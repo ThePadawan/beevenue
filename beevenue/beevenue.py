@@ -3,7 +3,7 @@ from flask import (
 )
 
 from flask_sqlalchemy import SQLAlchemy
-# TODO: requirements.txt this and marshmallow-sqlalchemy
+from flask_migrate import Migrate
 from flask_marshmallow import Marshmallow
 from flask_cors import CORS
 from flask_login import LoginManager
@@ -52,6 +52,7 @@ def get_application():
 
 app = get_application()
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 app.config['RULES'] = app.config['GET_RULES']()
 
 sentry_sdk.init(
