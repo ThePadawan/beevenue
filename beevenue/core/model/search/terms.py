@@ -100,7 +100,7 @@ def get_search_terms(search_term_list):
             (NEGATIVE_TERM_REGEX, NegativeSearchTerm, negative),
             (POSITIVE_TERM_REGEX, PositiveSearchTerm, positive),
         ]
-    
+
     def _maybe_match(term):
         for (regex, klass, result) in filters:
             maybe_match = regex.match(term)

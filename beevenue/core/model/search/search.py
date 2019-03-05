@@ -69,7 +69,7 @@ def _find_medium_tags(session, tag_to_id, terms, is_and):
         if maybe_id:
             ids.add(maybe_id)
 
-    if ids:
+    if terms and ids:
         q = session\
             .query(MediaTags.c.medium_id)\
             .filter(MediaTags.c.tag_id.in_(ids))\
@@ -78,8 +78,14 @@ def _find_medium_tags(session, tag_to_id, terms, is_and):
             q = q.having(func.count() == len(ids))
 
         medium_tags = q.all()
-    else:
+    elif terms and not ids:
         medium_tags = []
+    else:
+        if is_and:
+            q = session.query(MediaTags.c.medium_id)
+            medium_tags = q.all()
+        else:
+            medium_tags = []
 
     return medium_tags
 
