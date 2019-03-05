@@ -1,3 +1,4 @@
+import collections
 import os
 from pathlib import Path
 import re
@@ -10,6 +11,7 @@ import magic
 from PIL import Image
 
 from .media import EXTENSIONS
+from ...models import Medium
 
 KNOWN_MIME_TYPES = [
     'image/gif',
@@ -104,3 +106,48 @@ def create(mime_type, hash):
 
     origin_path = os.path.abspath(f'media/{hash}.{extension}')
     return Ffmpeg().thumbnails(origin_path, thumb_path, mime_type)
+
+
+def _add_media_with_missing_media_files(all_media, result):
+    found_hashes = set()
+
+    with os.scandir('./media') as it:
+        for entry in it:
+            found_hash = Path(os.path.basename(entry)).with_suffix('')
+            found_hashes.add(str(found_hash))
+
+    missing_media = [m for m in all_media if m.hash not in found_hashes]
+
+    for m in missing_media:
+        result[m.id].append("Missing medium")
+
+
+def _add_medium_with_missing_thumbnail(medium, thumbnail_size, result):
+    out_path_base = os.path.abspath(f'thumbs/{medium.hash}.jpg')
+    out_path = Path(out_path_base).with_suffix(f'.{thumbnail_size}.jpg')
+    if not os.path.exists(out_path):
+        result[medium.id].append(f"Missing thumbnail {thumbnail_size}")
+
+
+def _add_media_with_missing_thumbnails(all_media, result):
+    for medium in all_media:
+        for thumbnail_size, _ in current_app.config['BEEVENUE_THUMBNAIL_SIZES'].items():
+            _add_medium_with_missing_thumbnail(medium, thumbnail_size, result)
+
+
+def get_missing(session):
+    all_media = session.query(Medium).all()
+    missing = collections.defaultdict(list)
+
+    _add_media_with_missing_media_files(all_media, missing)
+    _add_media_with_missing_thumbnails(all_media, missing)
+
+    result = []
+
+    for medium_id, reasons in missing.items():
+        result.append({
+            "mediumId": medium_id,
+            "reasons": reasons
+        })
+
+    return result

@@ -16,7 +16,8 @@ from .decorators import paginated, requires_permission
 from .schemas.query import search_query_params_schema
 
 from .schemas.viewmodels import (
-    medium_schema, search_results_schema, tag_statistics_schema
+    medium_schema, search_results_schema,
+    tag_statistics_schema, missing_thumbnails_schema
 )
 
 
@@ -63,6 +64,17 @@ def list_media():
     media = _paginate(query)
     schema = search_results_schema.dump(media).data
     return jsonify(schema)
+
+
+@blueprint.route('/thumbnail/missing', methods=["GET"])
+@flask_login.login_required
+@requires_permission(permissions.create_thumbnail)
+def get_missing_thumbnails():
+    session = request.beevenue_context.session()
+    missing = thumbnails.get_missing(session)
+
+    return jsonify(missing_thumbnails_schema.dump(missing).data)
+
 
 
 @blueprint.route('/thumbnail/<int:medium_id>', methods=["PATCH"])

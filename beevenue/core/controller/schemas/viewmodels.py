@@ -55,4 +55,13 @@ class TagStatisticsSchema(TagSchema):
     class Meta:
         fields = ("id", "tag", "count")
 
+
 tag_statistics_schema = TagStatisticsSchema(many=True)
+
+
+class MissingThumbnailSchema(Schema):
+    mediumId = fields.Int()
+    reasons = fields.List(fields.String)
+
+
+missing_thumbnails_schema = MissingThumbnailSchema(many=True)
