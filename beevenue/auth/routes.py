@@ -19,6 +19,7 @@ def get_login_state():
     result = {
         'id': current_user.id,
         'role': current_user.role,
+        'version': current_app.config['COMMIT_ID'],
         'sfwSession': session.get("sfwSession", True)}
     return jsonify(result)
 
@@ -66,6 +67,7 @@ def login():
     return jsonify({
         'id': maybe_user.id,
         'role': maybe_user.role,
+        'version': current_app.config['COMMIT_ID'],
         'sfwSession': session["sfwSession"]}), 200
 
 
