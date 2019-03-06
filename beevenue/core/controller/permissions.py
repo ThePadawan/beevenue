@@ -47,6 +47,7 @@ def on_identity_loaded(sender, identity):
 
 _allowed = Permission()
 
+
 def _can_see_medium_by_filter(filter):
     maybe_medium = Medium.query.filter(filter).first()
     if not maybe_medium:
@@ -54,12 +55,15 @@ def _can_see_medium_by_filter(filter):
 
     return Permission(CanSeeMediumWithRatingNeed(maybe_medium.rating))
 
+
 def _can_see_medium(medium_id):
     return _can_see_medium_by_filter(Medium.id == medium_id)
+
 
 def _can_see_file(full_path):
     hash = str(Path(full_path).with_suffix(''))
     return _can_see_medium_by_filter(Medium.hash == hash)
+
 
 get_medium = _can_see_medium
 get_thumb = _can_see_file
@@ -71,6 +75,8 @@ update_medium = Permission(_admin_role_need)
 upload_medium = Permission(_admin_role_need)
 
 create_thumbnail = Permission(_admin_role_need)
+
+update_tag = Permission(_admin_role_need)
 
 get_tag_stats = Permission(_admin_role_need)
 delete_orphan_tags = Permission(_admin_role_need)

@@ -31,7 +31,7 @@ def not_sfw():
 def could_not_update_medium():
     return _make_notification(
         NotificationLevel.ERROR,
-        _text(f"Could not update medium"))
+        _text(f"Could not update medium."))
 
 
 def no_permission():
@@ -43,7 +43,19 @@ def no_permission():
 def no_such_medium(medium_id):
     return _make_notification(
         NotificationLevel.ERROR,
-        _text(f"Could not find medium with ID {medium_id}"))
+        _text(f"Could not find medium with ID {medium_id}."))
+
+
+def no_such_tag(current_name):
+    return _make_notification(
+        NotificationLevel.ERROR,
+        _text(f"Could not find tag with name '{current_name}''."))
+
+
+def tag_renamed():
+    return _make_notification(
+        NotificationLevel.INFO,
+        _text(f"Successfully renamed tag."))
 
 
 def medium_uploaded(medium_id):

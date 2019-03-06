@@ -20,17 +20,30 @@ def requires_permission(permission):
     return outer
 
 
-# View decorator that validates query params against the specified schema.
-# By default, validates for the presence of pagination parameters.
-def paginated(schema=pagination_query_params_schema):
+def _requires_schema(schema, validate):
     def outer(f):
-
         @wraps(f)
         def inner(*args, **kwargs):
-            validation_errors = schema.validate(request.args)
+            validation_errors = validate(request)
             if validation_errors:
                 return jsonify(validation_errors), 400
 
             return f(*args, **kwargs)
         return inner
     return outer
+
+
+# View decorator that validates requests' query params
+# against the specified schema.
+def requires_query_params(schema):
+    return _requires_schema(schema, lambda r: schema.validate(r.args))
+
+
+# View decorator that validates request's json body 
+# against the specified schema.
+def requires_json_body(schema):
+    return _requires_schema(schema, lambda r: schema.validate(r.json))
+
+
+def paginated():
+    return requires_query_params(schema=pagination_query_params_schema)

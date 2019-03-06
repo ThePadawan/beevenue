@@ -11,9 +11,14 @@ from .. import blueprint
 from ..model import (notifications, thumbnails, media, tags)
 
 from . import permissions
-from .decorators import paginated, requires_permission
+from .decorators import (
+    paginated, requires_query_params, requires_json_body, requires_permission
+)
 
-from .schemas.query import search_query_params_schema
+from .schemas.query import (
+    search_query_params_schema,
+    update_tag_schema
+)
 
 from .schemas.viewmodels import (
     medium_schema, search_results_schema,
@@ -29,7 +34,7 @@ def _paginate(query):
 
 @blueprint.route('/search')
 @flask_login.login_required
-@paginated(search_query_params_schema)
+@requires_query_params(search_query_params_schema)
 def search():
     search_terms = request.args.get('q').split(' ')
     medium_ids = run_search(request.beevenue_context, search_terms)
@@ -76,7 +81,6 @@ def get_missing_thumbnails():
     return jsonify(missing_thumbnails_schema.dump(missing).data)
 
 
-
 @blueprint.route('/thumbnail/<int:medium_id>', methods=["PATCH"])
 @flask_login.login_required
 @requires_permission(permissions.create_thumbnail)
@@ -102,7 +106,9 @@ def create_thumbnails(medium_id):
     all_media = session.query(Medium).filter(Medium.id > medium_id).all()
 
     for maybe_medium in all_media:
-        aspect_ratio = thumbnails.create(maybe_medium.mime_type, maybe_medium.hash)
+        aspect_ratio = thumbnails.create(
+            maybe_medium.mime_type,
+            maybe_medium.hash)
         maybe_medium.aspect_ratio = aspect_ratio
         session.commit()
 
@@ -187,6 +193,23 @@ def form_upload_medium():
     session.commit()
 
     return notifications.medium_uploaded(result.id), 200
+
+
+@blueprint.route('/tag/<string:tag_name>', methods=["PATCH"])
+@flask_login.login_required
+@requires_permission(permissions.update_tag)
+@requires_json_body(update_tag_schema)
+def update_tag(tag_name):
+    body = request.json
+    new_name = body.get("newName", None)
+
+    session = request.beevenue_context
+    _, success = tags.rename(session, old_name=tag_name, new_name=new_name)
+
+    if success:
+        return notifications.tag_renamed(), 200
+    else:
+        return notifications.no_such_tag(tag_name), 404
 
 
 @blueprint.route('/tags', methods=["GET"])
