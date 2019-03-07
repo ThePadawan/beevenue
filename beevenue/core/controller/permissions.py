@@ -69,14 +69,4 @@ get_medium = _can_see_medium
 get_thumb = _can_see_file
 get_medium_file = _can_see_file
 
-upload_medium = Permission(_admin_role_need)
-delete_medium = Permission(_admin_role_need)
-update_medium = Permission(_admin_role_need)
-upload_medium = Permission(_admin_role_need)
-
-create_thumbnail = Permission(_admin_role_need)
-
-update_tag = Permission(_admin_role_need)
-
-get_tag_stats = Permission(_admin_role_need)
-delete_orphan_tags = Permission(_admin_role_need)
+is_owner = Permission(_admin_role_need)

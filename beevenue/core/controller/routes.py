@@ -22,7 +22,8 @@ from .schemas.query import (
 
 from .schemas.viewmodels import (
     medium_schema, search_results_schema,
-    tag_statistics_schema, missing_thumbnails_schema
+    tag_statistics_schema, tag_show_schema,
+    missing_thumbnails_schema
 )
 
 
@@ -73,7 +74,7 @@ def list_media():
 
 @blueprint.route('/thumbnail/missing', methods=["GET"])
 @flask_login.login_required
-@requires_permission(permissions.create_thumbnail)
+@requires_permission(permissions.is_owner)
 def get_missing_thumbnails():
     session = request.beevenue_context.session()
     missing = thumbnails.get_missing(session)
@@ -83,7 +84,7 @@ def get_missing_thumbnails():
 
 @blueprint.route('/thumbnail/<int:medium_id>', methods=["PATCH"])
 @flask_login.login_required
-@requires_permission(permissions.create_thumbnail)
+@requires_permission(permissions.is_owner)
 def create_thumbnail(medium_id):
     session = request.beevenue_context.session()
     maybe_medium = session.query(Medium).filter_by(id=medium_id).first()
@@ -100,7 +101,7 @@ def create_thumbnail(medium_id):
 
 @blueprint.route('/thumbnails/after/<int:medium_id>', methods=["PATCH"])
 @flask_login.login_required
-@requires_permission(permissions.create_thumbnail)
+@requires_permission(permissions.is_owner)
 def create_thumbnails(medium_id):
     session = request.beevenue_context.session()
     all_media = session.query(Medium).filter(Medium.id > medium_id).all()
@@ -117,7 +118,7 @@ def create_thumbnails(medium_id):
 
 @blueprint.route('/medium/<int:medium_id>', methods=["DELETE"])
 @flask_login.login_required
-@requires_permission(permissions.delete_medium)
+@requires_permission(permissions.is_owner)
 def delete_medium(medium_id):
     maybe_medium = Medium.query.filter_by(id=medium_id).first()
 
@@ -156,9 +157,21 @@ def get_medium(medium_id):
     return medium_schema.jsonify(maybe_medium)
 
 
+@blueprint.route('/tag/<string:name>', methods=["GET", "OPTION"])
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+def get_tag(name):
+    maybe_tag = tags.get(request.beevenue_context, name)
+
+    if not maybe_tag:
+        return notifications.no_such_tag(name), 404
+
+    return jsonify(tag_show_schema.dump(maybe_tag).data)
+
+
 @blueprint.route('/medium/<int:medium_id>', methods=["PATCH"])
 @flask_login.login_required
-@requires_permission(permissions.update_medium)
+@requires_permission(permissions.is_owner)
 def update_medium_post(medium_id):
     body = request.json
 
@@ -176,7 +189,7 @@ def update_medium_post(medium_id):
 
 @blueprint.route('/medium', methods=["POST"])
 @flask_login.login_required
-@requires_permission(permissions.upload_medium)
+@requires_permission(permissions.is_owner)
 def form_upload_medium():
     if not request.files:
         return '', 400
@@ -197,7 +210,7 @@ def form_upload_medium():
 
 @blueprint.route('/tag/<string:tag_name>', methods=["PATCH"])
 @flask_login.login_required
-@requires_permission(permissions.update_tag)
+@requires_permission(permissions.is_owner)
 @requires_json_body(update_tag_schema)
 def update_tag(tag_name):
     body = request.json
@@ -214,15 +227,15 @@ def update_tag(tag_name):
 
 @blueprint.route('/tags', methods=["GET"])
 @flask_login.login_required
-@requires_permission(permissions.get_tag_stats)
+@requires_permission(permissions.is_owner)
 def get_tags_stats():
     stats = tags.get_statistics(request.beevenue_context)
-    return tag_statistics_schema.jsonify(stats).data, 200
+    return tag_statistics_schema.jsonify(stats)
 
 
 @blueprint.route('/tags/orphans', methods=["DELETE"])
 @flask_login.login_required
-@requires_permission(permissions.delete_orphan_tags)
+@requires_permission(permissions.is_owner)
 def delete_orphan_tags():
     tags.delete_orphans(request.beevenue_context)
     return '', 200

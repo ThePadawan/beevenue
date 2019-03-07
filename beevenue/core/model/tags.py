@@ -1,6 +1,15 @@
 from ...models import Tag, MediaTags
 
 
+def get(context, name):
+    session = context.session()
+    all_tags = session.query(Tag).filter_by(tag=name).all()
+    if len(all_tags) != 1:
+        return None
+
+    return all_tags[0]
+
+
 def get_statistics(context):
     session = context.session()
     all_tags = session.query(Tag).all()

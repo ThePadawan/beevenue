@@ -46,6 +46,16 @@ medium_schema = MediumSchema()
 search_results_schema = SearchResultsSchema()
 
 
+class TagShowSchema(Schema):
+    count = fields.Method("get_media_count")
+
+    def get_media_count(self, obj):
+        return len(obj.media)
+
+
+tag_show_schema = TagShowSchema()
+
+
 class TagStatisticsSchema(TagSchema):
     count = fields.Method("get_media_count")
 
