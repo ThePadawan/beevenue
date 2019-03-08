@@ -1,0 +1,17 @@
+DEBUG = True
+
+SQLALCHEMY_DATABASE_URI = 'POTATO'
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+BEEVENUE_ALLOWED_CORS_ORIGINS = ['http://localhost:*']
+
+BEEVENUE_THUMBNAIL_SIZES = {
+    's': 240,
+    'l': 600
+}
+
+SECRET_KEY = "TESTING_ONLY"
+
+
+def GET_RULES():
+    return []

@@ -1,7 +1,7 @@
 from flask import session, request
 from flask_login import current_user
 
-from ...beevenue import db
+from ...db import db
 
 from .. import blueprint
 from ...strawberry.routes import bp as strawberry_blueprint

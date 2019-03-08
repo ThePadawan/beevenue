@@ -1,7 +1,7 @@
 
 import bcrypt
 
-from ..beevenue import login_manager
+from ..login_manager import login_manager
 from .logged_in_user import LoggedInUser
 from .models import User
 

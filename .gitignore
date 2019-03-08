@@ -4,3 +4,5 @@ thumbs/
 beevenue_config.py
 
 __pycache__
+.cache
+.coverage

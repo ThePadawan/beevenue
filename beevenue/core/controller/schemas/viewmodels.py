@@ -1,6 +1,7 @@
-from ....beevenue import ma, app
+from ....marshmallow import ma
 from ....models import Medium, Tag
 
+from flask import current_app
 from marshmallow import fields, Schema
 
 
@@ -22,7 +23,7 @@ class MediumWithThumbsSchema(MediumSchema):
     thumbs = fields.Method("get_thumbnail_urls")
 
     def get_thumbnail_urls(self, obj):
-        return {size: f"/thumbs/{obj.hash}.{name}.jpg" for name, size in app.config["BEEVENUE_THUMBNAIL_SIZES"].items()}
+        return {size: f"/thumbs/{obj.hash}.{name}.jpg" for name, size in current_app.config["BEEVENUE_THUMBNAIL_SIZES"].items()}
 
 
 class SimilarMediumSchema(MediumWithThumbsSchema):

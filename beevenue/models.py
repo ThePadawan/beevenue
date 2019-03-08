@@ -1,4 +1,4 @@
-from .beevenue import db
+from .db import db
 
 
 class Tag(db.Model):

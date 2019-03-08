@@ -1,9 +1,9 @@
 from pathlib import Path
 
+from ...principal import principal
 from flask_login import current_user
 from flask_principal import identity_loaded, Permission, RoleNeed
 
-from ...beevenue import app
 from ...models import Medium
 
 
@@ -34,7 +34,7 @@ class AdminRoleNeed(object):
 _admin_role_need = AdminRoleNeed()
 
 
-@identity_loaded.connect_via(app)
+@identity_loaded.connect
 def on_identity_loaded(sender, identity):
     if hasattr(current_user, 'role'):
         identity.role = current_user.role

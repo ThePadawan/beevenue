@@ -2,19 +2,12 @@ from flask import (
     Flask
 )
 
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_marshmallow import Marshmallow
 from flask_cors import CORS
-from flask_login import LoginManager
-from flask_principal import Principal
-
-import sentry_sdk
-from sentry_sdk.integrations.flask import FlaskIntegration
 
 
 class BeevenueFlask(Flask):
-    """Custom implementation of Flask app """
+    """Custom implementation of Flask application """
 
     def __init__(self, name, hostname, port, *args, **kwargs):
         Flask.__init__(self, name, *args, **kwargs)
@@ -32,13 +25,16 @@ class BeevenueFlask(Flask):
                 use_x_sendfile=True)
 
 
-def get_application():
+def get_application(extra_config=None):
     application = BeevenueFlask(
         "strawberry",
         '0.0.0.0',
         7000)
 
     application.config.from_envvar('BEEVENUE_CONFIG_FILE')
+
+    if extra_config:
+        extra_config(application)
 
     CORS(
         application,
@@ -48,32 +44,39 @@ def get_application():
     # if application.config['DEBUG']:
     #     application.config['SQLALCHEMY_ECHO'] = True
 
+    from .db import db
+    db.init_app(application)
+    migrate = Migrate(application, db)
+    application.config['RULES'] = application.config['GET_RULES']()
+
+    if application.config.get('SENTRY_DSN'):
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+
+        sentry_sdk.init(
+            dsn=application.config['SENTRY_DSN'],
+            integrations=[FlaskIntegration()]
+        )
+
+    from .marshmallow import ma
+    ma.init_app(application)
+
+    with application.app_context():
+        from .login_manager import login_manager
+        login_manager.init_app(application)
+
+        from .principal import principal
+        principal.init_app(application)
+
+        from .auth import blueprint as auth_bp
+        from .core import blueprint as routes_bp
+        from .strawberry.routes import bp as strawberry_bp
+        application.register_blueprint(auth_bp)
+        application.register_blueprint(routes_bp)
+        application.register_blueprint(strawberry_bp)
+
+        db.create_all()
+
+    import beevenue.auth.auth
+
     return application
-
-app = get_application()
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-app.config['RULES'] = app.config['GET_RULES']()
-
-sentry_sdk.init(
-    dsn=app.config['SENTRY_DSN'],
-    integrations=[FlaskIntegration()]
-)
-
-ma = Marshmallow(app)
-
-from .auth import blueprint as auth_bp
-from .core import blueprint as routes_bp
-from .strawberry.routes import bp as strawberry_bp
-app.register_blueprint(auth_bp)
-app.register_blueprint(routes_bp)
-app.register_blueprint(strawberry_bp)
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-
-Principal(app)
-
-db.create_all()
-
-import beevenue.auth.auth
