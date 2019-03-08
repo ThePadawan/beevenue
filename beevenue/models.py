@@ -10,6 +10,14 @@ class Tag(db.Model):
         self.tag = tag
         self.rating = 'u'
 
+    @staticmethod
+    def create(tag):
+        clean_tag = tag.strip()
+        if clean_tag:
+            return Tag(clean_tag)
+        else:
+            return None
+
 
 MediaTags = db.Table('medium_tag', db.metadata,
     db.Column('medium_id', db.Integer, db.ForeignKey('medium.id'), primary_key=True),

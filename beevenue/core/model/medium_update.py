@@ -16,6 +16,8 @@ def update_tags(session, medium, new_tags):
     if new_tags is None:
         return False
 
+    new_tags = [t.strip() for t in new_tags]
+
     # Lookup ids for all input tags
     if len(new_tags) == 0:
         existing_tags = []
@@ -34,9 +36,10 @@ def update_tags(session, medium, new_tags):
     inserted_tags = []
 
     for unknown_tag_name in unknown_tag_names:
-        t = Tag(unknown_tag_name)
-        session.add(t)
-        inserted_tags.append(t)
+        t = Tag.create(unknown_tag_name)
+        if t:
+            session.add(t)
+            inserted_tags.append(t)
 
     # We need this to get the ids to insert into MediaTags later!
     if inserted_tags:
