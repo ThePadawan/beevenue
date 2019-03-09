@@ -28,8 +28,10 @@ _can_see_s = CanSeeMediumWithRatingNeed('s')
 
 _can_see_all = frozenset([_can_see_e, _can_see_q, _can_see_s, _can_see_u])
 
+
 class AdminRoleNeed(object):
     pass
+
 
 _admin_role_need = AdminRoleNeed()
 

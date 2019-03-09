@@ -1,5 +1,0 @@
-BEGIN TRANSACTION;
-
-INSERT INTO `tag` VALUES (100, 'u:overwatch');
-
-COMMIT;

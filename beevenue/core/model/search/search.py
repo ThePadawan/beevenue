@@ -157,6 +157,9 @@ def _evaluate(context, search_terms):
     neg_medium_tags = _find_medium_tags(
         session, tag_to_id, search_terms.negative, is_and=False)
 
+    print("NMT", neg_medium_tags)
+    print("NMT2", (9529,) in neg_medium_tags)
+
     to_exclude = set([mt.medium_id for mt in neg_medium_tags])
 
     found_by_rating = set()
@@ -201,6 +204,9 @@ def run_search(context, search_term_list):
     if context.user_role != 'admin':
         filters.append(Medium.rating != 'e')
         filters.append(Medium.rating != 'u')
+
+    if not medium_ids:
+        return []
 
     if filters:
         result = Medium.query.filter(Medium.id.in_(medium_ids), *filters)\

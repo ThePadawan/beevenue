@@ -175,6 +175,7 @@ def get_tag(name):
 def update_medium_post(medium_id):
     body = request.json
 
+    # TODO Think about default values vs. schema validation
     success = update_medium(
         request.beevenue_context,
         medium_id,
@@ -192,6 +193,7 @@ def update_medium_post(medium_id):
 @requires_permission(permissions.is_owner)
 def form_upload_medium():
     if not request.files:
+        # TODO: Create notification
         return '', 400
 
     stream = next(request.files.values())
@@ -215,6 +217,10 @@ def form_upload_medium():
 def update_tag(tag_name):
     body = request.json
     new_name = body.get("newName", None)
+
+    if not new_name:
+        # TODO Build better notification
+        return '', 400
 
     session = request.beevenue_context
     _, success = tags.rename(session, old_name=tag_name, new_name=new_name)

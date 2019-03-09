@@ -111,7 +111,10 @@ def create(mime_type, hash):
 def _add_media_with_missing_media_files(all_media, result):
     found_hashes = set()
 
-    with os.scandir('./media') as it:
+    if not os.path.exists('media'):
+        os.mkdir('media')
+
+    with os.scandir('media') as it:
         for entry in it:
             found_hash = Path(os.path.basename(entry)).with_suffix('')
             found_hashes.add(str(found_hash))
