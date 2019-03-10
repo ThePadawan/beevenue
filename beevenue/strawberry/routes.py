@@ -25,13 +25,12 @@ def _rules():
     return decode_rules(rules_obj)
 
 
-@bp.route('/tags/missing/rules')
+@bp.route('/rules')
 def get_rules():
     return json.dumps(_rules(), cls=RuleEncoder), 200
 
 
 # TODO: Setup logging for testing
-# TODO Switch from bare blueprint to application factory to inject json encoder
 @bp.route('/tags/missing/<int:post_id>', methods=["GET", "OPTION"])
 def get_missing_tags_for_post(post_id):
     session = request.beevenue_context.session()
