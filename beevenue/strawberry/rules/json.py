@@ -12,10 +12,10 @@ def _decode_part(obj):
         return iff.HasRating(obj["data"])
 
     if obj["type"] == "hasAnyTagsIn":
-        return iff.HasAnyTagsIn(obj["data"])
+        return iff.HasAnyTagsIn(*obj["data"])
 
     if obj["type"] == "hasAnyTagsLike":
-        return iff.HasAnyTagsLike(obj["data"])
+        return iff.HasAnyTagsLike(*obj["data"])
 
     raise Exception("Unknown rule IF")
 
