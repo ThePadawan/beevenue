@@ -22,6 +22,12 @@ def _make_notification(level, first_part, *other_parts):
     return jsonify({'level': level, 'contents': [first_part, *other_parts]})
 
 
+def simple_error(text):
+    return _make_notification(
+        NotificationLevel.ERROR,
+        _text(text))
+
+
 def not_sfw():
     return _make_notification(
         NotificationLevel.INFO,

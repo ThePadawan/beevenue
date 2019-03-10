@@ -51,6 +51,14 @@ def _ensure_folder(fname):
         os.mkdir(files_path)
 
 
+def _ensure_no_more_folder(fname):
+    files_path = os.path.join(os.path.dirname(__file__), fname)
+    if os.path.exists(files_path):
+        shutil.rmtree(files_path)
+
+
+# TODO: Set working folder for test client to '/test' so it saves thumbs
+# to the correct folder ('/test/thumbs') instead of /thumbs.
 def _client(extra=None):
     temp_fd, temp_path = tempfile.mkstemp(suffix=".db")
     print(f"Temp path: {temp_path}")
@@ -65,8 +73,6 @@ def _client(extra=None):
     app = get_application(extra_config)
 
     _run_testing_sql(temp_nice_path)
-    # TODO: Create actual hashes and files described in testing.sql
-    # so we can test file access, update, upload, thumbnail creation etc.
     _ensure_folder('media')
     _ensure_folder('thumbs')
 
@@ -81,8 +87,8 @@ def _client(extra=None):
 
     yield c
 
-    # TODO: Remove testing media when done with them (doesn't work?)
-    # _ensure_no_more_folder('files') # use shutil.rmtree
+    _ensure_no_more_folder('media')
+    _ensure_no_more_folder('thumbs')
 
     os.close(temp_fd)
     os.unlink(temp_path)
@@ -91,7 +97,7 @@ def _client(extra=None):
 @pytest.yield_fixture
 def client():
     for c in _client():
-        return c
+        yield c
 
 
 @pytest.yield_fixture
@@ -103,7 +109,7 @@ def adminClient():
         assert res.status_code == 200
 
     for c in _client(loginAsAdmin):
-        return c
+        yield c
 
 
 @pytest.yield_fixture
@@ -120,7 +126,7 @@ def adminNsfwClient():
         assert res.status_code == 200
 
     for c in _client(loginAsNsfwAdmin):
-        return c
+        yield c
 
 
 @pytest.yield_fixture
@@ -132,4 +138,4 @@ def userClient():
         assert res.status_code == 200
 
     for c in _client(loginAsUser):
-        return c
+        yield c

@@ -19,4 +19,3 @@ def test_can_create_thumb_for_current_file(adminClient):
     # assert res.status_code == 200
 
     # TODO: Assert that thumb exists
-    # TODO: Fails to missing cleanup after each test

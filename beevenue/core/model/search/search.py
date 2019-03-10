@@ -1,7 +1,7 @@
 from sqlalchemy.sql import func
 from sqlalchemy.orm import load_only
 
-from ....models import Medium, Tag, MediaTags
+from ....models import Medium, Tag, MediaTags, TagAlias, TagImplication
 
 from .terms import get_search_terms
 
@@ -69,25 +69,41 @@ def _find_medium_tags(session, tag_to_id, terms, is_and):
         if maybe_id:
             ids.add(maybe_id)
 
-    if terms and ids:
-        q = session\
-            .query(MediaTags.c.medium_id)\
-            .filter(MediaTags.c.tag_id.in_(ids))\
-            .group_by(MediaTags.c.medium_id)
-        if is_and:
-            q = q.having(func.count() == len(ids))
+    # TODO Write unit test
+    if ids:
+        implications = session.query(TagImplication)\
+            .filter(TagImplication.c.implied_tag_id.in_(ids))\
+            .all()
 
-        medium_tags = q.all()
-    elif terms and not ids:
-        medium_tags = []
-    else:
+        implying_tag_ids = [i.implying_tag_id for i in implications]
+        ids |= set(implying_tag_ids)
+
+    # User supplied no search terms:
+    # * ANDing together 0 terms means "show everything"
+    # * ORing together 0 terms means "show nothing"
+    if not terms:
         if is_and:
             q = session.query(MediaTags.c.medium_id)
-            medium_tags = q.all()
-        else:
-            medium_tags = []
+            return q.all()
+        return []
 
-    return medium_tags
+    # User supplied terms, but none were valid
+    if not ids:
+        return []
+
+    q = session\
+        .query(MediaTags.c.medium_id)\
+        .filter(MediaTags.c.tag_id.in_(ids))\
+        .group_by(MediaTags.c.medium_id)
+    if is_and:
+        # For ANDed together terms, the number of entries in
+        # the MediaTags table must be the same as the number of
+        # expected matches to AND terms.
+        # However, as tag implication-based terms are added automatically,
+        # we must not count those.
+        q = q.having(func.count() == (len(ids) - len(implying_tag_ids)))
+
+    return q.all()
 
 
 # Pass tag_ids_per_category != None to search for "ctags>2",
@@ -131,8 +147,32 @@ def _find_helper(session, terms, tag_ids_per_category=None):
     return found
 
 
-def _find_by_category(session, tag_ids_per_category, category_terms):
-    return _find_helper(session, category_terms, tag_ids_per_category)
+def _replace_aliases(session, search_terms):
+    possible_alias_terms = set()
+    possible_alias_terms |= set([t.term for t in search_terms.positive])
+    possible_alias_terms |= set([t.term for t in search_terms.negative])
+
+    found_aliases = session.query(TagAlias)\
+        .filter(TagAlias.alias.in_(possible_alias_terms))\
+        .all()
+
+    replacements = {}
+
+    for found_alias in found_aliases:
+        replacements[found_alias.alias] = found_alias.tag.tag
+
+    for old, new in replacements.items():
+        for target in [search_terms.positive, search_terms.negative]:
+            for term in target:
+                if term.term == old:
+                    term.term = new
+
+    return search_terms
+
+
+def _find_by_category(session, search_terms):
+    tag_ids_per_category = _tag_ids_per_category(session, search_terms)
+    return _find_helper(session, search_terms.category, tag_ids_per_category)
 
 
 def _find_by_counting(session, counting_terms):
@@ -142,23 +182,19 @@ def _find_by_counting(session, counting_terms):
 def _evaluate(context, search_terms):
     session = context.session()
 
+    search_terms = _replace_aliases(session, search_terms)
     tag_to_id = _tag_to_id(session, search_terms)
-    tag_ids_per_category = _tag_ids_per_category(session, search_terms)
 
     found_by_counting = _find_by_counting(session, search_terms.counting)
 
     found_by_category = _find_by_category(
         session,
-        tag_ids_per_category,
-        search_terms.category)
+        search_terms)
 
     pos_medium_tags = _find_medium_tags(
         session, tag_to_id, search_terms.positive, is_and=True)
     neg_medium_tags = _find_medium_tags(
         session, tag_to_id, search_terms.negative, is_and=False)
-
-    print("NMT", neg_medium_tags)
-    print("NMT2", (9529,) in neg_medium_tags)
 
     to_exclude = set([mt.medium_id for mt in neg_medium_tags])
 

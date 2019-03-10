@@ -15,6 +15,7 @@ from .decorators import (
     paginated, requires_query_params, requires_json_body, requires_permission
 )
 
+# TODO Split tags of into its own routes.py
 from .schemas.query import (
     search_query_params_schema,
     update_tag_schema
@@ -72,7 +73,7 @@ def list_media():
     return jsonify(schema)
 
 
-@blueprint.route('/thumbnail/missing', methods=["GET"])
+@blueprint.route('/thumbnails/missing', methods=["GET"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def get_missing_thumbnails():
@@ -169,6 +170,40 @@ def get_tag(name):
     return jsonify(tag_show_schema.dump(maybe_tag).data)
 
 
+@blueprint.route(
+    '/tag/<string:current_name>/aliases/<string:new_alias>',
+    methods=["POST"])
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+def add_alias(current_name, new_alias):
+    message, success = tags.add_alias(
+        request.beevenue_context,
+        current_name,
+        new_alias)
+
+    if success:
+        return '', 200
+    else:
+        return notifications.simple_error(message), 400
+
+
+@blueprint.route(
+    '/tag/<string:name>/aliases/<string:alias>',
+    methods=["DELETE"])
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+def delete_alias(name, alias):
+    message, success = tags.remove_alias(
+        request.beevenue_context,
+        name,
+        alias)
+
+    if success:
+        return '', 200
+    else:
+        return notifications.simple_error(message), 400
+
+
 @blueprint.route('/medium/<int:medium_id>', methods=["PATCH"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
@@ -193,8 +228,7 @@ def update_medium_post(medium_id):
 @requires_permission(permissions.is_owner)
 def form_upload_medium():
     if not request.files:
-        # TODO: Create notification
-        return '', 400
+        return notifications.simple_error("You must supply a file"), 400
 
     stream = next(request.files.values())
     session = request.beevenue_context.session()
@@ -218,17 +252,50 @@ def update_tag(tag_name):
     body = request.json
     new_name = body.get("newName", None)
 
-    if not new_name:
-        # TODO Build better notification
-        return '', 400
-
     session = request.beevenue_context
-    _, success = tags.rename(session, old_name=tag_name, new_name=new_name)
+    message, success = tags.rename(
+        session,
+        old_name=tag_name,
+        new_name=new_name)
 
     if success:
         return notifications.tag_renamed(), 200
     else:
-        return notifications.no_such_tag(tag_name), 404
+        return notifications.simple_error(message), 404
+
+
+@blueprint.route(
+    '/tag/<string:tag_name>/implications/<string:implied_by_this>',
+    methods=["PATCH"])
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+def tag_add_implication(tag_name, implied_by_this):
+    message, success = tags.add_implication(
+        request.beevenue_context,
+        implying=tag_name,
+        implied=implied_by_this)
+
+    if success:
+        return '', 200
+    else:
+        return notifications.simple_error(message), 400
+
+
+@blueprint.route(
+    '/tag/<string:tag_name>/implications/<string:implied_by_this>',
+    methods=["DELETE"])
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+def tag_remove_implication(tag_name, implied_by_this):
+    message, success = tags.remove_implication(
+        request.beevenue_context,
+        implying=tag_name,
+        implied=implied_by_this)
+
+    if success:
+        return '', 200
+    else:
+        return notifications.simple_error(message), 400
 
 
 @blueprint.route('/tags', methods=["GET"])

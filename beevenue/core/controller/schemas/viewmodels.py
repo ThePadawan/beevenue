@@ -48,10 +48,20 @@ search_results_schema = SearchResultsSchema()
 
 
 class TagShowSchema(Schema):
+    aliases = fields.List(fields.String(attribute="alias"))
     count = fields.Method("get_media_count")
+
+    implied_by_this = fields.Method("get_implied_by_this")
+    implying_this = fields.Method("get_implying_this")
 
     def get_media_count(self, obj):
         return len(obj.media)
+
+    def get_implied_by_this(self, obj):
+        return [t.tag for t in obj.implied_by_this]
+
+    def get_implying_this(self, obj):
+        return [t.tag for t in obj.implying_this]
 
 
 tag_show_schema = TagShowSchema()

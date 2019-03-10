@@ -1,10 +1,34 @@
 from .db import db
 
 
+TagImplication = db.Table('tagImplication', db.metadata,
+    db.Column('implying_tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True),
+    db.Column('implied_tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
+)
+
+
 class Tag(db.Model):
     __tablename__ = 'tag'
     id = db.Column(db.Integer, primary_key=True)
     tag = db.Column(db.String(length=256), unique=True, nullable=False)
+
+    aliases = db.relationship(
+        'TagAlias',
+        lazy='joined')
+
+    implying_this = db.relationship(
+        'Tag',
+        secondary=TagImplication,
+        primaryjoin=id==TagImplication.c.implied_tag_id,
+        secondaryjoin=id==TagImplication.c.implying_tag_id,
+        lazy='joined')
+
+    implied_by_this = db.relationship(
+        'Tag',
+        secondary=TagImplication,
+        primaryjoin=id==TagImplication.c.implying_tag_id,
+        secondaryjoin=id==TagImplication.c.implied_tag_id,
+        lazy='joined')
 
     def __init__(self, tag):
         self.tag = tag
@@ -17,6 +41,19 @@ class Tag(db.Model):
             return Tag(clean_tag)
         else:
             return None
+
+
+class TagAlias(db.Model):
+    __tablename__ = 'tagAlias'
+    id = db.Column(db.Integer, primary_key=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), nullable=False)
+    alias = db.Column(db.String(length=256), unique=True, nullable=False)
+
+    tag = db.relationship(Tag, lazy='joined')
+
+    def __init__(self, tag_id, alias):
+        self.tag_id = tag_id
+        self.alias = alias
 
 
 MediaTags = db.Table('medium_tag', db.metadata,

@@ -26,7 +26,6 @@ def get_rules():
 
 
 # TODO: Setup logging for testing
-# TODO Add permissions!
 # TODO Switch from bare blueprint to application factory to inject json encoder
 @bp.route('/tags/missing/<int:post_id>', methods=["GET", "OPTION"])
 def get_missing_tags_for_post(post_id):
