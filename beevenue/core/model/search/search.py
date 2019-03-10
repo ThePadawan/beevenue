@@ -63,6 +63,16 @@ def _having_expr(category_term):
 # Pass "is_and"=True to AND together conditions.
 # Otherwise, they will be ORed together.
 def _find_medium_tags(session, tag_to_id, terms, is_and):
+
+    # User supplied no search terms:
+    # * ANDing together 0 terms means "show everything"
+    # * ORing together 0 terms means "show nothing"
+    if not terms:
+        if is_and:
+            q = session.query(MediaTags.c.medium_id)
+            return q.all()
+        return []
+
     ids = set()
     for t in terms:
         maybe_id = tag_to_id.get(t.term, None)
@@ -77,15 +87,6 @@ def _find_medium_tags(session, tag_to_id, terms, is_and):
 
         implying_tag_ids = [i.implying_tag_id for i in implications]
         ids |= set(implying_tag_ids)
-
-    # User supplied no search terms:
-    # * ANDing together 0 terms means "show everything"
-    # * ORing together 0 terms means "show nothing"
-    if not terms:
-        if is_and:
-            q = session.query(MediaTags.c.medium_id)
-            return q.all()
-        return []
 
     # User supplied terms, but none were valid
     if not ids:

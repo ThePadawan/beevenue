@@ -3,9 +3,36 @@ import json
 from .rule import Rule
 from . import iff
 
-# TODO: Also write decoders. Consider Flask-JSON and @encoder, which seems to allow
-# more customization
 
+def _decode_part(obj):
+    if obj["type"] == "all":
+        return iff.All()
+
+    if obj["type"] == "hasRating":
+        return iff.HasRating(obj["data"])
+
+    if obj["type"] == "hasAnyTagsIn":
+        return iff.HasAnyTagsIn(obj["data"])
+
+    if obj["type"] == "hasAnyTagsLike":
+        return iff.HasAnyTagsLike(obj["data"])
+
+    raise Exception("Unknown rule IF")
+
+
+def _decode_thens(thens_obj):
+    return [_decode_part(t) for t in thens_obj]
+
+
+def _decode_rule(obj):
+    iff = _decode_part(obj["if"])
+    thens = _decode_thens(obj["then"])
+
+    return Rule(iff, thens)
+
+
+def decode_rules(obj):
+    return [_decode_rule(rule) for rule in obj]
 
 
 class RulePartEncoder(json.JSONEncoder):

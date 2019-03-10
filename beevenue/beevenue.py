@@ -47,7 +47,6 @@ def get_application(extra_config=None):
     from .db import db
     db.init_app(application)
     migrate = Migrate(application, db)
-    application.config['RULES'] = application.config['GET_RULES']()
 
     if application.config.get('SENTRY_DSN'):
         import sentry_sdk

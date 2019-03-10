@@ -4,6 +4,7 @@ thumbs/
 test/media/
 test/thumbs/
 beevenue_config.py
+beevenue_rules.json
 
 __pycache__
 .cache

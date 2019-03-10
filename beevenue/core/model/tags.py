@@ -23,6 +23,9 @@ def delete_orphans(context):
         .filter(MediaTags.c.tag_id is None)\
         .all()
 
+    # TODO: Only delete tags if they're not implied
+    # by anything.
+
     for t in tags_to_delete:
         session.delete(t)
 

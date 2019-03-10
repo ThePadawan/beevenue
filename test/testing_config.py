@@ -13,7 +13,3 @@ BEEVENUE_THUMBNAIL_SIZES = {
 }
 
 SECRET_KEY = "TESTING_ONLY"
-
-
-def GET_RULES():
-    return []

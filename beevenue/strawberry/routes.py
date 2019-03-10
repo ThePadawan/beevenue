@@ -3,7 +3,7 @@ from flask import jsonify, Blueprint, current_app, request
 import json
 import random
 
-from .rules.json import RuleEncoder
+from .rules.json import RuleEncoder, decode_rules
 
 bp = Blueprint('strawberry', __name__)
 
@@ -17,7 +17,12 @@ def _jsonified(rule_breaks):
 
 
 def _rules():
-    return current_app.config['RULES']
+    rules_file_path = current_app.config["BEEVENUE_RULES_FILE"]
+    with open(rules_file_path, 'r') as rules_file:
+        rules_file_json = rules_file.read()
+
+    rules_obj = json.loads(rules_file_json)
+    return decode_rules(rules_obj)
 
 
 @bp.route('/tags/missing/rules')
