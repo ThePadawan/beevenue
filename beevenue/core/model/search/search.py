@@ -100,8 +100,8 @@ def _find_medium_tags(session, tag_to_id, terms, is_and):
         # the MediaTags table must be the same as the number of
         # expected matches to AND terms.
         # However, as tag implication-based terms are added automatically,
-        # we must not count those.
-        q = q.having(func.count() == (len(ids) - len(implying_tag_ids)))
+        # we do not have to count those.
+        q = q.having(func.count() >= (len(ids) - len(implying_tag_ids)))
 
     return q.all()
 
