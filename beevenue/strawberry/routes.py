@@ -27,7 +27,8 @@ def _rules():
 
 @bp.route('/rules')
 def get_rules():
-    return json.dumps(_rules(), cls=RuleEncoder), 200
+    # result = json.dumps(, cls=RuleEncoder)
+    return jsonify(_rules()), 200
 
 
 # TODO: Setup logging for testing

@@ -74,6 +74,10 @@ def get_application(extra_config=None):
         application.register_blueprint(routes_bp)
         application.register_blueprint(strawberry_bp)
 
+        from .strawberry.rules.json import RuleEncoder
+
+        application.json_encoder = RuleEncoder
+
         db.create_all()
 
     import beevenue.auth.auth

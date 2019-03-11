@@ -64,13 +64,8 @@ def _having_expr(category_term):
 # Otherwise, they will be ORed together.
 def _find_medium_tags(session, tag_to_id, terms, is_and):
 
-    # User supplied no search terms:
-    # * ANDing together 0 terms means "show everything"
-    # * ORing together 0 terms means "show nothing"
+    # User supplied no search terms: show nothing
     if not terms:
-        if is_and:
-            q = session.query(MediaTags.c.medium_id)
-            return q.all()
         return []
 
     ids = set()
@@ -153,6 +148,10 @@ def _replace_aliases(session, search_terms):
     possible_alias_terms |= set([t.term for t in search_terms.positive])
     possible_alias_terms |= set([t.term for t in search_terms.negative])
 
+    if not possible_alias_terms:
+        # Nothing to do
+        return search_terms
+
     found_aliases = session.query(TagAlias)\
         .filter(TagAlias.alias.in_(possible_alias_terms))\
         .all()
@@ -219,7 +218,11 @@ def _evaluate(context, search_terms):
             non_empty_result_sets.append(result_set)
 
     if len(non_empty_result_sets) == 0:
-        found = set()
+        if len(search_terms) == 0 or len(to_exclude) > 0:
+            found = set(session.query(MediaTags.c.medium_id).all())
+            found = set([f[0] for f in found])
+        else:
+            found = set()
     else:
         found = non_empty_result_sets[0]
         for other_set in non_empty_result_sets[1:]:

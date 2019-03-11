@@ -40,7 +40,10 @@ class RulePartEncoder(json.JSONEncoder):
         if isinstance(obj, iff.All):
             return {"type": "all"}
         if isinstance(obj, iff.HasRating):
-            return {"type": "hasRating", "data": obj.rating}
+            result = {"type": "hasRating"}
+            if obj.rating:
+                result["data"] = obj.rating
+            return result
         if isinstance(obj, iff.HasAnyTagsIn):
             return {"type": "hasAnyTagsIn", "data": obj.names}
         if isinstance(obj, iff.HasAnyTagsLike):
