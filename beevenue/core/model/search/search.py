@@ -102,6 +102,19 @@ def _find_medium_tags(session, tag_to_id, terms, is_and):
     return q.all()
 
 
+def _term_contains_zero(term):
+    if term.operator in (':', '=', '>='):
+        return term.number == 0
+    if term.operator in ('<'):
+        return term.number > 0
+    if term.operator in ('<='):
+        return term.number >= 0
+    if term.operator in ('>'):
+        return False
+    if term.operator in ('!='):
+        return term.number != 0
+
+
 # Pass tag_ids_per_category != None to search for "ctags>2",
 # or None for "tags>2" etc.
 def _find_helper(session, terms, tag_ids_per_category=None):
@@ -122,23 +135,30 @@ def _find_helper(session, terms, tag_ids_per_category=None):
         if filters:
             q = q.filter(*filters)
 
-        # TODO Note that this is not really general enough. It doesn't
-        # catch "<1" or "<=0" etc.
-        if not (term.number == 0 and term.operator in (":", "=")):
-            q = q.having(_having_expr(term))
+        # If term contains zero, load values for >= 1 and
+        # do ALL MINUS that result.
+        found_for_this_term = set()
 
-        medium_ids = q.all()
-        medium_ids = set([m.medium_id for m in medium_ids])
+        if _term_contains_zero(term):
+            all_media_ids = session.query(Medium.id).all()
+            all_media_ids = [m[0] for m in all_media_ids]
 
-        if term.number == 0 and term.operator in (":", "="):
-            all_media = Medium.query.all()
-            medium_ids = set([m.id for m in all_media]) - medium_ids
+            geq_1_term = term.with_(operator='>=', number=1)
 
-        found_medium_ids = set(medium_ids)
+            results_for_geq_1 = q.having(_having_expr(geq_1_term)).all()
+            results_for_geq_1 = [t[0] for t in results_for_geq_1]
+
+            results_for_eq_0 = set(all_media_ids) - set(results_for_geq_1)
+            found_for_this_term |= results_for_eq_0
+
+        results = q.having(_having_expr(term)).all()
+        results = [t[0] for t in results]
+        found_for_this_term |= set(results)
+
         if found:
-            found &= found_medium_ids
+            found &= found_for_this_term
         else:
-            found = found_medium_ids
+            found = found_for_this_term
 
     return found
 

@@ -20,11 +20,14 @@ def delete_orphans(context):
     session = context.session()
 
     tags_to_delete = session.query(Tag).outerjoin(MediaTags)\
-        .filter(MediaTags.c.tag_id is None)\
+        .filter(MediaTags.c.tag_id.is_(None))\
         .all()
 
-    # TODO: Only delete tags if they're not implied
-    # by anything.
+    # Only delete tags if they're not implied by anything
+    def is_deletable(tag):
+        return len(tag.implying_this) == 0
+
+    tags_to_delete = [t for t in tags_to_delete if is_deletable(t)]
 
     for t in tags_to_delete:
         session.delete(t)

@@ -59,7 +59,6 @@ def update_tags(session, medium, new_tags):
     for tag_id in target_tag_ids:
         values.append({"medium_id": medium.id, "tag_id": tag_id})
 
-    print(f"Now inserting {values}")
     if values:
         insert = MediaTags.insert().values(values)
         session.execute(insert)

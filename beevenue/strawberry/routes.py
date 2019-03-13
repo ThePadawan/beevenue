@@ -1,9 +1,8 @@
 from flask import jsonify, Blueprint, current_app, request
 
-import json
 import random
 
-from .rules.json import RuleEncoder, decode_rules
+from .rules.json import decode_rules
 
 bp = Blueprint('strawberry', __name__)
 
@@ -21,13 +20,11 @@ def _rules():
     with open(rules_file_path, 'r') as rules_file:
         rules_file_json = rules_file.read()
 
-    rules_obj = json.loads(rules_file_json)
-    return decode_rules(rules_obj)
+    return decode_rules(rules_file_json)
 
 
 @bp.route('/rules')
 def get_rules():
-    # result = json.dumps(, cls=RuleEncoder)
     return jsonify(_rules()), 200
 
 

@@ -26,6 +26,11 @@ class CountingSearchTerm(object):
     def from_match(match):
         return CountingSearchTerm(**match.groupdict())
 
+    def with_(self, operator=None, number=None):
+        operator = operator or self.operator
+        number = number or self.number
+        return CountingSearchTerm(operator, number)
+
     def __repr__(self):
         return f"tags{self.operator}{self.number}"
 
@@ -39,6 +44,11 @@ class CategorySearchTerm(object):
     @staticmethod
     def from_match(match):
         return CategorySearchTerm(**match.groupdict())
+
+    def with_(self, operator=None, number=None):
+        operator = operator or self.operator
+        number = number or self.number
+        return CategorySearchTerm(self.category, operator, number)
 
     def __repr__(self):
         return f"{self.category}tags{self.operator}{self.number}"

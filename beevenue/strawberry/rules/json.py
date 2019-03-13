@@ -31,8 +31,9 @@ def _decode_rule(obj):
     return Rule(iff, thens)
 
 
-def decode_rules(obj):
-    return [_decode_rule(rule) for rule in obj]
+def decode_rules(json_text):
+    rules_obj = json.loads(json_text)
+    return [_decode_rule(rule) for rule in rules_obj]
 
 
 class RulePartEncoder(json.JSONEncoder):
