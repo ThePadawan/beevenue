@@ -69,15 +69,19 @@ def _find_medium_tags(session, tag_to_id, terms, is_and):
         return []
 
     ids = set()
+    implying_ids = set()
     for t in terms:
         maybe_id = tag_to_id.get(t.term, None)
         if maybe_id:
             ids.add(maybe_id)
+            if not t.is_quoted:
+                implying_ids.add(maybe_id)
 
     # TODO Write unit test
-    if ids:
+    implying_tag_ids = []
+    if implying_ids:
         implications = session.query(TagImplication)\
-            .filter(TagImplication.c.implied_tag_id.in_(ids))\
+            .filter(TagImplication.c.implied_tag_id.in_(implying_ids))\
             .all()
 
         implying_tag_ids = [i.implying_tag_id for i in implications]

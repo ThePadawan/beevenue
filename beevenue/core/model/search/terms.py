@@ -13,8 +13,8 @@ CATEGORY_TERM_REGEX = re.compile(
     r'(?P<category>[a-z]+)tags' + COMPARISON)
 RATING_TERM_REGEX = re.compile(
     r'rating:(u|s|e|q)')
-POSITIVE_TERM_REGEX = re.compile('([a-zA-Z0-9:.]+)')
-NEGATIVE_TERM_REGEX = re.compile('-([a-zA-Z0-9:.]+)')
+POSITIVE_TERM_REGEX = re.compile('\"?([a-zA-Z0-9:.]+)\"?')
+NEGATIVE_TERM_REGEX = re.compile('-\"?([a-zA-Z0-9:.]+)\"?')
 
 
 class CountingSearchTerm(object):
@@ -55,24 +55,28 @@ class CategorySearchTerm(object):
 
 
 class NegativeSearchTerm(object):
-    def __init__(self, term):
+    def __init__(self, term, is_quoted):
         self.term = term
+        self.is_quoted = is_quoted
 
     @staticmethod
     def from_match(match):
-        return NegativeSearchTerm(match.group(1))
+        return NegativeSearchTerm(
+            match.group(1), "\"" in match.group(0))
 
     def __repr__(self):
         return f"-{self.term}"
 
 
 class PositiveSearchTerm(object):
-    def __init__(self, term):
+    def __init__(self, term, is_quoted):
         self.term = term
+        self.is_quoted = is_quoted
 
     @staticmethod
     def from_match(match):
-        return PositiveSearchTerm(match.group(1))
+        return PositiveSearchTerm(
+            match.group(1), "\"" in match.group(0))
 
     def __repr__(self):
         return f"{self.term}"
