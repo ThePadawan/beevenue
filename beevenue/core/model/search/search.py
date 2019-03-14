@@ -39,7 +39,16 @@ def _tag_ids_per_category(session, search_terms):
             .all()
 
         tag_ids_in_this_category = [t.id for t in tags_in_this_category]
-        tag_ids_per_category[category_name] = set(tag_ids_in_this_category)
+
+        tag_ids_implying_this_category = \
+            session.query(TagImplication.c.implying_tag_id)\
+            .filter(TagImplication.c.implied_tag_id.in_(tag_ids_in_this_category))\
+            .all()
+
+        tag_ids_implying_this_category = [t[0] for t in tag_ids_implying_this_category]
+
+        result = set(tag_ids_in_this_category) | set(tag_ids_implying_this_category)
+        tag_ids_per_category[category_name] = result
 
     return tag_ids_per_category
 

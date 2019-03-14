@@ -228,9 +228,6 @@ def simplify_implied(context, tag):
 
     implying_tags = implied_tag.implying_this
 
-    print(implied_tag)
-    print(implying_tags)
-
     tag_ids = set([implied_tag.id])
     tag_ids |= set([t.id for t in implying_tags])
 
@@ -240,8 +237,6 @@ def simplify_implied(context, tag):
             .group_by(MediaTags.c.medium_id)\
             .having(func.count(MediaTags.c.tag_id) > 1)\
             .all()
-
-    print(media_ids_to_clean)
 
     if not media_ids_to_clean:
         return False
