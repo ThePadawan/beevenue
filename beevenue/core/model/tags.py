@@ -1,3 +1,5 @@
+from sqlalchemy.sql import func
+
 from ...models import Tag, TagAlias, TagImplication, MediaTags
 
 
@@ -8,6 +10,20 @@ def get(context, name):
         return None
 
     return all_tags[0]
+
+
+def create(session, name):
+    # Don't create tag if there is another tag that has the same 'name'
+    maybe_conflict = session.query(Tag).filter_by(tag=name).first()
+    if maybe_conflict:
+        return False
+
+    # Don't create tag if there is another tag that has 'name' as an alias
+    maybe_conflict = session.query(TagAlias).filter_by(alias=name).first()
+    if maybe_conflict:
+        return False
+
+    return Tag.create(name)
 
 
 def get_statistics(context):
@@ -196,3 +212,46 @@ def remove_implication(context, implying, implied):
     implying_tag.implied_by_this.remove(implied_tag)
     session.commit()
     return 'Success', 200
+
+
+def simplify_implied(context, tag):
+    """ If 'tag' (T1) is implied by any other tags (T2),
+        it no longer makes sense for a medium to be tagged
+        as both T1 and T2. This functions will remove
+        T1 from all media tagged "T1 Tx" iff Tx => T1."""
+
+    session = context.session()
+
+    implied_tag = session.query(Tag).filter_by(tag=tag).first()
+    if not implied_tag:
+        return False
+
+    implying_tags = implied_tag.implying_this
+
+    print(implied_tag)
+    print(implying_tags)
+
+    tag_ids = set([implied_tag.id])
+    tag_ids |= set([t.id for t in implying_tags])
+
+    media_ids_to_clean = \
+        session.query(MediaTags.c.medium_id)\
+            .filter(MediaTags.c.tag_id.in_(tag_ids))\
+            .group_by(MediaTags.c.medium_id)\
+            .having(func.count(MediaTags.c.tag_id) > 1)\
+            .all()
+
+    print(media_ids_to_clean)
+
+    if not media_ids_to_clean:
+        return False
+
+    d = MediaTags\
+        .delete()\
+        .where(
+            MediaTags.c.tag_id == implied_tag.id and
+            MediaTags.c.medium_id.in_(media_ids_to_clean)
+        )
+
+    session.execute(d)
+    session.commit()

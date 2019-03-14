@@ -2,6 +2,8 @@ from sqlalchemy.sql import column
 
 from ...models import Medium, Tag, MediaTags
 
+from . import tags
+
 
 def update_rating(session, medium, new_rating):
     # Update rating
@@ -36,7 +38,7 @@ def update_tags(session, medium, new_tags):
     inserted_tags = []
 
     for unknown_tag_name in unknown_tag_names:
-        t = Tag.create(unknown_tag_name)
+        t = tags.create(session, unknown_tag_name)
         if t:
             session.add(t)
             inserted_tags.append(t)

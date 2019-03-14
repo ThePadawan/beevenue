@@ -188,6 +188,19 @@ def add_alias(current_name, new_alias):
 
 
 @blueprint.route(
+    '/tag/<string:current_name>/clean',
+    methods=["PATCH"])
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+def simplify_tag(current_name):
+    tags.simplify_implied(
+        request.beevenue_context,
+        current_name)
+
+    return '', 200
+
+
+@blueprint.route(
     '/tag/<string:name>/aliases/<string:alias>',
     methods=["DELETE"])
 @flask_login.login_required
