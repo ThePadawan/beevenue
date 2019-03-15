@@ -1,36 +1,17 @@
+import re
+
 from sqlalchemy.sql import func
 from sqlalchemy.orm import load_only
 
-from ....models import Medium, Tag, MediaTags, TagAlias, TagImplication
+from ....models import Medium, Tag, MediaTags, TagAlias
 
 from .terms import get_search_terms
 
 
-def _tag_to_id(session, search_terms):
-    # In a separate query, create a map of tagname => tagid
-    # (or => none if searched tag sucks)
-    all_tag_names = set()
-    all_tag_names |= set([t.term for t in search_terms.positive])
-    all_tag_names |= set([t.term for t in search_terms.negative])
-
-    if all_tag_names:
-        found_tags = session.query(Tag).filter(
-            Tag.tag.in_(all_tag_names)).all()
-    else:
-        found_tags = []
-
-    tag_to_id = {}
-    for found_tag in found_tags:
-        tag_to_id[found_tag.tag] = found_tag.id
-
-    return tag_to_id
-
-
-def _tag_ids_per_category(session, search_terms):
-    # Lookup category => tag_ids_in_category dict
+def _tags_per_category(session, search_terms):
     category_names = set([t.category for t in search_terms.category])
 
-    tag_ids_per_category = {}
+    tags_per_category = {}
 
     for category_name in category_names:
         tags_in_this_category = \
@@ -38,19 +19,13 @@ def _tag_ids_per_category(session, search_terms):
             .filter(Tag.tag.like(f'{category_name}:%'))\
             .all()
 
-        tag_ids_in_this_category = [t.id for t in tags_in_this_category]
+        tags_implying_this_category = set()
+        for t in tags_in_this_category:
+            tags_implying_this_category |= set(t.implying_this)
 
-        tag_ids_implying_this_category = \
-            session.query(TagImplication.c.implying_tag_id)\
-            .filter(TagImplication.c.implied_tag_id.in_(tag_ids_in_this_category))\
-            .all()
+        tags_per_category[category_name] = (tags_in_this_category, tags_implying_this_category)
 
-        tag_ids_implying_this_category = [t[0] for t in tag_ids_implying_this_category]
-
-        result = set(tag_ids_in_this_category) | set(tag_ids_implying_this_category)
-        tag_ids_per_category[category_name] = result
-
-    return tag_ids_per_category
+    return tags_per_category
 
 
 def _having_expr(category_term):
@@ -69,50 +44,62 @@ def _having_expr(category_term):
     raise Exception(f"Unknown operator in {category_term}")
 
 
+def _having(category_term, value):
+    if category_term.operator in (':', '='):
+        return value == category_term.number
+    if category_term.operator == '<':
+        return value < category_term.number
+    if category_term.operator == '>':
+        return value > category_term.number
+    if category_term.operator == '<=':
+        return value <= category_term.number
+    if category_term.operator == '>=':
+        return value >= category_term.number
+    if category_term.operator == '!=':
+        return value != category_term.number
+    raise Exception(f"Unknown operator in {category_term}")
+
+
 # Pass "is_and"=True to AND together conditions.
 # Otherwise, they will be ORed together.
-def _find_medium_tags(session, tag_to_id, terms, is_and):
+def _find_media_ids(session, all_media, terms, is_and):
 
     # User supplied no search terms: show nothing
     if not terms:
         return []
 
-    ids = set()
-    implying_ids = set()
-    for t in terms:
-        maybe_id = tag_to_id.get(t.term, None)
-        if maybe_id:
-            ids.add(maybe_id)
-            if not t.is_quoted:
-                implying_ids.add(maybe_id)
+    term_strings = set([t.term for t in terms])
 
-    # TODO Write unit test
-    implying_tag_ids = []
-    if implying_ids:
-        implications = session.query(TagImplication)\
-            .filter(TagImplication.c.implied_tag_id.in_(implying_ids))\
-            .all()
+    term_tags = session.query(Tag).filter(Tag.tag.in_(term_strings)).all()
 
-        implying_tag_ids = [i.implying_tag_id for i in implications]
-        ids |= set(implying_tag_ids)
+    term_to_tag = {}
+    for tag in term_tags:
+        term_to_tag[tag.tag] = tag
 
-    # User supplied terms, but none were valid
-    if not ids:
-        return []
+    implying_tags = set()
+    for t in [term.term for term in terms if not term.is_quoted]:
+        tag = term_to_tag.get(t, None)
+        if not tag:
+            continue
+        implying_tags |= set(tag.implying_this)
 
-    q = session\
-        .query(MediaTags.c.medium_id)\
-        .filter(MediaTags.c.tag_id.in_(ids))\
-        .group_by(MediaTags.c.medium_id)
-    if is_and:
-        # For ANDed together terms, the number of entries in
-        # the MediaTags table must be the same as the number of
-        # expected matches to AND terms.
-        # However, as tag implication-based terms are added automatically,
-        # we do not have to count those.
-        q = q.having(func.count() >= (len(ids) - len(implying_tag_ids)))
+    implying_tag_strings = set([t.tag for t in implying_tags])
 
-    return q.all()
+    results = []
+
+    for medium in all_media:
+        medium_tag_names = set([t.tag for t in medium.tags])
+
+        target_strings = term_strings | implying_tag_strings
+
+        intersection = medium_tag_names.intersection(target_strings)
+
+        if is_and and len(intersection) == len(term_strings):
+            results.append(medium.id)
+        if not is_and and intersection:
+            results.append(medium.id)
+
+    return results
 
 
 def _term_contains_zero(term):
@@ -130,15 +117,12 @@ def _term_contains_zero(term):
 
 # Pass tag_ids_per_category != None to search for "ctags>2",
 # or None for "tags>2" etc.
-def _find_helper(session, terms, tag_ids_per_category=None):
+def _find_helper(session, all_media, terms):
+    all_media_ids = [m.id for m in all_media]
+
     found = set()
     for term in terms:
         filters = []
-
-        if tag_ids_per_category:
-            tag_ids = tag_ids_per_category[term.category]
-            if tag_ids:
-                filters.append(MediaTags.c.tag_id.in_(tag_ids))
 
         q = session\
             .query(MediaTags.c.medium_id)\
@@ -153,9 +137,6 @@ def _find_helper(session, terms, tag_ids_per_category=None):
         found_for_this_term = set()
 
         if _term_contains_zero(term):
-            all_media_ids = session.query(Medium.id).all()
-            all_media_ids = [m[0] for m in all_media_ids]
-
             geq_1_term = term.with_(operator='>=', number=1)
 
             results_for_geq_1 = q.having(_having_expr(geq_1_term)).all()
@@ -203,33 +184,69 @@ def _replace_aliases(session, search_terms):
     return search_terms
 
 
-def _find_by_category(session, search_terms):
-    tag_ids_per_category = _tag_ids_per_category(session, search_terms)
-    return _find_helper(session, search_terms.category, tag_ids_per_category)
+def _get_indirect_hits(category_string, indirect_hits):
+    FOO_RE = re.compile(category_string + r':(.*)')
+
+    indirect_hit_set = set()
+    for indirect_hit in indirect_hits:
+        for implied_tag in indirect_hit.implied_by_this:
+            match = FOO_RE.match(implied_tag.tag)
+            if match:
+                indirect_hit_set.add(match.group(0))
+
+    return indirect_hit_set
 
 
-def _find_by_counting(session, counting_terms):
-    return _find_helper(session, counting_terms)
+def _find_by_category(session, all_media, search_terms):
+    tags_per_category = _tags_per_category(session, search_terms)
+
+    results = set()
+
+    for category_term in search_terms.category:
+        category_string = category_term.category
+        tags_in_this_category = tags_per_category.get(category_string, None)
+        if not tags_in_this_category:
+            continue
+
+        for medium in all_media:
+            direct_tags = tags_in_this_category[0]
+            indirect_tags = tags_in_this_category[1]
+            these_tags = set(medium.tags)
+
+            direct_hits = these_tags.intersection(direct_tags)
+            indirect_hits = these_tags.intersection(indirect_tags)
+
+            indirect_hit_set = _get_indirect_hits(category_string, indirect_hits)
+            direct_hit_strings = set([t.tag for t in direct_hits])
+
+            hit_count = len(direct_hit_strings | indirect_hit_set)
+
+            is_hit = _having(category_term, hit_count)
+            if is_hit:
+                results.add(medium)
+
+    return set([m.id for m in results])
 
 
 def _evaluate(context, search_terms):
     session = context.session()
+    all_media = session.query(Medium).all()
 
     search_terms = _replace_aliases(session, search_terms)
-    tag_to_id = _tag_to_id(session, search_terms)
 
-    found_by_counting = _find_by_counting(session, search_terms.counting)
+    found_by_counting = _find_helper(session, all_media, search_terms.counting)
 
     found_by_category = _find_by_category(
         session,
+        all_media,
         search_terms)
 
-    pos_medium_tags = _find_medium_tags(
-        session, tag_to_id, search_terms.positive, is_and=True)
-    neg_medium_tags = _find_medium_tags(
-        session, tag_to_id, search_terms.negative, is_and=False)
+    pos_medium_ids = _find_media_ids(
+        session, all_media, search_terms.positive, is_and=True)
+    neg_medium_ids = _find_media_ids(
+        session, all_media, search_terms.negative, is_and=False)
 
-    to_exclude = set([mt.medium_id for mt in neg_medium_tags])
+    to_exclude = set(neg_medium_ids)
 
     found_by_rating = set()
     if search_terms.rating:
@@ -239,8 +256,7 @@ def _evaluate(context, search_terms):
         ids = [i[0] for i in ids]
         found_by_rating = set(ids)
 
-    found_by_pos = \
-        set([mt.medium_id for mt in pos_medium_tags])
+    found_by_pos = set(pos_medium_ids)
 
     # INTERSECT all non-empty result sets.
     non_empty_result_sets = []
