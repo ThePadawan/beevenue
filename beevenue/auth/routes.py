@@ -15,7 +15,6 @@ def get_login_state():
     if current_user.is_anonymous:
         return jsonify(False)
 
-    # TODO use ctx?
     result = {
         'id': current_user.id,
         'role': current_user.role,

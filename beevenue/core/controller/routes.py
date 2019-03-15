@@ -8,22 +8,19 @@ from ..model.medium_update import update_medium
 from ..model.search import run_search
 from ..model.similar import similar_media
 from .. import blueprint
-from ..model import (notifications, thumbnails, media, tags)
+from ..model import (notifications, thumbnails, media)
 
 from . import permissions
 from .decorators import (
-    paginated, requires_query_params, requires_json_body, requires_permission
+    paginated, requires_query_params, requires_permission
 )
 
-# TODO Split tags of into its own routes.py
 from .schemas.query import (
     search_query_params_schema,
-    update_tag_schema
 )
 
 from .schemas.viewmodels import (
     medium_schema, search_results_schema,
-    tag_statistics_schema, tag_show_schema,
     missing_thumbnails_schema
 )
 
@@ -158,65 +155,6 @@ def get_medium(medium_id):
     return medium_schema.jsonify(maybe_medium)
 
 
-@blueprint.route('/tag/<string:name>', methods=["GET", "OPTION"])
-@flask_login.login_required
-@requires_permission(permissions.is_owner)
-def get_tag(name):
-    maybe_tag = tags.get(request.beevenue_context, name)
-
-    if not maybe_tag:
-        return notifications.no_such_tag(name), 404
-
-    return jsonify(tag_show_schema.dump(maybe_tag).data)
-
-
-@blueprint.route(
-    '/tag/<string:current_name>/aliases/<string:new_alias>',
-    methods=["POST"])
-@flask_login.login_required
-@requires_permission(permissions.is_owner)
-def add_alias(current_name, new_alias):
-    message, success = tags.add_alias(
-        request.beevenue_context,
-        current_name,
-        new_alias)
-
-    if success:
-        return '', 200
-    else:
-        return notifications.simple_error(message), 400
-
-
-@blueprint.route(
-    '/tag/<string:current_name>/clean',
-    methods=["PATCH"])
-@flask_login.login_required
-@requires_permission(permissions.is_owner)
-def simplify_tag(current_name):
-    tags.simplify_implied(
-        request.beevenue_context,
-        current_name)
-
-    return '', 200
-
-
-@blueprint.route(
-    '/tag/<string:name>/aliases/<string:alias>',
-    methods=["DELETE"])
-@flask_login.login_required
-@requires_permission(permissions.is_owner)
-def delete_alias(name, alias):
-    message, success = tags.remove_alias(
-        request.beevenue_context,
-        name,
-        alias)
-
-    if success:
-        return '', 200
-    else:
-        return notifications.simple_error(message), 400
-
-
 @blueprint.route('/medium/<int:medium_id>', methods=["PATCH"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
@@ -255,76 +193,6 @@ def form_upload_medium():
     session.commit()
 
     return notifications.medium_uploaded(result.id), 200
-
-
-@blueprint.route('/tag/<string:tag_name>', methods=["PATCH"])
-@flask_login.login_required
-@requires_permission(permissions.is_owner)
-@requires_json_body(update_tag_schema)
-def update_tag(tag_name):
-    body = request.json
-    new_name = body.get("newName", None)
-
-    session = request.beevenue_context
-    message, success = tags.rename(
-        session,
-        old_name=tag_name,
-        new_name=new_name)
-
-    if success:
-        return notifications.tag_renamed(), 200
-    else:
-        return notifications.simple_error(message), 404
-
-
-@blueprint.route(
-    '/tag/<string:tag_name>/implications/<string:implied_by_this>',
-    methods=["PATCH"])
-@flask_login.login_required
-@requires_permission(permissions.is_owner)
-def tag_add_implication(tag_name, implied_by_this):
-    message, success = tags.add_implication(
-        request.beevenue_context,
-        implying=tag_name,
-        implied=implied_by_this)
-
-    if success:
-        return '', 200
-    else:
-        return notifications.simple_error(message), 400
-
-
-@blueprint.route(
-    '/tag/<string:tag_name>/implications/<string:implied_by_this>',
-    methods=["DELETE"])
-@flask_login.login_required
-@requires_permission(permissions.is_owner)
-def tag_remove_implication(tag_name, implied_by_this):
-    message, success = tags.remove_implication(
-        request.beevenue_context,
-        implying=tag_name,
-        implied=implied_by_this)
-
-    if success:
-        return '', 200
-    else:
-        return notifications.simple_error(message), 400
-
-
-@blueprint.route('/tags', methods=["GET"])
-@flask_login.login_required
-@requires_permission(permissions.is_owner)
-def get_tags_stats():
-    stats = tags.get_statistics(request.beevenue_context)
-    return tag_statistics_schema.jsonify(stats)
-
-
-@blueprint.route('/tags/orphans', methods=["DELETE"])
-@flask_login.login_required
-@requires_permission(permissions.is_owner)
-def delete_orphan_tags():
-    tags.delete_orphans(request.beevenue_context)
-    return '', 200
 
 
 @blueprint.route('/thumbs/<path:full_path>')

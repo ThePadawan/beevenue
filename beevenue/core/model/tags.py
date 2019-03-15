@@ -1,4 +1,5 @@
 from sqlalchemy.sql import func
+from sqlalchemy import or_
 
 from ...models import Tag, TagAlias, TagImplication, MediaTags
 
@@ -100,7 +101,7 @@ def add_alias(context, current_name, new_alias):
 
     # Ensure that there is no tag with the new_alias as actual name
     conflicting_tags_count = \
-        session.query(TagAlias).filter(TagAlias.alias == new_alias).count()
+        session.query(Tag).filter(Tag.tag == new_alias).count()
     if conflicting_tags_count > 0:
         return "This alias is already taken", False
 
@@ -116,7 +117,7 @@ def remove_alias(context, name, alias):
 
     old_tags = session.query(Tag).filter(Tag.tag == name).all()
     if len(old_tags) != 1:
-        return "Could not find tag with that name", False
+        return "Could not find tag with that name", True
 
     current_aliases = \
         session.query(TagAlias).filter(TagAlias.alias == alias).all()
@@ -140,11 +141,12 @@ def _identify_implication_tags(session, implying, implied):
 def _would_create_implication_chain(session, implying_tag, implied_tag):
     # * Does "implied" imply something?
     # * Does something imply "implying"?
-    conflicting_implications_count = \
+    q = \
         session.query(TagImplication)\
-        .filter(TagImplication.c.implying_tag_id == implied_tag.id
-                or TagImplication.c.implied_tag_id == implying_tag.id)\
-        .count()
+        .filter(or_(TagImplication.c.implying_tag_id == implied_tag.id,
+                TagImplication.c.implied_tag_id == implying_tag.id))
+
+    conflicting_implications_count = q.count()
 
     # If any of those are true, we have a chain.
     return conflicting_implications_count > 0
@@ -171,6 +173,7 @@ def add_implication(context, implying, implied):
         .count()
 
     if current_implication_count > 0:
+        print(f"This implication is already configured: {implying}, {implied}")
         return 'This implication is already configured', True
 
     would_create_implication_chain = _would_create_implication_chain(
@@ -178,6 +181,8 @@ def add_implication(context, implying, implied):
         implying_tag,
         implied_tag
     )
+    
+    print(f"would_create_implication_chain: {implying}, {implied}: {would_create_implication_chain}")
 
     if would_create_implication_chain:
         return 'This would create a chain of implications', False

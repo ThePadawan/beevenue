@@ -1,6 +1,10 @@
 import re
 from collections import namedtuple
 
+from sqlalchemy.sql import func
+
+from ....models import MediaTags
+
 SearchTerms = namedtuple(
     'SearchTerms',
     ['positive', 'negative', 'category', 'rating', 'counting'])
@@ -17,6 +21,17 @@ POSITIVE_TERM_REGEX = re.compile('\"?([a-zA-Z0-9:.]+)\"?')
 NEGATIVE_TERM_REGEX = re.compile('-\"?([a-zA-Z0-9:.]+)\"?')
 
 
+OPS = {
+    ':': lambda x, y: x == y,
+    '=': lambda x, y: x == y,
+    '<': lambda x, y: x < y,
+    '>': lambda x, y: x > y,
+    '<=': lambda x, y: x <= y,
+    '>=': lambda x, y: x >= y,
+    '!=': lambda x, y: x != y,
+}
+
+
 class CountingSearchTerm(object):
     def __init__(self, operator, number):
         self.operator = operator
@@ -25,6 +40,29 @@ class CountingSearchTerm(object):
     @staticmethod
     def from_match(match):
         return CountingSearchTerm(**match.groupdict())
+
+    def contains_zero(self):
+        if self.operator in (':', '=', '>='):
+            result = self.number == 0
+        elif self.operator in ('<'):
+            result = self.number > 0
+        elif self.operator in ('<='):
+            result = self.number >= 0
+        elif self.operator in ('>'):
+            result = False
+        elif self.operator in ('!='):
+            result = self.number != 0
+        else:
+            raise Exception(f"Unknown operator in {self.operator}")
+
+        return result
+
+    def having_expr(self):
+        op = OPS.get(self.operator, None)
+        if not op:
+            raise Exception(f"Unknown operator in {self}")
+
+        return op(func.count(MediaTags.c.tag_id), self.number)
 
     def with_(self, operator=None, number=None):
         operator = operator or self.operator
@@ -44,6 +82,13 @@ class CategorySearchTerm(object):
     @staticmethod
     def from_match(match):
         return CategorySearchTerm(**match.groupdict())
+
+    def having(self, value):
+        op = OPS.get(self.operator, None)
+        if not op:
+            raise Exception(f"Unknown operator in {self}")
+
+        return op(value, self.number)
 
     def with_(self, operator=None, number=None):
         operator = operator or self.operator
@@ -95,12 +140,6 @@ class RatingSearchTerm(object):
 
 
 def get_search_terms(search_term_list):
-    # Group search terms:
-    # * normal tag names ("abc")
-    # * negative tag names ("-abc")
-    # * category terms ("ctags:0", "utags>2")
-    # * counting terms ("tags:0") - very similar but still different
-    # * rating terms ("rating:u") - note that only the first one entered will be used
     positive = []
     negative = []
     category = []
