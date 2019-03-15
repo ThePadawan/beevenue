@@ -10,8 +10,12 @@ INSERT INTO `tag` VALUES (2000, 'u:peter.pan');
 INSERT INTO `tag` VALUES (2001, 'c:tinkerbell');
 INSERT INTO `tag` VALUES (2002, 'c:peter');
 
+INSERT INTO `tag` VALUES (3001, 's:2d');
+
 INSERT INTO `tagImplication` VALUES (2001, 2000);
 INSERT INTO `tagImplication` VALUES (2002, 2000);
+
+INSERT INTO `tagAlias` VALUES (1, 2002, 'c:pete');
 
 INSERT INTO `medium` VALUES (1, 'hash1', 'image/jpg', 1.5, 's');
 INSERT INTO `medium` VALUES (2, 'hash2', 'image/jpg', 1.5, 's');

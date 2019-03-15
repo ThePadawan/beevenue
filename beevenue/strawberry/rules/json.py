@@ -9,7 +9,7 @@ def _decode_part(obj):
         return iff.All()
 
     if obj["type"] == "hasRating":
-        return iff.HasRating(obj["data"])
+        return iff.HasRating(obj.get("data", None))
 
     if obj["type"] == "hasAnyTagsIn":
         return iff.HasAnyTagsIn(*obj["data"])

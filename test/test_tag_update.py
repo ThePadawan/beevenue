@@ -31,3 +31,10 @@ def test_can_update_current_tag_as_admin(adminClient):
     })
     assert res.status_code == 200
     # TODO Assert correct notification format
+
+
+def test_can_merge_current_tag_as_admin(adminClient):
+    res = adminClient.patch('/tag/A', json={
+        'newName': 'B'
+    })
+    assert res.status_code == 200

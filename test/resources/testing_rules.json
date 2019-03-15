@@ -1,0 +1,46 @@
+[
+    {
+        "if": {
+            "data": "e",
+            "type": "hasRating"
+        },
+        "then": [
+            {
+                "data": [
+                    "A"
+                ],
+                "type": "hasAnyTagsIn"
+            }
+        ]
+    },
+    {
+        "if": {
+            "data": [
+                "u:%"
+            ],
+            "type": "hasAnyTagsLike"
+        },
+        "then": [
+            {
+                "data": "e",
+                "type": "hasRating"
+            }
+        ]
+    },
+    {
+        "if": {
+            "type": "all"
+        },
+        "then": [
+            {
+                "data": [
+                    "s:%"
+                ],
+                "type": "hasAnyTagsLike"
+            },
+            {
+                "type": "hasRating"
+            }
+        ]
+    }
+]

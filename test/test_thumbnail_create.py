@@ -14,8 +14,14 @@ def test_cannot_create_thumb_for_missing_file(adminClient):
 
 
 def test_can_create_thumb_for_current_file(adminClient):
-    pass
     # res = adminClient.patch('/thumbnail/1')
     # assert res.status_code == 200
 
     # TODO: Assert that thumb exists
+    pass
+
+
+def test_can_create_thumbs_for_multiple_file(adminClient):
+    # res = adminClient.patch('/thumbnails/after/2')
+    # assert res.status_code == 200
+    pass

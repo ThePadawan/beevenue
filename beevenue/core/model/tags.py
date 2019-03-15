@@ -1,5 +1,5 @@
 from sqlalchemy.sql import func
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 from ...models import Tag, TagAlias, TagImplication, MediaTags
 
@@ -173,7 +173,6 @@ def add_implication(context, implying, implied):
         .count()
 
     if current_implication_count > 0:
-        print(f"This implication is already configured: {implying}, {implied}")
         return 'This implication is already configured', True
 
     would_create_implication_chain = _would_create_implication_chain(
@@ -182,8 +181,6 @@ def add_implication(context, implying, implied):
         implied_tag
     )
     
-    print(f"would_create_implication_chain: {implying}, {implied}: {would_create_implication_chain}")
-
     if would_create_implication_chain:
         return 'This would create a chain of implications', False
 
@@ -207,8 +204,8 @@ def remove_implication(context, implying, implied):
 
     maybe_current_implications = \
         session.query(TagImplication)\
-        .filter(TagImplication.c.implying_tag_id == implying_tag.id
-                and TagImplication.c.implied_tag_id == implied_tag.id)\
+        .filter(and_(TagImplication.c.implying_tag_id == implying_tag.id,
+                TagImplication.c.implied_tag_id == implied_tag.id))\
         .all()
 
     if len(maybe_current_implications) < 1:

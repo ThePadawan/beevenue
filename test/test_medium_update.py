@@ -15,3 +15,11 @@ def test_can_update_medium_as_admin(adminClient):
         'tags': [' some_new_tag   ', 'A']
     })
     assert res.status_code == 200
+
+
+def test_can_update_medium_with_duplicate_tags(adminClient):
+    res = adminClient.patch('/medium/3', json={
+        'rating': 'q',
+        'tags': ['new_tag', 'new_tag', 'c:pete']
+    })
+    assert res.status_code == 200

@@ -12,4 +12,6 @@ BEEVENUE_THUMBNAIL_SIZES = {
     'l': 600
 }
 
+BEEVENUE_RULES_FILE = 'test/resources/testing_rules.json'
+
 SECRET_KEY = "TESTING_ONLY"

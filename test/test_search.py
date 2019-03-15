@@ -1,8 +1,11 @@
 import json
+from urllib import parse
 
 
 def _when_searching(c, query):
-    return c.get(f'/search?q={query}&pageNumber=1&pageSize=10')
+    q = parse.urlencode({'q': query, 'pageNumber': 1, 'pageSize': 10})
+    print(q)
+    return c.get(f'/search?{q}')
 
 
 def test_cannot_search_without_login(client):
@@ -29,3 +32,59 @@ def test_search_with_category_term_succeeds(userClient):
     result = json.loads(res.data)
     print(result)
     assert len(result["items"]) == 1
+
+
+def test_search_with_combined_terms_succeeds(userClient):
+    res = _when_searching(userClient, 'c:tinkerbell tags>1')
+    assert res.status_code == 200
+    result = json.loads(res.data)
+    print(result)
+    assert len(result["items"]) == 1
+
+
+def test_search_with_alias_term_succeeds(userClient):
+    res = _when_searching(userClient, 'c:pete c:tinkerbell')
+    assert res.status_code == 200
+    result = json.loads(res.data)
+    print(result)
+    assert len(result["items"]) == 1
+
+
+def test_search_with_rating_term_succeeds(adminNsfwClient):
+    res = _when_searching(adminNsfwClient, 'rating:s')
+    assert res.status_code == 200
+    result = json.loads(res.data)
+    print(result)
+    assert len(result["items"]) == 3
+
+
+def test_search_with_counting_term_succeeds(adminNsfwClient):
+    res = _when_searching(adminNsfwClient, 'tags<2')
+    assert res.status_code == 200
+    result = json.loads(res.data)
+    print(result)
+    assert len(result["items"]) == 1
+
+
+def test_search_with_counting_term2_succeeds(adminNsfwClient):
+    res = _when_searching(adminNsfwClient, 'tags<=1')
+    assert res.status_code == 200
+    result = json.loads(res.data)
+    print(result)
+    assert len(result["items"]) == 1
+
+
+def test_search_with_counting_term3_succeeds(adminNsfwClient):
+    res = _when_searching(adminNsfwClient, 'tags>2')
+    assert res.status_code == 200
+    result = json.loads(res.data)
+    print(result)
+    assert len(result["items"]) == 1
+
+
+def test_search_with_counting_term4_succeeds(adminNsfwClient):
+    res = _when_searching(adminNsfwClient, 'tags!=0')
+    assert res.status_code == 200
+    result = json.loads(res.data)
+    print(result)
+    assert len(result["items"]) == 3

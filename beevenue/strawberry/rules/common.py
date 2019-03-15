@@ -1,11 +1,21 @@
+from abc import abstractmethod, abstractproperty, ABCMeta
+
 from sqlalchemy.sql.expression import column
 
 from ...models import Medium, Tag, MediaTags
 
 
-class HasAnyTags(object):
+class HasAnyTags(metaclass=ABCMeta):
     def __init__(self):
         self.tag_ids = None
+
+    @abstractmethod
+    def _load_tag_ids(self):
+        pass
+
+    @abstractproperty
+    def _tags_as_str(self):
+        pass
 
     def _ensure_tag_ids_loaded(self):
         if self.tag_ids is not None:
