@@ -12,4 +12,3 @@ def test_cannot_delete_orphan_tags_as_user(userClient):
 def test_can_delete_orphan_tags_as_admin(adminClient):
     res = adminClient.delete('/tags/orphans')
     assert res.status_code == 200
-    # TODO Assert that this actually worked

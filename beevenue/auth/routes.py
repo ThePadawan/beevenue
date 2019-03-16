@@ -62,7 +62,6 @@ def login():
         current_app._get_current_object(),
         identity=Identity(user.id))
 
-    # TODO ViewModel
     return jsonify({
         'id': maybe_user.id,
         'role': maybe_user.role,

@@ -43,7 +43,7 @@ def update_tag(tag_name):
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def tag_add_implication(tag_name, implied_by_this):
-    message, success = tags.add_implication(
+    message, success = tags.implications.add_implication(
         request.beevenue_context,
         implying=tag_name,
         implied=implied_by_this)
@@ -60,7 +60,7 @@ def tag_add_implication(tag_name, implied_by_this):
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def tag_remove_implication(tag_name, implied_by_this):
-    message, success = tags.remove_implication(
+    message, success = tags.implications.remove_implication(
         request.beevenue_context,
         implying=tag_name,
         implied=implied_by_this)
@@ -105,7 +105,7 @@ def get_tag(name):
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def add_alias(current_name, new_alias):
-    message, success = tags.add_alias(
+    message, success = tags.aliases.add_alias(
         request.beevenue_context,
         current_name,
         new_alias)
@@ -122,7 +122,7 @@ def add_alias(current_name, new_alias):
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def simplify_tag(current_name):
-    tags.simplify_implied(
+    tags.implications.simplify_implied(
         request.beevenue_context,
         current_name)
 
@@ -135,7 +135,7 @@ def simplify_tag(current_name):
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def delete_alias(name, alias):
-    message, success = tags.remove_alias(
+    message, success = tags.aliases.remove_alias(
         request.beevenue_context,
         name,
         alias)

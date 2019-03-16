@@ -1,132 +1,7 @@
-from sqlalchemy.sql import func
 from sqlalchemy import or_, and_
+from sqlalchemy.sql import func
 
-from ...models import Tag, TagAlias, TagImplication, MediaTags
-
-
-def get(context, name):
-    session = context.session()
-    all_tags = session.query(Tag).filter_by(tag=name).all()
-    if len(all_tags) != 1:
-        return None
-
-    return all_tags[0]
-
-
-def create(session, name):
-    # Don't create tag if there is another tag that has the same 'name'
-    maybe_conflict = session.query(Tag).filter_by(tag=name).first()
-    if maybe_conflict:
-        return False
-
-    # Don't create tag if there is another tag that has 'name' as an alias
-    maybe_conflict = session.query(TagAlias).filter_by(alias=name).first()
-    if maybe_conflict:
-        return False
-
-    return Tag.create(name)
-
-
-def get_statistics(context):
-    session = context.session()
-    all_tags = session.query(Tag).all()
-    return all_tags
-
-
-def delete_orphans(context):
-    session = context.session()
-
-    tags_to_delete = session.query(Tag).outerjoin(MediaTags)\
-        .filter(MediaTags.c.tag_id.is_(None))\
-        .all()
-
-    # Only delete tags if they're not implied by anything
-    def is_deletable(tag):
-        return len(tag.implying_this) == 0
-
-    tags_to_delete = [t for t in tags_to_delete if is_deletable(t)]
-
-    for t in tags_to_delete:
-        session.delete(t)
-
-    if tags_to_delete:
-        session.commit()
-
-
-def rename(context, old_name, new_name):
-    if not new_name:
-        return "You must specify a new name", False
-
-    session = context.session()
-
-    old_tags = session.query(Tag).filter(Tag.tag == old_name).all()
-
-    if len(old_tags) != 1:
-        return "Could not find tag with that name", False
-
-    old_tag = old_tags[0]
-
-    new_tags = session.query(Tag).filter(Tag.tag == new_name).all()
-
-    if len(new_tags) < 1:
-        old_tag.tag = new_name
-        session.commit()
-        return "Successfully renamed tag", True
-
-    new_tag = new_tags[0]
-
-    # if new_tag does exist, UPDATE all medium tags
-    # to reference new_tag instead of old_tag, then remove old_tag
-    MediaTags.update().where(MediaTags.c.tag_id == old_tag.id)\
-        .values(tag_id=new_tag.id)
-
-    session.delete(old_tag)
-    session.commit()
-    return "Successfully renamed tag", True
-
-
-def add_alias(context, current_name, new_alias):
-    session = context.session()
-
-    old_tags = session.query(Tag).filter(Tag.tag == current_name).all()
-    if len(old_tags) != 1:
-        return "Could not find tag with that name", False
-
-    new_alias = new_alias.strip()
-
-    conflicting_aliases = \
-        session.query(TagAlias).filter(TagAlias.alias == new_alias).all()
-    if len(conflicting_aliases) > 0:
-        return "This alias is already taken", False
-
-    # Ensure that there is no tag with the new_alias as actual name
-    conflicting_tags_count = \
-        session.query(Tag).filter(Tag.tag == new_alias).count()
-    if conflicting_tags_count > 0:
-        return "This alias is already taken", False
-
-    old_tag = old_tags[0]
-    alias = TagAlias(old_tag.id, new_alias)
-    session.add(alias)
-    session.commit()
-    return "", True
-
-
-def remove_alias(context, name, alias):
-    session = context.session()
-
-    old_tags = session.query(Tag).filter(Tag.tag == name).all()
-    if len(old_tags) != 1:
-        return "Could not find tag with that name", True
-
-    current_aliases = \
-        session.query(TagAlias).filter(TagAlias.alias == alias).all()
-    if len(current_aliases) == 0:
-        return "This alias does not exist", True
-
-    session.delete(current_aliases[0])
-    session.commit()
-    return "Successfully removed alias", True
+from ....models import Tag, TagImplication, MediaTags
 
 
 def _identify_implication_tags(session, implying, implied):
@@ -242,7 +117,7 @@ def simplify_implied(context, tag):
 
     if not media_ids_to_clean:
         return False
-    
+
     media_ids_to_clean = [m[0] for m in media_ids_to_clean]
 
     d = MediaTags\

@@ -57,8 +57,6 @@ def _ensure_no_more_folder(fname):
         shutil.rmtree(files_path)
 
 
-# TODO: Set working folder for test client to '/test' so it saves thumbs
-# to the correct folder ('/test/thumbs') instead of /thumbs.
 def _client(extra=None):
     temp_fd, temp_path = tempfile.mkstemp(suffix=".db")
     print(f"Temp path: {temp_path}")

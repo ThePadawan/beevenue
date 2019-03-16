@@ -14,7 +14,6 @@ def test_updating_missing_tag_as_admin_404s(adminClient):
         'newName': 'u:tubular'
     })
     assert res.status_code == 404
-    # TODO Assert correct notification format
 
 
 def test_update_as_admin_validates_schema(adminClient):
@@ -22,7 +21,6 @@ def test_update_as_admin_validates_schema(adminClient):
         'newNameButWrongField': 'u:overwatch2'
     })
     assert res.status_code == 400
-    # TODO Assert correct notification format
 
 
 def test_can_update_current_tag_as_admin(adminClient):
@@ -30,7 +28,6 @@ def test_can_update_current_tag_as_admin(adminClient):
         'newName': 'u:overwatch2'
     })
     assert res.status_code == 200
-    # TODO Assert correct notification format
 
 
 def test_can_merge_current_tag_as_admin(adminClient):

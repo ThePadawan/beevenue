@@ -14,6 +14,11 @@ class BeevenueContext(object):
 
     def session(self):
         return db.session
+    
+    def paginate(self, query):
+        return query.paginate(
+            int(request.args.get("pageNumber")),
+            int(request.args.get("pageSize")))
 
 
 @strawberry_blueprint.before_request

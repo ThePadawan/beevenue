@@ -28,7 +28,6 @@ def get_rules():
     return jsonify(_rules()), 200
 
 
-# TODO: Setup logging for testing
 @bp.route('/tags/missing/<int:post_id>', methods=["GET", "OPTION"])
 def get_missing_tags_for_post(post_id):
     session = request.beevenue_context.session()
