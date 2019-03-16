@@ -90,8 +90,12 @@ def create_thumbnail(medium_id):
     if not maybe_medium:
         return notifications.no_such_medium(medium_id), 404
 
-    aspect_ratio = thumbnails.create(maybe_medium.mime_type, maybe_medium.hash)
-    maybe_medium.aspect_ratio = aspect_ratio
+    maybe_aspect_ratio = thumbnails.create(maybe_medium.mime_type, maybe_medium.hash)
+
+    if not maybe_aspect_ratio:
+        return '', 400
+
+    maybe_medium.aspect_ratio = maybe_aspect_ratio
     session.commit()
 
     return '', 200
@@ -105,11 +109,16 @@ def create_thumbnails(medium_id):
     all_media = session.query(Medium).filter(Medium.id > medium_id).all()
 
     for maybe_medium in all_media:
-        aspect_ratio = thumbnails.create(
+        maybe_aspect_ratio = thumbnails.create(
             maybe_medium.mime_type,
             maybe_medium.hash)
-        maybe_medium.aspect_ratio = aspect_ratio
-        session.commit()
+
+        if not maybe_aspect_ratio:
+            continue
+
+        maybe_medium.aspect_ratio = maybe_aspect_ratio
+
+    session.commit()
 
     return '', 200
 
@@ -161,7 +170,6 @@ def get_medium(medium_id):
 def update_medium_post(medium_id):
     body = request.json
 
-    # TODO Think about default values vs. schema validation
     success = update_medium(
         request.beevenue_context,
         medium_id,
@@ -188,8 +196,11 @@ def form_upload_medium():
     if not success:
         return notifications.medium_already_exists(result), 400
 
-    aspect_ratio = thumbnails.create(result.mime_type, result.hash)
-    result.aspect_ratio = aspect_ratio
+    maybe_aspect_ratio = thumbnails.create(result.mime_type, result.hash)
+    if not maybe_aspect_ratio:
+        return '', 400
+
+    result.aspect_ratio = maybe_aspect_ratio
     session.commit()
 
     return notifications.medium_uploaded(result.id), 200

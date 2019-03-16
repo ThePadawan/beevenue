@@ -13,20 +13,6 @@ from PIL import Image
 from .media import EXTENSIONS
 from ...models import Medium
 
-KNOWN_MIME_TYPES = [
-    'image/gif',
-    'image/jpeg',
-    'image/png',
-    'video/mp4',
-    'video/webm'
-]
-
-
-def _is_file_thumbnailable(path):
-    mime_type = magic.from_file(path, mime=True)
-    print(f"MIME Type: {mime_type}")
-    return mime_type in KNOWN_MIME_TYPES
-
 
 class Ffmpeg(object):
     def _image_thumbnails(self, in_path, out_path_base):
@@ -73,7 +59,7 @@ class Ffmpeg(object):
         for thumbnail_size, thumbnail_size_pixels in current_app.config['BEEVENUE_THUMBNAIL_SIZES'].items():
             min_axis = thumbnail_size_pixels
             out_path = out_path_base.with_suffix(f'.{thumbnail_size}.jpg')
-            
+
             cmd = ["ffmpeg", "-y", f"-i", f"{in_path}", "-vf",
                 f"thumbnail,scale={min_axis}:-1", "-frames:v", "1", f"{out_path}"]
 
@@ -99,12 +85,15 @@ class Ffmpeg(object):
 def create(mime_type, hash):
     thumb_path = os.path.abspath(f'thumbs/{hash}.jpg')
     if os.path.exists(thumb_path):
-        print("Thumb exists")
         os.remove(thumb_path)
 
     extension = EXTENSIONS[mime_type]
 
     origin_path = os.path.abspath(f'media/{hash}.{extension}')
+
+    if not os.path.exists(origin_path):
+        return False
+
     return Ffmpeg().thumbnails(origin_path, thumb_path, mime_type)
 
 

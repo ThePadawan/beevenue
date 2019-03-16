@@ -12,13 +12,20 @@ EXTENSIONS = {
 }
 
 
+def _try_and_remove(f):
+    try:
+        os.remove(f)
+    except Exception:
+        pass
+
+
 def delete(session, medium):
     hash = medium.hash
     extension = EXTENSIONS[medium.mime_type]
     session.delete(medium)
     session.commit()
 
-    os.remove(f'media/{hash}.{extension}')
+    _try_and_remove(f'media/{hash}.{extension}')
 
     for thumbnail_size, _ in current_app.config['BEEVENUE_THUMBNAIL_SIZES'].items():
-        os.remove(f'thumbs/{hash}.{thumbnail_size}.jpg')
+        _try_and_remove(f'thumbs/{hash}.{thumbnail_size}.jpg')
