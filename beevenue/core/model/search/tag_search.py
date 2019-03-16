@@ -29,18 +29,33 @@ class TagSearch(object):
 
         implying_tag_strings = set([t.tag for t in implying_tags])
 
+        implication_map = {}
+        for t in implying_tags:
+            implication_map[t.tag] = set([tt.tag for tt in t.implied_by_this])
+
         results = []
 
         for medium in self.all_media:
             medium_tag_names = set([t.tag for t in medium.tags])
 
-            target_strings = term_strings | implying_tag_strings
+            is_hit = False
 
-            intersection = medium_tag_names.intersection(target_strings)
+            hits = set()
 
-            if is_and and len(intersection) == len(term_strings):
+            for term in term_strings:
+                if term in medium_tag_names:
+                    is_hit = True
+                    hits.add(term)
+
+            for term in implying_tag_strings:
+                if term in medium_tag_names:
+                    is_hit = True
+                    for t in implication_map[term]:
+                        hits.add(t)
+
+            if is_and and hits and len(hits.union(term_strings)) == len(hits):
                 results.append(medium.id)
-            if not is_and and intersection:
+            if not is_and and is_hit:
                 results.append(medium.id)
 
         return results
