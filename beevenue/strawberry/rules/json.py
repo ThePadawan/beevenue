@@ -1,12 +1,15 @@
 import json
 
 from .rule import Rule
-from . import iff
+from . import iff, then
 
 
 def _decode_part(obj):
     if obj["type"] == "all":
         return iff.All()
+
+    if obj["type"] == "fail":
+        return then.Fail()
 
     if obj["type"] == "hasRating":
         return iff.HasRating(obj.get("data", None))
@@ -33,13 +36,19 @@ def _decode_rule(obj):
 
 def decode_rules(json_text):
     rules_obj = json.loads(json_text)
-    return [_decode_rule(rule) for rule in rules_obj]
+    return decode_rules_obj(rules_obj)
+
+
+def decode_rules_obj(obj):
+    return [_decode_rule(rule) for rule in obj]
 
 
 class RulePartEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, iff.All):
             return {"type": "all"}
+        if isinstance(obj, then.Fail):
+            return {"type": "fail"}
         if isinstance(obj, iff.HasRating):
             result = {"type": "hasRating"}
             if obj.rating:

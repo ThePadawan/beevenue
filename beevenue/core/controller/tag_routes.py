@@ -1,10 +1,10 @@
 from flask import request, jsonify
 import flask_login
 from .. import blueprint
-from ..model import notifications, tags
+from ..model import tags
+from ... import notifications, permissions
 
-from . import permissions
-from .decorators import (
+from ...decorators import (
     requires_json_body, requires_permission
 )
 

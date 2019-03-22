@@ -7,10 +7,10 @@ from ..model.file_upload import upload_file
 from ..model.medium_update import update_medium
 from ..model.similar import similar_media
 from .. import blueprint
-from ..model import (notifications, thumbnails, media)
+from ..model import (thumbnails, media)
+from ... import notifications, permissions
 
-from . import permissions
-from .decorators import (
+from ...decorators import (
     paginated, requires_permission
 )
 

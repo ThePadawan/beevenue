@@ -26,8 +26,7 @@ class HasAnyTags(metaclass=ABCMeta):
     def get_medium_ids(self, session, filtering_medium_ids=[]):
         self._ensure_tag_ids_loaded()
         if not self.tag_ids:
-            raise Exception(
-                f"The tags you configured do not exist: {self._tags_as_str}")
+            return []
 
         filters = [column("tag_id").in_(self.tag_ids)]
         if filtering_medium_ids:

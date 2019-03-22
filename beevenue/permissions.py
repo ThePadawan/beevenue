@@ -1,10 +1,9 @@
 from pathlib import Path
 
-from ...principal import principal
 from flask_login import current_user
 from flask_principal import identity_loaded, Permission, RoleNeed
 
-from ...models import Medium
+from .models import Medium
 
 
 class CanSeeMediumWithRatingNeed(object):
