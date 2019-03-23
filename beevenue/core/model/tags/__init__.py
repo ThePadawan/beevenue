@@ -1,4 +1,4 @@
-from ....models import Tag, TagAlias, MediaTags
+from ....models import Tag, TagAlias, MediaTags, Medium
 
 from . import aliases, implications
 
@@ -10,6 +10,43 @@ def get(context, name):
         return None
 
     return all_tags[0]
+
+
+def add_batch(context, tag_names, medium_ids):
+    trimmed_tag_names = [t.strip() for t in tag_names]
+
+    # User submitted no non-empty tag names
+    if not trimmed_tag_names:
+        return True
+
+    if not medium_ids:
+        return True
+
+    session = context.session()
+    all_tags = session.query(Tag).filter(Tag.tag.in_(trimmed_tag_names)).all()
+
+    # User submitted only tags that don't exist yet.
+    # Note: add_batch does not autocreate tags.
+    if not all_tags:
+        return True
+
+    # load media by ids
+    all_media = session.query(Medium).filter(Medium.id.in_(medium_ids)).all()
+
+    # User submitted only ids for nonexistant media
+    if not all_media:
+        return True
+
+    tags_by_name = {t.tag: t for t in all_tags}
+
+    for tag_name in trimmed_tag_names:
+        tag = tags_by_name[tag_name]
+        for medium in all_media:
+            if tag not in medium.tags:
+                medium.tags.append(tag)
+
+    session.commit()
+    return True
 
 
 def create(session, name):

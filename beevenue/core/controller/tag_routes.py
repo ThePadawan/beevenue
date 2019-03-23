@@ -9,7 +9,7 @@ from ...decorators import (
 )
 
 from .schemas.query import (
-    update_tag_schema
+    update_tag_schema, add_tags_batch_schema
 )
 
 from .schemas.viewmodels import (
@@ -77,6 +77,21 @@ def tag_remove_implication(tag_name, implied_by_this):
 def get_tags_stats():
     stats = tags.get_statistics(request.beevenue_context)
     return tag_statistics_schema.jsonify(stats)
+
+
+@blueprint.route('/tags/batch', methods=["POST"])
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+@requires_json_body(add_tags_batch_schema)
+def add_tags_batch():
+    success = tags.add_batch(
+        request.beevenue_context,
+        request.json["tags"],
+        request.json["mediumIds"])
+    if success:
+        return '', 200
+    else:
+        return '', 400
 
 
 @blueprint.route('/tags/orphans', methods=["DELETE"])
