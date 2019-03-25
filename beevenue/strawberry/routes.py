@@ -81,75 +81,44 @@ def validate_rules():
         return jsonify({'ok': False, 'data': str(e)}), 200
 
 
+def _violating_medium_ids(rule):
+    session = request.beevenue_context.session()
+    medium_ids = rule.iff.get_medium_ids(session)
+    if not medium_ids:
+        return []
+
+    invalid_medium_ids = set()
+
+    for then in rule.thens:
+        valid_medium_ids = then.get_medium_ids(
+            session,
+            medium_ids)
+        invalid_medium_ids |= set(medium_ids) - set(valid_medium_ids)
+
+    return invalid_medium_ids
+
+
+def _get_rule_violations():
+    for rule in _rules():
+        for violating_medium_id in _violating_medium_ids(rule):
+            yield (violating_medium_id, rule)
+
+
 @bp.route('/tags/missing/<int:medium_id>', methods=["GET", "OPTION"])
 @requires_permission(permissions.get_medium)
 def get_missing_tags_for_post(medium_id):
-    session = request.beevenue_context.session()
-    broken_rules = set()
-
-    for rule in _rules():
-        medium_ids = rule.iff.get_medium_ids(session)
-
-        if medium_id not in medium_ids:
-            continue
-
-        medium_ids = [medium_id]
-
-        for then in rule.thens:
-            valid_medium_ids = then.get_medium_ids(
-                session,
-                medium_ids)
-
-            if medium_id not in valid_medium_ids:
-                broken_rules.add(rule)
+    broken_rules = set([rule for id, rule in _get_rule_violations()
+                        if id == medium_id])
 
     return _jsonified({medium_id: broken_rules})
-
-
-@bp.route('/tags/missing/all', methods=["GET", "OPTION"])
-@requires_permission(permissions.is_owner)
-def get_missing_tags():
-    session = request.beevenue_context.session()
-    rule_breaks = {}
-
-    for rule in _rules():
-        medium_ids = rule.iff.get_medium_ids(session)
-
-        for then in rule.thens:
-            valid_medium_ids = then.get_medium_ids(
-                session,
-                medium_ids)
-            invalid_medium_ids = set(medium_ids) - set(valid_medium_ids)
-
-            for invalid_medium_id in invalid_medium_ids:
-                if invalid_medium_id not in rule_breaks:
-                    rule_breaks[invalid_medium_id] = set()
-                rule_breaks[invalid_medium_id].add(rule)
-
-    return _jsonified(rule_breaks)
 
 
 @bp.route('/tags/missing/any', methods=["GET", "OPTION"])
 @requires_permission(permissions.is_owner)
 def get_missing_tags_any():
-    session = request.beevenue_context.session()
-    rule_breaks = {}
+    violations = list(_get_rule_violations())
+    random.shuffle(violations)
+    for medium_id, rule in violations:
+        return _jsonified({medium_id: [rule]})
 
-    for rule in _rules():
-        medium_ids = rule.iff.get_medium_ids(session)
-
-        random.shuffle(medium_ids)
-
-        for then in rule.thens:
-            valid_medium_ids = then.get_medium_ids(
-                session,
-                medium_ids)
-            invalid_medium_ids = set(medium_ids) - set(valid_medium_ids)
-
-            for invalid_medium_id in invalid_medium_ids:
-                if invalid_medium_id not in rule_breaks:
-                    rule_breaks[invalid_medium_id] = set()
-                rule_breaks[invalid_medium_id].add(rule)
-                return _jsonified(rule_breaks)
-
-    return _jsonified(rule_breaks)
+    return _jsonified({})
