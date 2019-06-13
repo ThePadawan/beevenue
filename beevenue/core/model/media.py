@@ -59,4 +59,4 @@ def get_zip(session, medium):
             z.writestr(f'{medium.id}.{extension}', res.read())
 
     result_bytes.seek(0)
-    return some_bytes
+    return result_bytes
