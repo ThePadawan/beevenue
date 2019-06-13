@@ -71,6 +71,14 @@ def tag_remove_implication(tag_name, implied_by_this):
         return notifications.simple_error(message), 400
 
 
+@blueprint.route('/tag/implications/backup')
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+def backup_implications():
+    all_implications = tags.implications.get_all(request.beevenue_context)
+    return jsonify(all_implications)
+
+
 @blueprint.route('/tags', methods=["GET"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)

@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, send_file, render_template, make_response
 import flask_login
 
 from ...models import Medium
@@ -119,3 +119,40 @@ def form_upload_medium():
     session.commit()
 
     return notifications.medium_uploaded(result.id), 200
+
+
+@blueprint.route('/media/backup.sh')
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+def get_backup_sh():
+    all_media_ids = [m.id for m in Medium.query.order_by(Medium.id).all()]
+
+    base_path = request.url_root
+    session_cookie = request.cookies['session']
+
+    response = make_response(render_template(
+        'backup.sh',
+        medium_ids=all_media_ids,
+        base_url=base_path,
+        session_cookie=session_cookie))
+    response.mimetype = "application/x-sh"
+    return response
+
+
+@blueprint.route('/medium/<int:medium_id>/backup')
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+def get_medium_zip(medium_id):
+    maybe_medium = Medium.query.filter_by(id=medium_id).first()
+
+    if not maybe_medium:
+        return '', 404
+
+    session = request.beevenue_context.session()
+
+    b = media.get_zip(session, maybe_medium)
+    return send_file(
+        b,
+        mimetype='application/zip',
+        as_attachment=True,
+        attachment_filename=f'{medium_id}.zip')

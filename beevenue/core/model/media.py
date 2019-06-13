@@ -1,5 +1,9 @@
 from flask import current_app
+
+import io
+import json
 import os
+import zipfile
 
 EXTENSIONS = {
     'video/mp4': 'mp4',
@@ -19,6 +23,15 @@ def _try_and_remove(f):
         pass
 
 
+def _get_metadata_bytes(session, medium):
+    metadata = {
+        'rating': medium.rating,
+        'tags:': [t.tag for t in medium.tags]
+    }
+    metadata_text = json.dumps(metadata)
+    return metadata_text.encode('utf-8')
+
+
 def delete(session, medium):
     hash = medium.hash
     extension = EXTENSIONS[medium.mime_type]
@@ -29,3 +42,21 @@ def delete(session, medium):
 
     for thumbnail_size, _ in current_app.config['BEEVENUE_THUMBNAIL_SIZES'].items():
         _try_and_remove(f'thumbs/{hash}.{thumbnail_size}.jpg')
+
+
+def get_zip(session, medium):
+    result_bytes = io.BytesIO()
+    with zipfile.ZipFile(result_bytes, mode='w') as z:
+        # Add metadata
+        metadata_bytes = _get_metadata_bytes(session, medium)
+        z.writestr(f'{medium.id}.metadata.json', metadata_bytes)
+
+        # Add data
+        extension = EXTENSIONS[medium.mime_type]
+        with current_app.open_resource(
+            f'media/{medium.hash}.{extension}',
+                'rb') as res:
+            z.writestr(f'{medium.id}.{extension}', res.read())
+
+    result_bytes.seek(0)
+    return some_bytes
