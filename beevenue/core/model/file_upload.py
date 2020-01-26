@@ -17,6 +17,10 @@ RATING_TAG_REGEX = re.compile(r'rating:(?P<rating>u|q|s|e)')
 
 def _maybe_add_tags(session, m, file):
     filename = file.filename
+    if not filename:
+        print("Filename not useful")
+        return
+
     match = TAGGY_FILENAME_REGEX.match(filename)
     if not match:
         print("Filename not taggy:", filename)

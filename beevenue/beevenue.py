@@ -70,9 +70,11 @@ def get_application(extra_config=None):
         from .auth import blueprint as auth_bp
         from .core import blueprint as routes_bp
         from .strawberry.routes import bp as strawberry_bp
+        from .sushi.routes import bp as sushi_bp
         application.register_blueprint(auth_bp)
         application.register_blueprint(routes_bp)
         application.register_blueprint(strawberry_bp)
+        application.register_blueprint(sushi_bp)
 
         from .strawberry.rules.json import RuleEncoder
 

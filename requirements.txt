@@ -1,3 +1,5 @@
+--index-url https://pypi.fury.io/thepadawan/
+--extra-index-url https://pypi.org/simple/
 bcrypt==3.1.2
 coverage==4.4.1
 Flask==1.0.2
@@ -16,3 +18,4 @@ psycopg2==2.7.6
 sentry-sdk[flask]==0.7.4
 SQLAlchemy==1.1.5
 SQLAlchemy-Utils==0.33.9
+sashimmie==0.0.5
