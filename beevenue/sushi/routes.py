@@ -5,6 +5,7 @@ from flask import jsonify, Blueprint, current_app, request
 from sashimmie.sashimmie import get_saved, acknowledge
 
 from ..core.model.file_upload import upload_file
+from ..core.model import thumbnails
 
 from ..decorators import requires_permission
 from .. import permissions
@@ -46,6 +47,13 @@ def run():
                 newIds = result_dict["newIds"]
                 newIds.append(result.id)
                 result_dict["newIds"] = newIds
+                
+                maybe_aspect_ratio = thumbnails.create(result.mime_type, result.hash)
+                if not maybe_aspect_ratio:
+                    return '', 400
+
+                result.aspect_ratio = maybe_aspect_ratio
+                session.commit()
 
         return jsonify(this_import_schema.dump(result_dict).data), 200
     else:
