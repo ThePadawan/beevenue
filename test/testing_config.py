@@ -15,3 +15,5 @@ BEEVENUE_THUMBNAIL_SIZES = {
 BEEVENUE_RULES_FILE = 'test/resources/testing_rules.json'
 
 SECRET_KEY = "TESTING_ONLY"
+
+CACHE_DIR = "./test-cache"

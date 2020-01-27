@@ -3,6 +3,7 @@ import re
 
 import magic
 
+from ...spindex.signals import medium_added
 from ...models import Medium
 
 from .md5sum import md5sum
@@ -71,4 +72,5 @@ def upload_file(session, file):
     _maybe_add_tags(session, m, file)
 
     session.commit()
+    medium_added.send(m.id)
     return True, m

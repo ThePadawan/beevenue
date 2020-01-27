@@ -1,5 +1,5 @@
 from ....models import Tag, TagAlias
-
+from ....spindex.signals import alias_added, alias_removed
 
 def add_alias(context, current_name, new_alias):
     session = context.session()
@@ -25,6 +25,7 @@ def add_alias(context, current_name, new_alias):
     alias = TagAlias(old_tag.id, new_alias)
     session.add(alias)
     session.commit()
+    alias_added.send((old_tag.tag, new_alias,))
     return "", True
 
 
@@ -42,4 +43,5 @@ def remove_alias(context, name, alias):
 
     session.delete(current_aliases[0])
     session.commit()
+    alias_removed.send((old_tags[0].tag, alias,))
     return "Successfully removed alias", True

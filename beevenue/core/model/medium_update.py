@@ -1,5 +1,6 @@
 from sqlalchemy.sql import column
 
+from ...spindex.signals import medium_updated
 from ...models import Medium, Tag, MediaTags
 
 from . import tags
@@ -76,4 +77,5 @@ def update_medium(context, medium_id, new_rating, new_tags):
 
     update_rating(session, maybe_medium, new_rating)
     update_tags(session, maybe_medium, new_tags)
+    medium_updated.send(maybe_medium.id)
     return True

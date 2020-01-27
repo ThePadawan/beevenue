@@ -1,5 +1,7 @@
 from ....models import Tag, TagAlias, MediaTags, Medium
 
+from ....spindex.signals import tag_renamed
+
 from . import aliases, implications
 
 
@@ -105,8 +107,10 @@ def rename(context, old_name, new_name):
     new_tags = session.query(Tag).filter(Tag.tag == new_name).all()
 
     if len(new_tags) < 1:
+        # New tag doesn't exist yet. We can simply rename "old_tag".
         old_tag.tag = new_name
         session.commit()
+        tag_renamed.send((old_name, new_name,))
         return "Successfully renamed tag", True
 
     new_tag = new_tags[0]
@@ -118,4 +122,6 @@ def rename(context, old_name, new_name):
 
     session.delete(old_tag)
     session.commit()
+
+    tag_renamed.send((old_name, new_name,))
     return "Successfully renamed tag", True

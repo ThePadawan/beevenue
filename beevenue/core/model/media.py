@@ -5,6 +5,8 @@ import json
 import os
 import zipfile
 
+from ...spindex.signals import medium_deleted
+
 EXTENSIONS = {
     'video/mp4': 'mp4',
     'video/webm': 'webm',
@@ -37,6 +39,8 @@ def delete(session, medium):
     extension = EXTENSIONS[medium.mime_type]
     session.delete(medium)
     session.commit()
+
+    medium_deleted.send(medium.id)
 
     _try_and_remove(f'media/{hash}.{extension}')
 

@@ -21,33 +21,24 @@ NEGATIVE_TERM_REGEX = re.compile('-\"?([a-zA-Z0-9:.]+)\"?')
 
 
 def get_search_terms(search_term_list):
-    positive = []
-    negative = []
-    category = []
-    rating = []
-    counting = []
+    result = set()
 
     filters = [
-            (COUNTING_TERM_REGEX, CountingSearchTerm, counting),
-            (CATEGORY_TERM_REGEX, CategorySearchTerm, category),
-            (RATING_TERM_REGEX, RatingSearchTerm, rating),
-            (NEGATIVE_TERM_REGEX, NegativeSearchTerm, negative),
-            (POSITIVE_TERM_REGEX, PositiveSearchTerm, positive),
+            (COUNTING_TERM_REGEX, CountingSearchTerm),
+            (CATEGORY_TERM_REGEX, CategorySearchTerm),
+            (RATING_TERM_REGEX, RatingSearchTerm),
+            (NEGATIVE_TERM_REGEX, NegativeSearchTerm),
+            (POSITIVE_TERM_REGEX, PositiveSearchTerm),
         ]
 
     def _maybe_match(term):
-        for (regex, klass, result) in filters:
+        for (regex, klass) in filters:
             maybe_match = regex.match(term)
             if maybe_match:
-                result.append(klass.from_match(maybe_match))
+                result.add(klass.from_match(maybe_match))
                 return
 
     for term in search_term_list:
         _maybe_match(term)
 
-    return SearchTerms(
-        positive=set(positive),
-        negative=set(negative),
-        category=set(category),
-        rating=rating[:1],
-        counting=set(counting))
+    return result

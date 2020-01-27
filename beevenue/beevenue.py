@@ -25,7 +25,7 @@ class BeevenueFlask(Flask):
                 use_x_sendfile=True)
 
 
-def get_application(extra_config=None):
+def get_application(extra_config=None, fill_db=None):
     application = BeevenueFlask(
         "strawberry",
         '0.0.0.0',
@@ -81,6 +81,14 @@ def get_application(extra_config=None):
         application.json_encoder = RuleEncoder
 
         db.create_all()
+
+        # Only used for testing - needs to happen after DB is setup,
+        # but before filling Spindex from DB.
+        if fill_db:
+            fill_db()
+
+        from .spindex import init_app as spindex_init_app
+        spindex_init_app(application, db.session)
 
     import beevenue.auth.auth
 

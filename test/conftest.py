@@ -68,9 +68,11 @@ def _client(extra=None):
         application.config['SQLALCHEMY_DATABASE_URI'] = connection_string
         application.config['TESTING'] = True
 
-    app = get_application(extra_config)
+    def fill_db():
+        _run_testing_sql(temp_nice_path)
 
-    _run_testing_sql(temp_nice_path)
+    app = get_application(extra_config, fill_db)
+
     _ensure_folder('media')
     _ensure_folder('thumbs')
 

@@ -1,6 +1,7 @@
 from sqlalchemy import or_, and_
 from sqlalchemy.sql import func
 
+from ....spindex.signals import implication_added, implication_removed
 from ....models import Tag, TagImplication, MediaTags
 
 
@@ -61,6 +62,7 @@ def add_implication(context, implying, implied):
 
     implying_tag.implied_by_this.append(implied_tag)
     session.commit()
+    implication_added.send((implying, implied,))
     return 'Success', True
 
 
@@ -88,6 +90,7 @@ def remove_implication(context, implying, implied):
 
     implying_tag.implied_by_this.remove(implied_tag)
     session.commit()
+    implication_removed.send((implying, implied,))
     return 'Success', 200
 
 
