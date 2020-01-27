@@ -6,6 +6,7 @@ from ...db import db
 from .. import blueprint
 from ...strawberry.routes import bp as strawberry_blueprint
 from ...sushi.routes import bp as sushi_blueprint
+from ...spindex.routes import bp as spindex_blueprint
 
 
 class BeevenueContext(object):
@@ -24,6 +25,7 @@ class BeevenueContext(object):
 
 @strawberry_blueprint.before_request
 @sushi_blueprint.before_request
+@spindex_blueprint.before_request
 @blueprint.before_request
 def context_setter():
     try:

@@ -24,11 +24,11 @@ def init_app(app, session):
     cache.init_app(app, config={"CACHE_TYPE": "filesystem"})
 
     SPINDEX.set_cache(cache)
-    _full_load(session)
+    full_load(session)
     setup_signals()
 
 
-def _full_load(session):
+def full_load(session):
     all_media = Medium.query.all()
 
     all_implications = session.query(TagImplication).all()
