@@ -68,7 +68,7 @@ class _SpindexCache(AbstractContextManager):
 
     def __exit__(self, *details):
         if self._to_set:
-            self._cache.set("MEDIA", self._to_set)
+            self._cache.set("MEDIA", self._to_set, timeout=0)
 
 
 class Spindex(object):
