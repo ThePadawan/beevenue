@@ -15,6 +15,7 @@ def run_search(context, search_term_list):
 class Search(object):
     def __init__(self, context, search_terms):
         search_terms = set(search_terms)
+
         if context.is_sfw:
             search_terms.add(RatingSearchTerm("s"))
         if context.user_role != "admin":
@@ -25,7 +26,6 @@ class Search(object):
 
     def evaluate(self):
         all_media = SPINDEX.all()
-
         result = set()
 
         for x in all_media:

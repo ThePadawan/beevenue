@@ -50,7 +50,7 @@ class Negative(SearchTerm):
         raise "Unsupported for this SearchTerm"
 
     def __repr__(self):
-        return f"-{self.inner_term.__repr__()}"
+        return f"!{self.inner_term.__repr__()}"
 
     def applies_to(self, medium):
         return not self.inner_term.applies_to(medium)
