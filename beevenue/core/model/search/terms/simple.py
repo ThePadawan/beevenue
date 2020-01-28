@@ -17,6 +17,10 @@ class NegativeSearchTerm(BasicSearchTerm):
     def applies_to(self, medium):
         return self.term not in medium.tag_names
 
+    @classmethod
+    def from_match(cls, match):
+        return cls(match.group(0))
+
 
 class PositiveSearchTerm(BasicSearchTerm):
     def __repr__(self):
@@ -24,6 +28,10 @@ class PositiveSearchTerm(BasicSearchTerm):
 
     def applies_to(self, medium):
         return self.term in medium.tag_names
+
+    @classmethod
+    def from_match(cls, match):
+        return cls(match.group(0))
 
 
 class RatingSearchTerm(SearchTerm):

@@ -30,6 +30,7 @@ def _resource(fname):
 def _medium_file(fname):
     return os.path.join(
         os.path.dirname(__file__),
+        '..',
         'media',
         fname)
 
@@ -46,6 +47,10 @@ def _run_testing_sql(temp_path):
 
 
 def _ensure_folder(fname):
+    files_path = os.path.join(os.path.dirname(__file__), "..", fname)
+    if not os.path.exists(files_path):
+        os.mkdir(files_path)
+
     files_path = os.path.join(os.path.dirname(__file__), fname)
     if not os.path.exists(files_path):
         os.mkdir(files_path)
@@ -79,6 +84,9 @@ def _client(extra=None):
     shutil.copy(_resource("placeholder.jpg"), _medium_file('hash1.jpg'))
     shutil.copy(_resource("placeholder.jpg"), _medium_file('hash2.jpg'))
     shutil.copy(_resource("placeholder.jpg"), _medium_file('hash3.jpg'))
+
+    print(f"os.listdir(): {os.listdir()}")
+    print(f"os.listdir({os.path.join(os.path.dirname(__file__), 'media')}): {os.listdir(os.path.join(os.path.dirname(__file__), 'media'))}")
 
     c = app.test_client()
 

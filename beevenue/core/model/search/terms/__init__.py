@@ -1,12 +1,9 @@
 import re
-from collections import namedtuple
+
+from ...tags import VALID_TAG_REGEX_INNER
 
 from .simple import NegativeSearchTerm, PositiveSearchTerm, RatingSearchTerm
 from .complex import CategorySearchTerm, CountingSearchTerm
-
-SearchTerms = namedtuple(
-    'SearchTerms',
-    ['positive', 'negative', 'category', 'rating', 'counting'])
 
 COMPARISON = r'(?P<operator>(:|=|<|>|<=|>=|!=))(?P<number>[0-9]+)'
 
@@ -16,8 +13,8 @@ CATEGORY_TERM_REGEX = re.compile(
     r'(?P<category>[a-z]+)tags' + COMPARISON)
 RATING_TERM_REGEX = re.compile(
     r'rating:(u|s|e|q)')
-POSITIVE_TERM_REGEX = re.compile('\"?([a-zA-Z0-9:.]+)\"?')
-NEGATIVE_TERM_REGEX = re.compile('-\"?([a-zA-Z0-9:.]+)\"?')
+POSITIVE_TERM_REGEX = re.compile(VALID_TAG_REGEX_INNER)
+NEGATIVE_TERM_REGEX = re.compile(f"-{VALID_TAG_REGEX_INNER}")
 
 
 def get_search_terms(search_term_list):
@@ -40,5 +37,7 @@ def get_search_terms(search_term_list):
 
     for term in search_term_list:
         _maybe_match(term)
+    
+    print(f"TERMS: {result}")
 
     return result

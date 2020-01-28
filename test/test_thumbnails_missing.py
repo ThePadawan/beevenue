@@ -12,4 +12,4 @@ def test_can_get_missing_thumbs_as_admin(adminClient):
     res = adminClient.get('/thumbnails/missing')
     assert res.status_code == 200
     print(res.json)
-    assert len(res.json) >= 3
+    assert len(res.json) >= 1

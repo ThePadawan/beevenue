@@ -19,7 +19,7 @@ def update_tags(session, medium, new_tags):
     if new_tags is None:
         return False
 
-    new_tags = [t.strip() for t in new_tags]
+    new_tags = tags.validate(new_tags)
 
     # Lookup ids for all input tags
     if len(new_tags) == 0:

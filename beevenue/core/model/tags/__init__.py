@@ -1,8 +1,13 @@
+import re
+
 from ....models import Tag, TagAlias, MediaTags, Medium
 
 from ....spindex.signals import tag_renamed
 
 from . import aliases, implications
+
+VALID_TAG_REGEX_INNER = "(?P<category>[a-z]+:)?([a-zA-Z0-9.]+)"
+VALID_TAG_REGEX = re.compile(f"^{VALID_TAG_REGEX_INNER}$")
 
 
 def get(context, name):
@@ -14,8 +19,15 @@ def get(context, name):
     return all_tags[0]
 
 
+def validate(tag_names):
+    """
+    Filters input iterable such that it only contains valid tag names.
+    """
+    return [n.strip() for n in tag_names if VALID_TAG_REGEX.match(n)]
+
+
 def add_batch(context, tag_names, medium_ids):
-    trimmed_tag_names = [t.strip() for t in tag_names]
+    trimmed_tag_names = validate(tag_names)
 
     # User submitted no non-empty tag names
     if not trimmed_tag_names:
