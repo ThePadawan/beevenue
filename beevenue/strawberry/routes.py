@@ -5,6 +5,7 @@ import random
 
 from ..decorators import requires_permission
 from .. import permissions
+from ..models import Medium
 from .rules.json import decode_rules, decode_rules_obj
 
 bp = Blueprint('strawberry', __name__)
@@ -117,7 +118,25 @@ def get_missing_tags_for_post(medium_id):
 @requires_permission(permissions.is_owner)
 def get_missing_tags_any():
     violations = list(_get_rule_violations())
+
+    # Ensure that tag violations are ordered somewhat randomly,
+    # but also that all SFW media get reviewed before all others.
     random.shuffle(violations)
+
+    media = Medium.query\
+        .filter(Medium.id.in_([v[0] for v in violations]))\
+        .all()
+
+    rating_by_id = {m.id: m.rating for m in media}
+
+    def sorter(violation):
+        if rating_by_id[violation[0]] == 's':
+            return 1
+        else:
+            return 2
+
+    violations.sort(key=sorter)
+
     for medium_id, rule in violations:
         return _jsonified({medium_id: [rule]})
 
