@@ -20,4 +20,4 @@ psycopg2==2.7.6
 sentry-sdk[flask]==0.7.4
 SQLAlchemy==1.3.13
 SQLAlchemy-Utils==0.33.9
-sashimmie==0.0.5
+sashimmie==0.0.6
