@@ -19,7 +19,9 @@ class NegativeSearchTerm(BasicSearchTerm):
 
     @classmethod
     def from_match(cls, match):
-        return cls(match.group(0))
+        # group 0 == whole match (e.g. "-foo")
+        # skip first character (always "-") to get term "foo"
+        return cls(match.group(0)[1:])
 
 
 class PositiveSearchTerm(BasicSearchTerm):
