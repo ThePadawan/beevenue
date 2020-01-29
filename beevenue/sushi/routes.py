@@ -24,7 +24,7 @@ class HelperBytesIO(BytesIO):
             out_file.write(self.read())
 
 
-@bp.route('/sushi/next')
+@bp.route('/sushi/next', methods=["POST"])
 @requires_permission(permissions.is_owner)
 def run():
     saved = get_saved(current_app.config)
