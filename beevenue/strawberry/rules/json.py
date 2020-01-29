@@ -55,9 +55,9 @@ class RulePartEncoder(json.JSONEncoder):
                 result["data"] = obj.rating
             return result
         if isinstance(obj, iff.HasAnyTagsIn):
-            return {"type": "hasAnyTagsIn", "data": obj.names}
+            return {"type": "hasAnyTagsIn", "data": list(obj.tag_names)}
         if isinstance(obj, iff.HasAnyTagsLike):
-            return {"type": "hasAnyTagsLike", "data": obj.like_exprs}
+            return {"type": "hasAnyTagsLike", "data": list(obj.regexes)}
         return json.JSONEncoder.default(self, obj)
 
 

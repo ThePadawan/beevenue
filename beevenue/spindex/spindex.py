@@ -16,6 +16,8 @@ def _spindexed_medium(session, id):
         .with_entities(TagAlias.alias)\
         .all()
 
+    tag_aliases = [t[0] for t in tag_aliases]
+
     implied_tag_ids = session.query(TagImplication)\
         .filter(TagImplication.c.implying_tag_id.in_(tag_ids))\
         .with_entities(TagImplication.c.implied_tag_id)\
@@ -25,6 +27,8 @@ def _spindexed_medium(session, id):
         .filter(Tag.id.in_(implied_tag_ids))\
         .with_entities(Tag.tag)\
         .all()
+
+    implied_tag_names = [t[0] for t in implied_tag_names]
 
     tag_names = set([t.tag for t in matching_medium.tags]) \
         | set(tag_aliases) \
@@ -52,23 +56,40 @@ class SpindexedMedium(object):
         return self.__str__()
 
 
-class _SpindexCache(AbstractContextManager):
-    def __init__(self, cache):
+class _SpindexMedia(object):
+    def __init__(self):
+        self.data = {}
+
+    def get_medium(self, id):
+        return self.data[id]
+
+    def get_all(self):
+        return self.data.values()
+
+    def add(self, item: SpindexedMedium):
+        self.data[item.id] = item
+
+    def remove(self, item: SpindexedMedium):
+        self.remove_id(item.id)
+
+    def remove_id(self, id: int):
+        if id in self.data:
+            del self.data[id]
+
+
+class _CacheContextManager(AbstractContextManager):
+    def __init__(self, cache, write_on_exit):
         self._cache = cache
-        self._to_set = None
+        self._to_write = None
+        self.write_on_exit = write_on_exit
 
     def __enter__(self):
-        return self
-
-    def get(self):
-        return self._cache.get("MEDIA") or set()
-
-    def set(self, new):
-        self._to_set = set(new)
+        self._to_write = self._cache.get("MEDIA") or _SpindexMedia()
+        return self._to_write
 
     def __exit__(self, *details):
-        if self._to_set:
-            self._cache.set("MEDIA", self._to_set, timeout=0)
+        if self.write_on_exit:
+            self._cache.set("MEDIA", self._to_write, timeout=0)
 
 
 class Spindex(object):
@@ -77,102 +98,85 @@ class Spindex(object):
         self._cache.clear()
 
     def all(self):
-        with self._cache_context as c:
-            return c.get()
+        with self._read_context as c:
+            return c.get_all()
+
+    def get_medium(self, id):
+        with self._read_context as c:
+            return c.get_medium(id)
 
     @property
-    def _cache_context(self):
-        return _SpindexCache(self._cache)
+    def _read_context(self):
+        return _CacheContextManager(self._cache, False)
+
+    @property
+    def _write_context(self):
+        # Note: This *always* writes, even if no actual modification
+        # took place. This makes it less laborious for the caller to explicitly
+        # decide when to write or not (using a "dirty" flag or similar).
+        return _CacheContextManager(self._cache, True)
 
     def add_alias(self, tag_name, new_alias):
-        with self._cache_context as c:
-            old = c.get()
-
-            for m in old:
+        with self._write_context as old:
+            for m in old.get_all():
                 if tag_name in m.tag_names:
                     m.tag_names.add(new_alias)
 
-            c.set(old)
             return True
 
     def remove_alias(self, tag_name, former_alias):
-        with self._cache_context as c:
-            old = c.get()
-
-            for m in old:
+        with self._write_context as old:
+            for m in old.get_all():
                 if former_alias in m.tag_names:
                     m.tag_names.remove(former_alias)
 
-            c.set(old)
             return True
 
     def reindex_medium(self, session, id):
-        with self._cache_context as c:
-            old = c.get()
-            found_media = [m for m in old if m.id == id]
+        with self._write_context as old:
+            old.remove_id(id)
 
             new_spindexed_medium = _spindexed_medium(session, id)
 
             if not new_spindexed_medium:
                 return False
 
-            if found_media:
-                found_medium = found_media[0]
-                old.remove(found_medium)
-
             old.add(new_spindexed_medium)
-
-            c.set(old)
             return True
 
     def rename_tag(self, old_name, new_name):
-        with self._cache_context as c:
-            old = c.get()
-            for m in old:
+        with self._write_context as old:
+            for m in old.get_all():
                 if old_name in m.tag_names:
                     m.tag_names.remove(old_name)
                     m.tag_names.add(new_name)
 
-            c.set(old)
             return True
 
     def add_implication(self, implying, implied):
-        with self._cache_context as c:
-            old = c.get()
-
-            for m in old:
+        with self._write_context as old:
+            for m in old.get_all():
                 if implying in m.tag_names:
                     m.tag_names.add(implied)
 
-            c.set(old)
             return True
 
     def remove_implication(self, implying, implied):
-        with self._cache_context as c:
-            old = c.get()
-
-            for m in old:
+        with self._write_context as old:
+            for m in old.get_all():
                 if implying in m.tag_names:
                     m.tag_names.remove(implied)
 
-            c.set(old)
             return True
 
     def remove_medium(self, id):
-        with self._cache_context as c:
-            old = c.get()
-            new = [m for m in old if m.id != id]
-
-            c.set(new)
-            return (len(old), len(new))
+        with self._write_context as old:
+            old.remove_id(id)
 
     def add_media(self, media):
-        with self._cache_context as c:
-            old = c.get()
+        with self._write_context as old:
             for m in media:
                 old.add(m)
-
-            c.set(old)
 
 
 SPINDEX = Spindex()

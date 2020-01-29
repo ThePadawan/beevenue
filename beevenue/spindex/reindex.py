@@ -9,7 +9,7 @@ from .spindex import SPINDEX
 
 
 def _reindex_medium(id):
-    result = SPINDEX.reindex_medium(request.beevenue_context.session(), id)
+    SPINDEX.reindex_medium(request.beevenue_context.session(), id)
 
 
 def _rename_tag(names):
@@ -18,7 +18,7 @@ def _rename_tag(names):
 
 
 def _unindex_medium(id):
-    old, new = SPINDEX.remove_medium(id)
+    SPINDEX.remove_medium(id)
 
 
 def _add_alias(msg):

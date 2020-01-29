@@ -37,7 +37,5 @@ def get_search_terms(search_term_list):
 
     for term in search_term_list:
         _maybe_match(term)
-    
-    print(f"TERMS: {result}")
 
     return result

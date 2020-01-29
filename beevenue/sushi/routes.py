@@ -47,7 +47,7 @@ def run():
                 newIds = result_dict["newIds"]
                 newIds.append(result.id)
                 result_dict["newIds"] = newIds
-                
+
                 maybe_aspect_ratio = thumbnails.create(result.mime_type, result.hash)
                 if not maybe_aspect_ratio:
                     return '', 400

@@ -1,10 +1,9 @@
-from flask import request, send_from_directory, jsonify
+from flask import Blueprint, request, send_from_directory, jsonify
 import flask_login
 
 from ...models import Medium
 
 from ..model.search import run_search
-from .. import blueprint
 from ..model import thumbnails
 
 from ... import permissions, notifications
@@ -21,8 +20,12 @@ from .schemas.viewmodels import (
     missing_thumbnails_schema
 )
 
+bp = Blueprint('core', __name__)
 
-@blueprint.route('/search')
+from . import tag_routes, media_routes
+
+
+@bp.route('/search')
 @flask_login.login_required
 @requires_query_params(search_query_params_schema)
 def search():
@@ -40,7 +43,7 @@ def search():
     return jsonify(search_results_schema.dump(media).data)
 
 
-@blueprint.route('/thumbnails/missing', methods=["GET"])
+@bp.route('/thumbnails/missing', methods=["GET"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def get_missing_thumbnails():
@@ -50,7 +53,7 @@ def get_missing_thumbnails():
     return jsonify(missing_thumbnails_schema.dump(missing).data)
 
 
-@blueprint.route('/thumbnail/<int:medium_id>', methods=["PATCH"])
+@bp.route('/thumbnail/<int:medium_id>', methods=["PATCH"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def create_thumbnail(medium_id):
@@ -72,7 +75,7 @@ def create_thumbnail(medium_id):
     return '', 200
 
 
-@blueprint.route('/thumbnails/after/<int:medium_id>', methods=["PATCH"])
+@bp.route('/thumbnails/after/<int:medium_id>', methods=["PATCH"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def create_thumbnails(medium_id):
@@ -94,14 +97,14 @@ def create_thumbnails(medium_id):
     return '', 200
 
 
-@blueprint.route('/thumbs/<path:full_path>')
+@bp.route('/thumbs/<path:full_path>')
 @flask_login.login_required
 @requires_permission(permissions.get_thumb)
 def get_thumb(full_path):
     return send_from_directory('thumbs', full_path)
 
 
-@blueprint.route('/files/<path:full_path>')
+@bp.route('/files/<path:full_path>')
 @flask_login.login_required
 @requires_permission(permissions.get_medium_file)
 def get_file(full_path):

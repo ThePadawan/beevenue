@@ -1,6 +1,6 @@
 from flask import request, jsonify
 import flask_login
-from .. import blueprint
+from .routes import bp
 from ..model import tags
 from ... import notifications, permissions
 
@@ -17,7 +17,7 @@ from .schemas.viewmodels import (
 )
 
 
-@blueprint.route('/tag/<string:tag_name>', methods=["PATCH"])
+@bp.route('/tag/<string:tag_name>', methods=["PATCH"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 @requires_json_body(update_tag_schema)
@@ -37,7 +37,7 @@ def update_tag(tag_name):
         return notifications.simple_error(message), 404
 
 
-@blueprint.route(
+@bp.route(
     '/tag/<string:tag_name>/implications/<string:implied_by_this>',
     methods=["PATCH"])
 @flask_login.login_required
@@ -54,7 +54,7 @@ def tag_add_implication(tag_name, implied_by_this):
         return notifications.simple_error(message), 400
 
 
-@blueprint.route(
+@bp.route(
     '/tag/<string:tag_name>/implications/<string:implied_by_this>',
     methods=["DELETE"])
 @flask_login.login_required
@@ -71,7 +71,7 @@ def tag_remove_implication(tag_name, implied_by_this):
         return notifications.simple_error(message), 400
 
 
-@blueprint.route('/tag/implications/backup')
+@bp.route('/tag/implications/backup')
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def backup_implications():
@@ -79,7 +79,7 @@ def backup_implications():
     return jsonify(all_implications)
 
 
-@blueprint.route('/tags', methods=["GET"])
+@bp.route('/tags', methods=["GET"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def get_tags_stats():
@@ -87,7 +87,7 @@ def get_tags_stats():
     return tag_statistics_schema.jsonify(stats)
 
 
-@blueprint.route('/tags/batch', methods=["POST"])
+@bp.route('/tags/batch', methods=["POST"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 @requires_json_body(add_tags_batch_schema)
@@ -102,7 +102,7 @@ def add_tags_batch():
         return '', 400
 
 
-@blueprint.route('/tags/orphans', methods=["DELETE"])
+@bp.route('/tags/orphans', methods=["DELETE"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def delete_orphan_tags():
@@ -110,7 +110,7 @@ def delete_orphan_tags():
     return '', 200
 
 
-@blueprint.route('/tag/<string:name>', methods=["GET", "OPTION"])
+@bp.route('/tag/<string:name>', methods=["GET", "OPTION"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def get_tag(name):
@@ -122,7 +122,7 @@ def get_tag(name):
     return jsonify(tag_show_schema.dump(maybe_tag).data)
 
 
-@blueprint.route(
+@bp.route(
     '/tag/<string:current_name>/aliases/<string:new_alias>',
     methods=["POST"])
 @flask_login.login_required
@@ -139,7 +139,7 @@ def add_alias(current_name, new_alias):
         return notifications.simple_error(message), 400
 
 
-@blueprint.route(
+@bp.route(
     '/tag/<string:current_name>/clean',
     methods=["PATCH"])
 @flask_login.login_required
@@ -152,7 +152,7 @@ def simplify_tag(current_name):
     return '', 200
 
 
-@blueprint.route(
+@bp.route(
     '/tag/<string:name>/aliases/<string:alias>',
     methods=["DELETE"])
 @flask_login.login_required

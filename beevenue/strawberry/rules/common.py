@@ -1,60 +1,77 @@
 from abc import abstractmethod, abstractproperty, ABCMeta
+import re
 
-from sqlalchemy.sql.expression import column
-
-from ...models import Medium, Tag, MediaTags
+from ...spindex.spindex import SPINDEX
 
 
 class HasAnyTags(metaclass=ABCMeta):
     def __init__(self):
-        self.tag_ids = None
+        self.tag_names = None
 
     @abstractmethod
-    def _load_tag_ids(self):
+    def _load_tag_names(self):
         pass
 
     @abstractproperty
     def _tags_as_str(self):
         pass
 
-    def _ensure_tag_ids_loaded(self):
-        if self.tag_ids is not None:
+    def _ensure_tag_names_loaded(self):
+        if self.tag_names is not None:
             return
 
-        self._load_tag_ids()
+        self._load_tag_names()
 
-    def get_medium_ids(self, session, filtering_medium_ids=[]):
-        self._ensure_tag_ids_loaded()
-        if not self.tag_ids:
+    def applies_to(self, medium_id):
+        self._ensure_tag_names_loaded()
+        if not self.tag_names:
+            return False
+
+        m = SPINDEX.get_medium(medium_id)
+        return len(self.tag_names & m.tag_names) > 0
+
+    def get_medium_ids(self, filtering_medium_ids=[]):
+        self._ensure_tag_names_loaded()
+        if not self.tag_names:
             return []
 
-        filters = [column("tag_id").in_(self.tag_ids)]
+        all_media = SPINDEX.all()
+
         if filtering_medium_ids:
-            filters.append(column("medium_id").in_(filtering_medium_ids))
+            all_media = [m for m in all_media if m.id in filtering_medium_ids]
 
-        medium_tags = session.query(MediaTags).filter(*filters).all()
+        all_media = [m for m in all_media if len(self.tag_names & m.tag_names) > 0]
 
-        return [i.medium_id for i in medium_tags]
+        return [i.id for i in all_media]
 
 
 class HasAnyTagsLike(HasAnyTags):
-    def __init__(self, *like_exprs):
+    def __init__(self, *regexes):
         HasAnyTags.__init__(self)
-        if not like_exprs:
+        if not regexes:
             raise Exception("You must configure at least one LIKE expression")
-        self.like_exprs = like_exprs
 
-    def _load_tag_ids(self):
-        tag_ids = []
-        for like_expr in self.like_exprs:
-            tags = Tag.query.filter(Tag.tag.ilike(like_expr)).all()
-            tag_ids += [t.id for t in tags]
+        self.regexes = regexes
 
-        self.tag_ids = frozenset(tag_ids)
+    def _load_tag_names(self):
+        tag_names = set()
+
+        all_tag_names = set()
+        for m in SPINDEX.all():
+            # Note that this "accidentally" also searches implications & aliases.
+            all_tag_names |= m.tag_names
+
+        for regex in self.regexes:
+            compiled_regex = re.compile(f"^{regex}$")
+            for tag_name in all_tag_names:
+                if compiled_regex.match(tag_name):
+                    tag_names.add(tag_name)
+
+        self.tag_names = frozenset(tag_names)
 
     @property
     def _tags_as_str(self):
-        return ', '.join(self.like_exprs)
+        return ', '.join(self.regexes)
 
     def pprint_if(self):
         return f"Any medium with a tag like '{self._tags_as_str}'"
@@ -64,20 +81,18 @@ class HasAnyTagsLike(HasAnyTags):
 
 
 class HasAnyTagsIn(HasAnyTags):
-    def __init__(self, *names):
+    def __init__(self, *tag_names):
         HasAnyTags.__init__(self)
-        if not names:
+        if not tag_names:
             raise Exception("You must configure at least one name")
-        self.names = names
+        self.tag_names = set(tag_names)
 
-    def _load_tag_ids(self):
-        tags = Tag.query.filter(Tag.tag.in_(self.names)).all()
-        tag_ids = [t.id for t in tags]
-        self.tag_ids = frozenset(tag_ids)
+    def _load_tag_names(self):
+        pass
 
     @property
     def _tags_as_str(self):
-        return ', '.join(self.names)
+        return ', '.join(self.tag_names)
 
     def pprint_if(self):
         return f"Any medium with a tag in '{self._tags_as_str}'"
@@ -90,19 +105,24 @@ class HasRating(object):
     def __init__(self, rating=None):
         self.rating = rating
 
-    def get_medium_ids(self, session, filtering_medium_ids=[]):
-        filters = []
-        if self.rating:
-            filters.append(Medium.rating == self.rating)
-        else:
-            filters.append(Medium.rating != 'u')
+    def get_medium_ids(self, filtering_medium_ids=[]):
+        all_media = SPINDEX.all()
 
         if filtering_medium_ids:
-            filters.append(Medium.id.in_(filtering_medium_ids))
+            all_media = [m for m in all_media if m.id in filtering_medium_ids]
 
-        media = session.query(Medium).filter(*filters).all()
+        if self.rating:
+            all_media = [m for m in all_media if m.rating == self.rating]
+        else:
+            all_media = [m for m in all_media if m.rating != "u"]
 
-        return [m.id for m in media]
+        return [m.id for m in all_media]
+
+    def applies_to(self, medium_id):
+        m = SPINDEX.get_medium(medium_id)
+        if self.rating:
+            return m.rating == self.rating
+        return m.rating != 'u'
 
     @property
     def _rating_str(self):

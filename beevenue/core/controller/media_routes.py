@@ -6,7 +6,7 @@ from ...models import Medium
 from ..model.file_upload import upload_file
 from ..model.medium_update import update_medium
 from ..model.similar import similar_media
-from .. import blueprint
+from .routes import bp
 from ..model import (thumbnails, media)
 from ... import notifications, permissions
 
@@ -17,7 +17,7 @@ from ...decorators import (
 from .schemas.viewmodels import medium_schema, search_results_schema
 
 
-@blueprint.route('/media/')
+@bp.route('/media/')
 @flask_login.login_required
 @paginated()
 def list_media():
@@ -38,7 +38,7 @@ def list_media():
     return jsonify(schema)
 
 
-@blueprint.route('/medium/<int:medium_id>', methods=["DELETE"])
+@bp.route('/medium/<int:medium_id>', methods=["DELETE"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def delete_medium(medium_id):
@@ -58,7 +58,7 @@ def delete_medium(medium_id):
     return '', 200
 
 
-@blueprint.route('/medium/<int:medium_id>', methods=["GET", "OPTION"])
+@bp.route('/medium/<int:medium_id>', methods=["GET", "OPTION"])
 @flask_login.login_required
 @requires_permission(permissions.get_medium)
 def get_medium(medium_id):
@@ -79,7 +79,7 @@ def get_medium(medium_id):
     return medium_schema.jsonify(maybe_medium)
 
 
-@blueprint.route('/medium/<int:medium_id>', methods=["PATCH"])
+@bp.route('/medium/<int:medium_id>', methods=["PATCH"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def update_medium_post(medium_id):
@@ -97,7 +97,7 @@ def update_medium_post(medium_id):
         return notifications.could_not_update_medium(), 400
 
 
-@blueprint.route('/medium', methods=["POST"])
+@bp.route('/medium', methods=["POST"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def form_upload_medium():
@@ -121,7 +121,7 @@ def form_upload_medium():
     return notifications.medium_uploaded(result.id), 200
 
 
-@blueprint.route('/media/backup.sh')
+@bp.route('/media/backup.sh')
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def get_backup_sh():
@@ -139,7 +139,7 @@ def get_backup_sh():
     return response
 
 
-@blueprint.route('/medium/<int:medium_id>/backup')
+@bp.route('/medium/<int:medium_id>/backup')
 @flask_login.login_required
 @requires_permission(permissions.is_owner)
 def get_medium_zip(medium_id):

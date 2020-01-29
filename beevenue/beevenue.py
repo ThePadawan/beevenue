@@ -67,8 +67,11 @@ def get_application(extra_config=None, fill_db=None):
         from .principal import principal
         principal.init_app(application)
 
+        from .core.controller.context import init_app as context_init_app
+        context_init_app(application)
+
         from .auth import blueprint as auth_bp
-        from .core import blueprint as routes_bp
+        from .core.controller.routes import bp as routes_bp
         from .strawberry.routes import bp as strawberry_bp
         from .sushi.routes import bp as sushi_bp
         from .spindex.routes import bp as spindex_bp

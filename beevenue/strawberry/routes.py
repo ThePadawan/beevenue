@@ -3,9 +3,9 @@ from flask.json import dumps
 
 import random
 
+from ..spindex.spindex import SPINDEX
 from ..decorators import requires_permission
 from .. import permissions
-from ..models import Medium
 from .rules.json import decode_rules, decode_rules_obj
 
 bp = Blueprint('strawberry', __name__)
@@ -83,8 +83,7 @@ def validate_rules():
 
 
 def _violating_medium_ids(rule):
-    session = request.beevenue_context.session()
-    medium_ids = rule.iff.get_medium_ids(session)
+    medium_ids = rule.iff.get_medium_ids()
     if not medium_ids:
         return []
 
@@ -92,7 +91,6 @@ def _violating_medium_ids(rule):
 
     for then in rule.thens:
         valid_medium_ids = then.get_medium_ids(
-            session,
             medium_ids)
         invalid_medium_ids |= set(medium_ids) - set(valid_medium_ids)
 
@@ -108,9 +106,7 @@ def _get_rule_violations():
 @bp.route('/tags/missing/<int:medium_id>', methods=["GET", "OPTION"])
 @requires_permission(permissions.get_medium)
 def get_missing_tags_for_post(medium_id):
-    broken_rules = set([rule for id, rule in _get_rule_violations()
-                        if id == medium_id])
-
+    broken_rules = [r for r in _rules() if r.is_violated_by(medium_id)]
     return _jsonified({medium_id: broken_rules})
 
 
@@ -123,9 +119,10 @@ def get_missing_tags_any():
     # but also that all SFW media get reviewed before all others.
     random.shuffle(violations)
 
-    media = Medium.query\
-        .filter(Medium.id.in_([v[0] for v in violations]))\
-        .all()
+    all_media = SPINDEX.all()
+
+    violation_medium_ids = frozenset(v[0] for v in violations)
+    media = [m for m in all_media if m.id in violation_medium_ids]
 
     rating_by_id = {m.id: m.rating for m in media}
 
