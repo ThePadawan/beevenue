@@ -110,6 +110,14 @@ def delete_orphan_tags():
     return '', 200
 
 
+@bp.route('/tags/similarity')
+@flask_login.login_required
+@requires_permission(permissions.is_owner)
+def get_tag_similarity():
+    matrix = tags.get_similarity_matrix(request.beevenue_context)
+    return jsonify(matrix), 200
+
+
 @bp.route('/tag/<string:name>', methods=["GET", "OPTION"])
 @flask_login.login_required
 @requires_permission(permissions.is_owner)

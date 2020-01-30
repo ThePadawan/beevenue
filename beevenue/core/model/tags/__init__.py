@@ -1,3 +1,4 @@
+from collections import defaultdict
 import re
 
 from ....models import Tag, TagAlias, MediaTags, Medium
@@ -17,6 +18,39 @@ def get(context, name):
         return None
 
     return all_tags[0]
+
+
+def get_similarity_matrix(context):
+    session = context.session()
+
+    tag_names = session.query(Tag).all()
+
+    tag_name_dict = {t.id: t.tag for t in tag_names}
+
+    media_tags = session.query(MediaTags).all()
+
+    grouped_media_ids = defaultdict(set)
+
+    for mt in media_tags:
+        grouped_media_ids[mt.tag_id].add(mt.medium_id)
+
+    similarities = {}
+
+    for tag1_id, media1_ids in grouped_media_ids.items():
+        similarity_row = {}
+
+        for tag2_id, media2_ids in grouped_media_ids.items():
+
+            if tag1_id == tag2_id:
+                continue
+            intersection_size = len(media1_ids & media2_ids)
+            union_size = len(media1_ids | media2_ids)
+            similarity = float(intersection_size) / float(union_size)
+            similarity_row[tag_name_dict[tag2_id]] = similarity
+
+        similarities[tag_name_dict[tag1_id]] = similarity_row
+
+    return similarities
 
 
 def validate(tag_names):
