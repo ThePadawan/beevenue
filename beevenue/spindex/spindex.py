@@ -78,24 +78,35 @@ class _SpindexMedia(object):
 
 
 class _CacheContextManager(AbstractContextManager):
-    def __init__(self, cache, write_on_exit):
-        self._cache = cache
+    MEDIA = None
+
+    def __init__(self, write_on_exit):
         self._to_write = None
         self.write_on_exit = write_on_exit
 
     def __enter__(self):
-        self._to_write = self._cache.get("MEDIA") or _SpindexMedia()
+        if not _CacheContextManager.MEDIA:
+            _CacheContextManager.MEDIA = _SpindexMedia()
+
+        self._to_write = _CacheContextManager.MEDIA
         return self._to_write
 
     def __exit__(self, *details):
         if self.write_on_exit:
-            self._cache.set("MEDIA", self._to_write, timeout=0)
+            _CacheContextManager.MEDIA = self._to_write
 
 
 class Spindex(object):
-    def set_cache(self, cache):
-        self._cache = cache
-        self._cache.clear()
+    @property
+    def _read_context(self):
+        return _CacheContextManager(False)
+
+    @property
+    def _write_context(self):
+        # Note: This *always* writes, even if no actual modification
+        # took place. This makes it less laborious for the caller to explicitly
+        # decide when to write or not (using a "dirty" flag or similar).
+        return _CacheContextManager(True)
 
     def all(self):
         with self._read_context as c:
@@ -104,17 +115,6 @@ class Spindex(object):
     def get_medium(self, id):
         with self._read_context as c:
             return c.get_medium(id)
-
-    @property
-    def _read_context(self):
-        return _CacheContextManager(self._cache, False)
-
-    @property
-    def _write_context(self):
-        # Note: This *always* writes, even if no actual modification
-        # took place. This makes it less laborious for the caller to explicitly
-        # decide when to write or not (using a "dirty" flag or similar).
-        return _CacheContextManager(self._cache, True)
 
     def add_alias(self, tag_name, new_alias):
         with self._write_context as old:

@@ -42,5 +42,18 @@
                 "type": "hasRating"
             }
         ]
+    },
+    {
+        "if": {
+            "data": [
+                "x:.*"
+            ],
+            "type": "hasAnyTagsLike"
+        },
+        "then": [
+            {
+                "type": "fail"
+            }
+        ]
     }
 ]

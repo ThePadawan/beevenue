@@ -1,0 +1,16 @@
+[
+    {
+        "if": {
+            "data": "e",
+            "type": "hasRating"
+        },
+        "then": [
+            {
+                "data": [
+                    "B"
+                ],
+                "type": "hasAnyTagsIn"
+            }
+        ]
+    }
+]

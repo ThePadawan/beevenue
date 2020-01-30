@@ -1,7 +1,5 @@
 from collections import defaultdict
 
-from flask_caching import Cache
-
 from ..models import Medium, TagImplication, TagAlias, Tag
 
 from .spindex import SPINDEX
@@ -20,10 +18,6 @@ class SpindexedMedium(object):
 
 
 def init_app(app, session):
-    cache = Cache(config={"CACHE_TYPE": "filesystem"})
-    cache.init_app(app, config={"CACHE_TYPE": "filesystem"})
-
-    SPINDEX.set_cache(cache)
     full_load(session)
     setup_signals()
 
@@ -82,5 +76,4 @@ def full_load(session):
 
         media_to_cache.append(medium_to_cache)
 
-    global SPINDEX
     SPINDEX.add_media(media_to_cache)

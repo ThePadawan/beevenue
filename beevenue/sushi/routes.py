@@ -2,7 +2,7 @@ from io import BytesIO
 
 from flask import jsonify, Blueprint, current_app, request
 
-from sashimmie.sashimmie import get_saved, acknowledge
+from sashimmie import sashimmie
 
 from ..core.model.file_upload import upload_file
 from ..core.model import thumbnails
@@ -27,7 +27,7 @@ class HelperBytesIO(BytesIO):
 @bp.route('/sushi/next', methods=["POST"])
 @requires_permission(permissions.is_owner)
 def run():
-    saved = get_saved(current_app.config)
+    saved = sashimmie.get_saved(current_app.config)
 
     result_dict = {"status": "done", "newIds": []}
 
@@ -40,7 +40,7 @@ def run():
             stream.filename = file_tuple[2]
             success, result = upload_file(session, stream)
 
-            acknowledge(id)
+            sashimmie.acknowledge(id)
             result_dict["status"] = "continue"
 
             if success:
