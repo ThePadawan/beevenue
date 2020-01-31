@@ -21,7 +21,7 @@ def test_double_login_does_not_modify_session(client):
         'password': 'user'
     })
     assert res.status_code == 200
-    assert res.json["sfwSession"] == True
+    assert res.get_json()["sfwSession"] == True
 
     res = client.patch('/sfw', json={
         'sfwSession': False
@@ -31,7 +31,7 @@ def test_double_login_does_not_modify_session(client):
     # Now, SFW should be False
     res = client.get('/login')
     assert res.status_code == 200
-    assert res.json["sfwSession"] == False
+    assert res.get_json()["sfwSession"] == False
 
     res = client.post('/login', json={
         'username': 'user',
@@ -42,7 +42,7 @@ def test_double_login_does_not_modify_session(client):
     # SFW should *still* be False, not modified.
     res = client.get('/login')
     assert res.status_code == 200
-    assert res.json["sfwSession"] == False
+    assert res.get_json()["sfwSession"] == False
 
 
 def test_get_logged_in_as_user(userClient):

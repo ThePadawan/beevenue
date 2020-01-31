@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from flask import jsonify, Blueprint, current_app, request
+from flask import Blueprint, current_app, request
 
 from sashimmie import sashimmie
 
@@ -55,6 +55,6 @@ def run():
                 result.aspect_ratio = maybe_aspect_ratio
                 session.commit()
 
-        return jsonify(this_import_schema.dump(result_dict).data), 200
+        return this_import_schema.dump(result_dict), 200
     else:
-        return jsonify(this_import_schema.dump(result_dict).data), 200
+        return this_import_schema.dump(result_dict), 200

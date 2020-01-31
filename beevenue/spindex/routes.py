@@ -29,4 +29,4 @@ def status():
 @requires_permission(permissions.is_owner)
 def reindex():
     full_load(request.beevenue_context.session())
-    return jsonify(f"Full load finished. Loaded {len(SPINDEX.all())} entries."), 200
+    return f"Full load finished. Loaded {len(SPINDEX.all())} entries.", 200

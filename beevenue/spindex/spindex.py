@@ -43,11 +43,8 @@ def _spindexed_medium(session, id):
 
 
 class SpindexedMedium(object):
-    def __init__(self, id, hash, rating, tag_names):
-        self.id = id
-        self.hash = hash
-        self.rating = rating
-        self.tag_names = set(tag_names)
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
 
     def __str__(self):
         return f"Medium {self.id} ({self.hash}) ({self.tag_names})"

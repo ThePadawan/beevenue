@@ -1,7 +1,5 @@
 from enum import Enum, unique
 
-from flask import jsonify
-
 
 @unique
 class NotificationLevel(str, Enum):
@@ -19,7 +17,7 @@ def _link(location, text):
 
 
 def _make_notification(level, first_part, *other_parts):
-    return jsonify({'level': level, 'contents': [first_part, *other_parts]})
+    return {'level': level, 'contents': [first_part, *other_parts]}
 
 
 def simple_error(text):

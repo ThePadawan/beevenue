@@ -47,5 +47,9 @@ def requires_json_body(schema):
     return _requires_schema(lambda r: schema.validate(r.json))
 
 
-def paginated():
-    return requires_query_params(schema=pagination_query_params_schema)
+paginated = requires_query_params(schema=pagination_query_params_schema)
+
+
+def does_not_require_login(f):
+    f.is_public = True
+    return f

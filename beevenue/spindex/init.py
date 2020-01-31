@@ -2,19 +2,8 @@ from collections import defaultdict
 
 from ..models import Medium, TagImplication, TagAlias, Tag
 
-from .spindex import SPINDEX
+from .spindex import SPINDEX, SpindexedMedium
 from .reindex import setup_signals
-
-
-class SpindexedMedium(object):
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-
-    def __str__(self):
-        return f"Medium {self.id} ({self.hash}) ({self.tag_names})"
-
-    def __repr__(self):
-        return self.__str__()
 
 
 def init_app(app, session):
@@ -33,12 +22,8 @@ def full_load(session):
     # if Id=3 implies Id=5, implied_by_this[3] == set([5])
     implied_by_this = defaultdict(set)
 
-    # if Id=3 implies Id=5, implying_this[5] == set([3])
-    implying_this = defaultdict(set)
-
     for implication in all_implications:
         implied_by_this[implication.implying_tag_id].add(implication.implied_tag_id)
-        implying_this[implication.implied_tag_id].add(implication.implying_tag_id)
 
     all_aliases = session.query(TagAlias).all()
 
@@ -52,11 +37,9 @@ def full_load(session):
         tag_names = [t.tag for t in medium.tags]
 
         implied_ids = set()
-        implying_ids = set()
 
         for tag in medium.tags:
             implied_ids |= implied_by_this[tag.id]
-            implying_ids |= implying_this[tag.id]
 
         implied_tags = [tag_name_by_id[i] for i in implied_ids]
 

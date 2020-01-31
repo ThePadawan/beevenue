@@ -1,5 +1,5 @@
-from flask import request, jsonify, send_file, render_template, make_response
-import flask_login
+from flask import request, send_file, render_template, make_response
+from sqlalchemy.orm import load_only
 
 from ...models import Medium
 
@@ -17,9 +17,8 @@ from ...decorators import (
 from .schemas.viewmodels import medium_schema, search_results_schema
 
 
-@bp.route('/media/')
-@flask_login.login_required
-@paginated()
+@bp.route('/media')
+@paginated
 def list_media():
     query = Medium.query.order_by(Medium.id.desc())
 
@@ -34,12 +33,10 @@ def list_media():
         query = query.filter(*filters)
 
     media = ctx.paginate(query)
-    schema = search_results_schema.dump(media).data
-    return jsonify(schema)
+    return search_results_schema.dump(media)
 
 
 @bp.route('/medium/<int:medium_id>', methods=["DELETE"])
-@flask_login.login_required
 @requires_permission(permissions.is_owner)
 def delete_medium(medium_id):
     maybe_medium = Medium.query.filter_by(id=medium_id).first()
@@ -59,7 +56,6 @@ def delete_medium(medium_id):
 
 
 @bp.route('/medium/<int:medium_id>', methods=["GET", "OPTION"])
-@flask_login.login_required
 @requires_permission(permissions.get_medium)
 def get_medium(medium_id):
     maybe_medium = Medium.query.filter_by(id=medium_id).first()
@@ -80,7 +76,6 @@ def get_medium(medium_id):
 
 
 @bp.route('/medium/<int:medium_id>', methods=["PATCH"])
-@flask_login.login_required
 @requires_permission(permissions.is_owner)
 def update_medium_post(medium_id):
     body = request.json
@@ -98,7 +93,6 @@ def update_medium_post(medium_id):
 
 
 @bp.route('/medium', methods=["POST"])
-@flask_login.login_required
 @requires_permission(permissions.is_owner)
 def form_upload_medium():
     if not request.files:
@@ -122,10 +116,13 @@ def form_upload_medium():
 
 
 @bp.route('/media/backup.sh')
-@flask_login.login_required
 @requires_permission(permissions.is_owner)
 def get_backup_sh():
-    all_media_ids = [m.id for m in Medium.query.order_by(Medium.id).all()]
+    all_media_ids = [
+        m.id
+        for m
+        in Medium.query.options(load_only(Medium.id)).order_by(Medium.id).all()
+    ]
 
     base_path = request.url_root
     session_cookie = request.cookies['session']
@@ -140,7 +137,6 @@ def get_backup_sh():
 
 
 @bp.route('/medium/<int:medium_id>/backup')
-@flask_login.login_required
 @requires_permission(permissions.is_owner)
 def get_medium_zip(medium_id):
     maybe_medium = Medium.query.filter_by(id=medium_id).first()

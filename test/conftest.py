@@ -85,8 +85,9 @@ def _client(extra=None):
     shutil.copy(_resource("placeholder.jpg"), _medium_file('hash2.jpg'))
     shutil.copy(_resource("placeholder.jpg"), _medium_file('hash3.jpg'))
 
-    print(f"os.listdir(): {os.listdir()}")
-    print(f"os.listdir({os.path.join(os.path.dirname(__file__), 'media')}): {os.listdir(os.path.join(os.path.dirname(__file__), 'media'))}")
+    # Some tests ruin this file by overwriting it. So we restore it when we're done.
+    with open(_resource("testing_rules.json"), "r") as rules_file:
+        rules_file_contents = rules_file.read()
 
     c = app.test_client()
 
@@ -94,6 +95,9 @@ def _client(extra=None):
         extra(c)
 
     yield c
+
+    with open(_resource("testing_rules.json"), "w") as rules_file:
+        rules_file.write(rules_file_contents)
 
     _ensure_no_more_folder('media')
     _ensure_no_more_folder('thumbs')

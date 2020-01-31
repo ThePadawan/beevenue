@@ -10,7 +10,7 @@ def test_can_only_list_s_media_as_user(userClient):
         '/media?pageNumber=1&pageSize=10',
         follow_redirects=True)
     assert res.status_code == 200
-    json_result = res.json
+    json_result = res.get_json()
     assert len(json_result["items"]) == 3
 
 
@@ -19,7 +19,10 @@ def test_can_list_s_media_as_sfw_admin(adminClient):
         '/media?pageNumber=1&pageSize=10',
         follow_redirects=True)
     assert res.status_code == 200
-    json_result = res.json
+    assert res.mimetype == "application/json"
+    json_result = res.get_json()
+    print(res.data)
+    print(res.get_json())
     assert len(json_result["items"]) == 3
 
 
@@ -28,5 +31,5 @@ def test_can_list_all_media_as_nsfw_admin(adminNsfwClient):
         '/media?pageNumber=1&pageSize=10',
         follow_redirects=True)
     assert res.status_code == 200
-    json_result = res.json
+    json_result = res.get_json()
     assert len(json_result["items"]) == 4

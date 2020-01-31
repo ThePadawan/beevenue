@@ -18,12 +18,12 @@ def _persist(rules_obj):
         rules_file.write(res)
 
 
-def _jsonified(rule_breaks):
+def _pretty_print(rule_breaks):
     json_helper = {}
     for medium_id, broken_rules in rule_breaks.items():
         json_helper[medium_id] = list([r.pprint() for r in broken_rules])
 
-    return jsonify(json_helper)
+    return json_helper
 
 
 def _rules():
@@ -77,9 +77,9 @@ def upload_rules():
 def validate_rules():
     try:
         maybe_rules = decode_rules_obj(request.json)
-        return jsonify({'ok': True, 'data': len(maybe_rules)}), 200
+        return {'ok': True, 'data': len(maybe_rules)}, 200
     except Exception as e:
-        return jsonify({'ok': False, 'data': str(e)}), 200
+        return {'ok': False, 'data': str(e)}, 200
 
 
 def _violating_medium_ids(rule):
@@ -107,7 +107,7 @@ def _get_rule_violations():
 @requires_permission(permissions.get_medium)
 def get_missing_tags_for_post(medium_id):
     broken_rules = [r for r in _rules() if r.is_violated_by(medium_id)]
-    return _jsonified({medium_id: broken_rules})
+    return _pretty_print({medium_id: broken_rules})
 
 
 @bp.route('/tags/missing/any', methods=["GET", "OPTION"])
@@ -135,6 +135,6 @@ def get_missing_tags_any():
     violations.sort(key=sorter)
 
     for medium_id, rule in violations:
-        return _jsonified({medium_id: [rule]})
+        return _pretty_print({medium_id: [rule]})
 
-    return _jsonified({})
+    return _pretty_print({})

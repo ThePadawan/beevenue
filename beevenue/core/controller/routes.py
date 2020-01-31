@@ -1,5 +1,4 @@
 from flask import Blueprint, request, send_from_directory, jsonify
-import flask_login
 
 from ...models import Medium
 
@@ -26,35 +25,32 @@ from . import tag_routes, media_routes
 
 
 @bp.route('/search')
-@flask_login.login_required
 @requires_query_params(search_query_params_schema)
 def search():
     search_terms = request.args.get('q').split(' ')
     medium_ids = run_search(request.beevenue_context, search_terms)
 
     if not medium_ids:
-        return jsonify(search_results_schema.dump([]).data)
+        return search_results_schema.dumps([])
 
     media = Medium.query.\
         filter(Medium.id.in_(medium_ids)).\
         order_by(Medium.id.desc())
 
     media = request.beevenue_context.paginate(media)
-    return jsonify(search_results_schema.dump(media).data)
+    return search_results_schema.dump(media)
 
 
 @bp.route('/thumbnails/missing', methods=["GET"])
-@flask_login.login_required
 @requires_permission(permissions.is_owner)
 def get_missing_thumbnails():
     session = request.beevenue_context.session()
     missing = thumbnails.get_missing(session)
 
-    return jsonify(missing_thumbnails_schema.dump(missing).data)
+    return jsonify(missing_thumbnails_schema.dump(missing))
 
 
 @bp.route('/thumbnail/<int:medium_id>', methods=["PATCH"])
-@flask_login.login_required
 @requires_permission(permissions.is_owner)
 def create_thumbnail(medium_id):
     session = request.beevenue_context.session()
@@ -76,7 +72,6 @@ def create_thumbnail(medium_id):
 
 
 @bp.route('/thumbnails/after/<int:medium_id>', methods=["PATCH"])
-@flask_login.login_required
 @requires_permission(permissions.is_owner)
 def create_thumbnails(medium_id):
     session = request.beevenue_context.session()
@@ -98,14 +93,12 @@ def create_thumbnails(medium_id):
 
 
 @bp.route('/thumbs/<path:full_path>')
-@flask_login.login_required
 @requires_permission(permissions.get_thumb)
 def get_thumb(full_path):
     return send_from_directory('thumbs', full_path)
 
 
 @bp.route('/files/<path:full_path>')
-@flask_login.login_required
 @requires_permission(permissions.get_medium_file)
 def get_file(full_path):
     return send_from_directory('media', full_path)

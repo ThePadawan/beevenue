@@ -11,7 +11,7 @@ class TagSchema(ma.ModelSchema):
 
 
 class MediumSchema(ma.ModelSchema):
-    tags = fields.Nested(TagSchema, many=True, only="tag")
+    tags = fields.Pluck(TagSchema, "tag", many=True)
     similar = fields.Nested('SimilarMediumSchema', many=True, exclude=["similar"])
     aspect_ratio = fields.Decimal(dump_to="aspectRatio", as_string=True)
 

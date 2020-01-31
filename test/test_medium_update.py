@@ -26,7 +26,7 @@ def test_cant_update_medium_to_unknown_rating(adminNsfwClient):
 
     res = adminNsfwClient.get('/medium/3')
     assert res.status_code == 200
-    json_result = res.json
+    json_result = res.get_json()
     assert json_result["rating"] == 'e'
 
 
@@ -53,7 +53,7 @@ def test_not_specifiying_tags_means_leave_them_as_is(adminNsfwClient):
     assert res.status_code == 200
     res = adminNsfwClient.get('/medium/2')
     assert res.status_code == 200
-    json_result = res.json
+    json_result = res.get_json()
     assert len(json_result["tags"]) > 0
 
 
@@ -65,7 +65,7 @@ def test_specifiying_empty_tags_means_remove_all(adminNsfwClient):
     assert res.status_code == 200
     res = adminNsfwClient.get('/medium/2')
     assert res.status_code == 200
-    json_result = res.json
+    json_result = res.get_json()
     assert len(json_result["tags"]) == 0
 
 
