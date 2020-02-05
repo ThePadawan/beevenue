@@ -44,7 +44,6 @@ def login_required_by_default():
     view_func = current_app.view_functions[request.endpoint]
 
     if hasattr(view_func, "is_public"):
-        print("Route is public")
         return
 
     if not current_user.is_authenticated:

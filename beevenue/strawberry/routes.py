@@ -4,7 +4,6 @@ from flask.json import dumps
 import random
 
 from ..spindex.spindex import SPINDEX
-from ..decorators import requires_permission
 from .. import permissions
 from .rules.json import decode_rules, decode_rules_obj
 
@@ -37,19 +36,19 @@ def _rules():
 
 
 @bp.route('/rules')
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def get_rules():
     return jsonify(_rules()), 200
 
 
 @bp.route('/rules/rules.json')
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def get_rules_as_json():
     return jsonify(_rules()), 200
 
 
 @bp.route('/rules/<int:rule_index>', methods=["DELETE"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def remove_rule(rule_index):
     current_rules = _rules()
     if rule_index < 0 or rule_index > (len(current_rules) - 1):
@@ -61,7 +60,7 @@ def remove_rule(rule_index):
 
 
 @bp.route('/rules', methods=["POST"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def upload_rules():
     try:
         maybe_rules = decode_rules_obj(request.json)
@@ -73,7 +72,7 @@ def upload_rules():
 
 
 @bp.route('/rules/validation', methods=["POST"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def validate_rules():
     try:
         maybe_rules = decode_rules_obj(request.json)
@@ -104,14 +103,14 @@ def _get_rule_violations():
 
 
 @bp.route('/tags/missing/<int:medium_id>', methods=["GET", "OPTION"])
-@requires_permission(permissions.get_medium)
+@permissions.get_medium
 def get_missing_tags_for_post(medium_id):
     broken_rules = [r for r in _rules() if r.is_violated_by(medium_id)]
     return _pretty_print({medium_id: broken_rules})
 
 
 @bp.route('/tags/missing/any', methods=["GET", "OPTION"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def get_missing_tags_any():
     violations = list(_get_rule_violations())
 

@@ -4,7 +4,7 @@ from flask import current_app, jsonify, session, request
 from flask_login import current_user, login_user, logout_user
 from flask_principal import identity_changed, Identity, AnonymousIdentity
 
-from ..decorators import requires_json_body, does_not_require_login
+from ..decorators import does_not_require_login
 
 from . import blueprint
 from .logged_in_user import LoggedInUser
@@ -41,7 +41,7 @@ def logout():
 
 
 @blueprint.route('/login', methods=["POST"])
-@requires_json_body(login_params_schema)
+@login_params_schema
 @does_not_require_login
 def login():
     username = request.json["username"]
@@ -75,7 +75,7 @@ def login():
 
 
 @blueprint.route('/sfw', methods=["PATCH"])
-@requires_json_body(sfw_mode_schema)
+@sfw_mode_schema
 def set_sfw_mode():
     session["sfwSession"] = bool(request.json["sfwSession"])
     session.modified = True

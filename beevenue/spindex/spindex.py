@@ -58,7 +58,7 @@ class _SpindexMedia(object):
         self.data = {}
 
     def get_medium(self, id):
-        return self.data[id]
+        return self.data.get(id, None)
 
     def get_all(self):
         return self.data.values()

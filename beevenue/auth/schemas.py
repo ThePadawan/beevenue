@@ -1,5 +1,6 @@
-
 from marshmallow import fields, Schema, EXCLUDE
+
+from ..schemas import requires_json_body
 
 
 class LoginParamsSchema(Schema):
@@ -10,11 +11,11 @@ class LoginParamsSchema(Schema):
     password = fields.String(required=True)
 
 
-login_params_schema = LoginParamsSchema()
+login_params_schema = requires_json_body(LoginParamsSchema())
 
 
 class SfwModeSchema(Schema):
     sfwSession = fields.Boolean(required=True)
 
 
-sfw_mode_schema = SfwModeSchema()
+sfw_mode_schema = requires_json_body(SfwModeSchema())

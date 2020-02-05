@@ -1,11 +1,7 @@
-from flask import request, jsonify
-from .routes import bp
-from ..model import tags
+from flask import request
 from ... import notifications, permissions
-
-from ...decorators import (
-    requires_json_body, requires_permission
-)
+from ..model import tags
+from ..model.tags import implications, aliases
 
 from .schemas.query import (
     update_tag_schema, add_tags_batch_schema
@@ -15,10 +11,12 @@ from .schemas.viewmodels import (
     tag_statistics_schema, tag_show_schema,
 )
 
+from . import bp
+
 
 @bp.route('/tag/<string:tag_name>', methods=["PATCH"])
-@requires_permission(permissions.is_owner)
-@requires_json_body(update_tag_schema)
+@permissions.is_owner
+@update_tag_schema
 def update_tag(tag_name):
     body = request.json
     new_name = body.get("newName", None)
@@ -38,9 +36,9 @@ def update_tag(tag_name):
 @bp.route(
     '/tag/<string:tag_name>/implications/<string:implied_by_this>',
     methods=["PATCH"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def tag_add_implication(tag_name, implied_by_this):
-    message, success = tags.implications.add_implication(
+    message, success = implications.add_implication(
         request.beevenue_context,
         implying=tag_name,
         implied=implied_by_this)
@@ -54,9 +52,9 @@ def tag_add_implication(tag_name, implied_by_this):
 @bp.route(
     '/tag/<string:tag_name>/implications/<string:implied_by_this>',
     methods=["DELETE"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def tag_remove_implication(tag_name, implied_by_this):
-    message, success = tags.implications.remove_implication(
+    message, success = implications.remove_implication(
         request.beevenue_context,
         implying=tag_name,
         implied=implied_by_this)
@@ -68,22 +66,22 @@ def tag_remove_implication(tag_name, implied_by_this):
 
 
 @bp.route('/tag/implications/backup')
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def backup_implications():
-    all_implications = tags.implications.get_all(request.beevenue_context)
+    all_implications = implications.get_all(request.beevenue_context)
     return all_implications
 
 
 @bp.route('/tags', methods=["GET"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def get_tags_stats():
     stats = tags.get_statistics(request.beevenue_context)
     return tag_statistics_schema.jsonify(stats)
 
 
 @bp.route('/tags/batch', methods=["POST"])
-@requires_permission(permissions.is_owner)
-@requires_json_body(add_tags_batch_schema)
+@permissions.is_owner
+@add_tags_batch_schema
 def add_tags_batch():
     success = tags.add_batch(
         request.beevenue_context,
@@ -96,21 +94,21 @@ def add_tags_batch():
 
 
 @bp.route('/tags/orphans', methods=["DELETE"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def delete_orphan_tags():
     tags.delete_orphans(request.beevenue_context)
     return '', 200
 
 
 @bp.route('/tags/similarity')
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def get_tag_similarity():
     matrix = tags.get_similarity_matrix(request.beevenue_context)
     return matrix, 200
 
 
 @bp.route('/tag/<string:name>', methods=["GET", "OPTION"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def get_tag(name):
     maybe_tag = tags.get(request.beevenue_context, name)
 
@@ -123,9 +121,9 @@ def get_tag(name):
 @bp.route(
     '/tag/<string:current_name>/aliases/<string:new_alias>',
     methods=["POST"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def add_alias(current_name, new_alias):
-    message, success = tags.aliases.add_alias(
+    message, success = aliases.add_alias(
         request.beevenue_context,
         current_name,
         new_alias)
@@ -139,9 +137,9 @@ def add_alias(current_name, new_alias):
 @bp.route(
     '/tag/<string:current_name>/clean',
     methods=["PATCH"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def simplify_tag(current_name):
-    tags.implications.simplify_implied(
+    implications.simplify_implied(
         request.beevenue_context,
         current_name)
 
@@ -151,9 +149,9 @@ def simplify_tag(current_name):
 @bp.route(
     '/tag/<string:name>/aliases/<string:alias>',
     methods=["DELETE"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def delete_alias(name, alias):
-    message, success = tags.aliases.remove_alias(
+    message, success = aliases.remove_alias(
         request.beevenue_context,
         name,
         alias)

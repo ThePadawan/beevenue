@@ -1,11 +1,15 @@
-from flask import current_app
-
 import io
 import json
 import os
 import zipfile
 
+from flask import current_app
+from sqlalchemy.orm import load_only
+
+from ...models import Medium
 from ...spindex.signals import medium_deleted
+
+from .similar import similar_media
 
 EXTENSIONS = {
     'video/mp4': 'mp4',
@@ -25,7 +29,7 @@ def _try_and_remove(f):
         pass
 
 
-def _get_metadata_bytes(session, medium):
+def _get_metadata_bytes(medium):
     metadata = {
         'rating': medium.rating,
         'tags:': [t.tag for t in medium.tags]
@@ -34,7 +38,45 @@ def _get_metadata_bytes(session, medium):
     return metadata_text.encode('utf-8')
 
 
-def delete(session, medium):
+def get(context, medium_id):
+    maybe_medium = Medium.query.filter_by(id=medium_id).first()
+
+    if not maybe_medium:
+        return 404, None
+
+    if context.is_sfw and maybe_medium.rating != 's':
+        return 400, None
+
+    similar = similar_media(context, maybe_medium)
+    maybe_medium.similar = similar
+    return 200, maybe_medium
+
+
+def get_all_ids():
+    return [
+        m.id for m in
+        Medium.query.options(load_only(Medium.id)).order_by(Medium.id).all()
+    ]
+
+
+def delete(context, medium_id):
+    maybe_medium = Medium.query.filter_by(id=medium_id).first()
+
+    if not maybe_medium:
+        return False
+
+    # Delete "Medium" DB row. Note: SQLAlchemy
+    # automatically removes MediaTags rows!
+    session = context.session()
+    try:
+        _delete(session, maybe_medium)
+    except FileNotFoundError:
+        pass
+
+    return True
+
+
+def _delete(session, medium):
     hash = medium.hash
     extension = EXTENSIONS[medium.mime_type]
     session.delete(medium)
@@ -48,11 +90,16 @@ def delete(session, medium):
         _try_and_remove(f'thumbs/{hash}.{thumbnail_size}.jpg')
 
 
-def get_zip(session, medium):
+def get_zip(medium_id):
+    medium = Medium.query.filter_by(id=medium_id).first()
+
+    if not medium:
+        return 404, None
+
     result_bytes = io.BytesIO()
     with zipfile.ZipFile(result_bytes, mode='w') as z:
         # Add metadata
-        metadata_bytes = _get_metadata_bytes(session, medium)
+        metadata_bytes = _get_metadata_bytes(medium)
         z.writestr(f'{medium.id}.metadata.json', metadata_bytes)
 
         # Add data
@@ -63,4 +110,4 @@ def get_zip(session, medium):
             z.writestr(f'{medium.id}.{extension}', res.read())
 
     result_bytes.seek(0)
-    return result_bytes
+    return 200, result_bytes

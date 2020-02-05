@@ -5,7 +5,7 @@ import re
 import subprocess
 from math import ceil
 
-from flask import current_app
+from flask import current_app, request
 
 import magic
 from PIL import Image
@@ -82,7 +82,42 @@ class Ffmpeg(object):
             return self._video_thumbnails(in_path, still_out_path)
 
 
-def create(mime_type, hash):
+def create(medium_id):
+    session = request.beevenue_context.session()
+    maybe_medium = session.query(Medium).filter_by(id=medium_id).first()
+
+    if not maybe_medium:
+        return 404
+
+    maybe_aspect_ratio = _create(maybe_medium.mime_type, maybe_medium.hash)
+
+    if not maybe_aspect_ratio:
+        return 400
+
+    maybe_medium.aspect_ratio = maybe_aspect_ratio
+    session.commit()
+    return 200
+
+
+def create_all(medium_id_threshold):
+    session = request.beevenue_context.session()
+    all_media = session.query(Medium)\
+        .filter(Medium.id > medium_id_threshold).all()
+
+    for maybe_medium in all_media:
+        maybe_aspect_ratio = _create(
+            maybe_medium.mime_type,
+            maybe_medium.hash)
+
+        if not maybe_aspect_ratio:
+            continue
+
+        maybe_medium.aspect_ratio = maybe_aspect_ratio
+
+    session.commit()
+
+
+def _create(mime_type, hash):
     thumb_path = os.path.abspath(f'thumbs/{hash}.jpg')
     if os.path.exists(thumb_path):
         os.remove(thumb_path)

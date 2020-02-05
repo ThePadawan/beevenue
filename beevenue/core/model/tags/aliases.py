@@ -1,6 +1,7 @@
 from ....models import Tag, TagAlias
 from ....spindex.signals import alias_added, alias_removed
 
+
 def add_alias(context, current_name, new_alias):
     session = context.session()
 

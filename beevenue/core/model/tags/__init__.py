@@ -5,8 +5,6 @@ from ....models import Tag, TagAlias, MediaTags, Medium
 
 from ....spindex.signals import tag_renamed
 
-from . import aliases, implications
-
 VALID_TAG_REGEX_INNER = "(?P<category>[a-z]+:)?([a-zA-Z0-9.]+)"
 VALID_TAG_REGEX = re.compile(f"^{VALID_TAG_REGEX_INNER}$")
 
@@ -34,6 +32,8 @@ def get_similarity_matrix(context):
     for mt in media_tags:
         grouped_media_ids[mt.tag_id].add(mt.medium_id)
 
+    nodes = {tag_name_dict[k]: {"size": len(v)} for k, v in grouped_media_ids.items()}
+
     similarities = {}
 
     for tag1_id, media1_ids in grouped_media_ids.items():
@@ -44,13 +44,21 @@ def get_similarity_matrix(context):
             if tag1_id == tag2_id:
                 continue
             intersection_size = len(media1_ids & media2_ids)
+
+            if intersection_size == 0:
+                continue
+
             union_size = len(media1_ids | media2_ids)
             similarity = float(intersection_size) / float(union_size)
-            similarity_row[tag_name_dict[tag2_id]] = similarity
+
+            similarity_row[tag_name_dict[tag2_id]] = {
+                "similarity": similarity,
+                "relevance": union_size
+            }
 
         similarities[tag_name_dict[tag1_id]] = similarity_row
 
-    return similarities
+    return {"nodes": nodes, "links": similarities}
 
 
 def validate(tag_names):

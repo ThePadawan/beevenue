@@ -1,82 +1,49 @@
 from flask import request, send_file, render_template, make_response
-from sqlalchemy.orm import load_only
 
-from ...models import Medium
+from ... import (notifications, permissions, schemas)
 
+from ..model.search import run
 from ..model.file_upload import upload_file
 from ..model.medium_update import update_medium
-from ..model.similar import similar_media
-from .routes import bp
 from ..model import (thumbnails, media)
-from ... import notifications, permissions
-
-from ...decorators import (
-    paginated, requires_permission
-)
 
 from .schemas.viewmodels import medium_schema, search_results_schema
+from . import bp
 
 
 @bp.route('/media')
-@paginated
+@schemas.paginated
 def list_media():
-    query = Medium.query.order_by(Medium.id.desc())
-
-    ctx = request.beevenue_context
-    filters = []
-    if ctx.is_sfw:
-        filters.append(Medium.rating == 's')
-    if ctx.user_role != 'admin':
-        filters.append(Medium.rating != 'e')
-
-    if filters:
-        query = query.filter(*filters)
-
-    media = ctx.paginate(query)
+    media = run([])
     return search_results_schema.dump(media)
 
 
 @bp.route('/medium/<int:medium_id>', methods=["DELETE"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def delete_medium(medium_id):
-    maybe_medium = Medium.query.filter_by(id=medium_id).first()
+    success = media.delete(request.beevenue_context, medium_id)
+    if success:
+        return '', 200
 
-    if not maybe_medium:
-        return notifications.no_such_medium(medium_id), 404
-
-    # Delete "Medium" DB row. Note: SQLAlchemy
-    # automatically removes MediaTags rows!
-    session = request.beevenue_context.session()
-    try:
-        media.delete(session, maybe_medium)
-    except FileNotFoundError:
-        pass
-
-    return '', 200
+    return notifications.no_such_medium(medium_id), 404
 
 
 @bp.route('/medium/<int:medium_id>', methods=["GET", "OPTION"])
-@requires_permission(permissions.get_medium)
+@permissions.get_medium
 def get_medium(medium_id):
-    maybe_medium = Medium.query.filter_by(id=medium_id).first()
+    status_code, maybe_medium = media.get(request.beevenue_context, medium_id)
 
-    if not maybe_medium:
+    if status_code == 404:
         return notifications.no_such_medium(medium_id), 404
 
-    ctx = request.beevenue_context
-
-    if ctx.is_sfw and maybe_medium.rating != 's':
+    if status_code == 400:
         return notifications.not_sfw(), 400
-
-    similar = similar_media(ctx, maybe_medium)
-
-    maybe_medium.similar = similar
 
     return medium_schema.jsonify(maybe_medium)
 
 
 @bp.route('/medium/<int:medium_id>', methods=["PATCH"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def update_medium_post(medium_id):
     body = request.json
 
@@ -93,7 +60,7 @@ def update_medium_post(medium_id):
 
 
 @bp.route('/medium', methods=["POST"])
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def form_upload_medium():
     if not request.files:
         return notifications.simple_error("You must supply a file"), 400
@@ -105,24 +72,17 @@ def form_upload_medium():
     if not success:
         return notifications.medium_already_exists(result), 400
 
-    maybe_aspect_ratio = thumbnails.create(result.mime_type, result.hash)
-    if not maybe_aspect_ratio:
+    status = thumbnails.create(result.id)
+    if status == 400:
         return '', 400
-
-    result.aspect_ratio = maybe_aspect_ratio
-    session.commit()
 
     return notifications.medium_uploaded(result.id), 200
 
 
 @bp.route('/media/backup.sh')
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def get_backup_sh():
-    all_media_ids = [
-        m.id
-        for m
-        in Medium.query.options(load_only(Medium.id)).order_by(Medium.id).all()
-    ]
+    all_media_ids = media.get_all_ids()
 
     base_path = request.url_root
     session_cookie = request.cookies['session']
@@ -137,16 +97,13 @@ def get_backup_sh():
 
 
 @bp.route('/medium/<int:medium_id>/backup')
-@requires_permission(permissions.is_owner)
+@permissions.is_owner
 def get_medium_zip(medium_id):
-    maybe_medium = Medium.query.filter_by(id=medium_id).first()
+    status, b = media.get_zip(medium_id)
 
-    if not maybe_medium:
+    if status == 404:
         return '', 404
 
-    session = request.beevenue_context.session()
-
-    b = media.get_zip(session, maybe_medium)
     return send_file(
         b,
         mimetype='application/zip',

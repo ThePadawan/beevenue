@@ -1,9 +1,11 @@
 from pathlib import Path
 
 from flask_login import current_user
-from flask_principal import identity_loaded, Permission, RoleNeed
+from flask_principal import identity_loaded, Permission
 
-from .models import Medium
+from .spindex.spindex import SPINDEX
+from .decorators import requires
+from . import notifications
 
 
 class CanSeeMediumWithRatingNeed(object):
@@ -49,25 +51,44 @@ def on_identity_loaded(sender, identity):
 _allowed = Permission()
 
 
-def _can_see_medium_by_filter(filter):
-    maybe_medium = Medium.query.filter(filter).first()
-    if not maybe_medium:
+def _can_see_spindex_medium(m):
+    if not m:
         return _allowed
 
-    return Permission(CanSeeMediumWithRatingNeed(maybe_medium.rating))
+    return Permission(CanSeeMediumWithRatingNeed(m.rating))
 
 
 def _can_see_medium(medium_id):
-    return _can_see_medium_by_filter(Medium.id == medium_id)
+    maybe_medium = SPINDEX.get_medium(medium_id)
+    return _can_see_spindex_medium(maybe_medium)
 
 
 def _can_see_file(full_path):
     hash = str(Path(full_path).with_suffix(''))
-    return _can_see_medium_by_filter(Medium.hash == hash)
+    all_media = SPINDEX.all()
+
+    matching = [m for m in all_media if m.hash == hash]
+    if matching:
+        m = matching[0]
+    else:
+        m = None
+
+    return _can_see_spindex_medium(m)
 
 
-get_medium = _can_see_medium
-get_thumb = _can_see_file
-get_medium_file = _can_see_file
+def _requires_permission(permission):
+    def validator(*args, **kwargs):
+        p = permission
+        if callable(p):
+            p = p(*args, **kwargs)
 
-is_owner = Permission(_admin_role_need)
+        if not p.can():
+            return notifications.no_permission(), 403
+    return requires(validator)
+
+
+get_medium = _requires_permission(_can_see_medium)
+get_thumb = _requires_permission(_can_see_file)
+get_medium_file = _requires_permission(_can_see_file)
+
+is_owner = _requires_permission(Permission(_admin_role_need))

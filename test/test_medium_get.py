@@ -9,6 +9,6 @@ def test_can_get_s_rated_medium_as_user(userClient):
     assert res.status_code == 200
 
 
-def test_can_get_missing_rated_medium_as_user(userClient):
+def test_can_get_missing_medium_as_user(userClient):
     res = userClient.get('/medium/141341')
     assert res.status_code == 404
