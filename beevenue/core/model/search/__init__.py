@@ -62,9 +62,13 @@ def _paginate(ids):
     else:
         skip = (pageNumber - 1) * pageSize
 
+    pageCount = (len(ids) // pageSize)
+    if (len(ids) % pageSize) != 0:
+        pageCount += 1
+
     return {
         "items": ids[skip:skip+pageSize],
-        "pageCount": (len(ids) // pageSize) + 1,
+        "pageCount": pageCount,
         "pageNumber": pageNumber,
         "pageSize": pageSize
     }
