@@ -28,7 +28,9 @@ class CountingSearchTerm(SearchTerm):
         op = OPS.get(self.operator, None)
         if not op:
             raise Exception(f"Unknown operator in {self}")
-        return op(len(medium.tag_names), self.number)
+
+        # Note! Only count *innate* tags, not implications, aliases, etc...
+        return op(len(medium.tag_names.innate), self.number)
 
     def __repr__(self):
         return f"tags{self.operator}{self.number}"
@@ -50,7 +52,7 @@ class CategorySearchTerm(SearchTerm):
 
     def applies_to(self, medium):
         matching_tag_names = [
-            t for t in medium.tag_names if t.startswith(f"{self.category}:")
+            t for t in medium.tag_names.innate if t.startswith(f"{self.category}:")
         ]
 
         op = OPS.get(self.operator, None)

@@ -1,56 +1,5 @@
 from contextlib import AbstractContextManager
-from ..models import Medium, Tag, TagAlias, TagImplication
-
-
-def _spindexed_medium(session, id):
-    matching_media = session.query(Medium).filter_by(id=id).all()
-    if not matching_media:
-        return None
-
-    matching_medium = matching_media[0]
-
-    tag_ids = [t.id for t in matching_medium.tags]
-
-    tag_aliases = session.query(TagAlias)\
-        .filter(TagAlias.tag_id.in_(tag_ids))\
-        .with_entities(TagAlias.alias)\
-        .all()
-
-    tag_aliases = [t[0] for t in tag_aliases]
-
-    implied_tag_ids = session.query(TagImplication)\
-        .filter(TagImplication.c.implying_tag_id.in_(tag_ids))\
-        .with_entities(TagImplication.c.implied_tag_id)\
-        .all()
-
-    implied_tag_names = session.query(Tag)\
-        .filter(Tag.id.in_(implied_tag_ids))\
-        .with_entities(Tag.tag)\
-        .all()
-
-    implied_tag_names = [t[0] for t in implied_tag_names]
-
-    tag_names = set([t.tag for t in matching_medium.tags]) \
-        | set(tag_aliases) \
-        | set(implied_tag_names)
-
-    return SpindexedMedium(
-        id=matching_medium.id,
-        rating=matching_medium.rating,
-        hash=matching_medium.hash,
-        tag_names=tag_names
-    )
-
-
-class SpindexedMedium(object):
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-
-    def __str__(self):
-        return f"Medium {self.id} ({self.hash}) ({self.tag_names})"
-
-    def __repr__(self):
-        return self.__str__()
+from .load import single_load, SpindexedMedium
 
 
 class _SpindexMedia(object):
@@ -112,20 +61,24 @@ class Spindex(object):
     def get_medium(self, id):
         with self._read_context as c:
             return c.get_medium(id)
+            
+    def get_media(self, ids):
+        with self._read_context as c:
+            return [c.get_medium(id) for id in ids]
 
     def add_alias(self, tag_name, new_alias):
         with self._write_context as old:
             for m in old.get_all():
-                if tag_name in m.tag_names:
-                    m.tag_names.add(new_alias)
+                if tag_name in m.tag_names.searchable:
+                    m.tag_names.searchable.add(new_alias)
 
             return True
 
     def remove_alias(self, tag_name, former_alias):
         with self._write_context as old:
             for m in old.get_all():
-                if former_alias in m.tag_names:
-                    m.tag_names.remove(former_alias)
+                if former_alias in m.tag_names.searchable:
+                    m.tag_names.searchable.remove(former_alias)
 
             return True
 
@@ -133,7 +86,7 @@ class Spindex(object):
         with self._write_context as old:
             old.remove_id(id)
 
-            new_spindexed_medium = _spindexed_medium(session, id)
+            new_spindexed_medium = single_load(session, id)
 
             if not new_spindexed_medium:
                 return False
@@ -144,25 +97,28 @@ class Spindex(object):
     def rename_tag(self, old_name, new_name):
         with self._write_context as old:
             for m in old.get_all():
-                if old_name in m.tag_names:
-                    m.tag_names.remove(old_name)
-                    m.tag_names.add(new_name)
+                if old_name in m.tag_names.innate:
+                    m.tag_names.innate.remove(old_name)
+                    m.tag_names.innate.add(new_name)
+                if old_name in m.tag_names.searchable:
+                    m.tag_names.searchable.remove(old_name)
+                    m.tag_names.searchable.add(new_name)
 
             return True
 
     def add_implication(self, implying, implied):
         with self._write_context as old:
             for m in old.get_all():
-                if implying in m.tag_names:
-                    m.tag_names.add(implied)
+                if implying in m.tag_names.searchable:
+                    m.tag_names.searchable.add(implied)
 
             return True
 
     def remove_implication(self, implying, implied):
         with self._write_context as old:
             for m in old.get_all():
-                if implying in m.tag_names:
-                    m.tag_names.remove(implied)
+                if implying in m.tag_names.searchable:
+                    m.tag_names.searchable.remove(implied)
 
             return True
 

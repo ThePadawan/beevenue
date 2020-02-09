@@ -1,7 +1,6 @@
 from flask import request
 
 from ....spindex.spindex import SPINDEX
-from ....models import Medium
 
 from .terms import get_search_terms
 from .terms.simple import RatingSearchTerm, Negative
@@ -16,11 +15,17 @@ def run(search_term_list):
     if not medium_ids:
         return []
 
-    media = Medium.query.\
-        filter(Medium.id.in_(medium_ids)).\
-        order_by(Medium.id.desc())
+    medium_ids = list(medium_ids)
+    medium_ids.sort(reverse=True)
 
-    return context.paginate(media)
+    pagination = _paginate(medium_ids)
+
+    media = SPINDEX.get_media(pagination["items"])
+
+    pagination.update({
+        "items": media
+    })
+    return pagination
 
 
 def _search(context, search_terms):
@@ -43,3 +48,23 @@ def _search(context, search_terms):
             result.add(x.id)
 
     return result
+
+
+def _paginate(ids):
+    pageNumber = int(request.args.get("pageNumber"))
+    pageSize = int(request.args.get("pageSize"))
+
+    if pageSize < 1:
+        return []
+
+    if pageNumber < 1:
+        skip = 0
+    else:
+        skip = (pageNumber - 1) * pageSize
+
+    return {
+        "items": ids[skip:skip+pageSize],
+        "pageCount": (len(ids) // pageSize) + 1,
+        "pageNumber": pageNumber,
+        "pageSize": pageSize
+    }

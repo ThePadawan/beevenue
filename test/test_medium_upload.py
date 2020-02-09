@@ -31,5 +31,5 @@ def test_uploading_medium_with_taggy_filename_succeeds(adminClient):
         '/medium', data={
             'file': (
                 BytesIO(contents),
-                '1234 - rating_q example.tag u_overwatch A.jpg')})
+                '1234 - rating_q u_overwatch A.jpg')})
     assert res.status_code == 200

@@ -15,7 +15,7 @@ class NegativeSearchTerm(BasicSearchTerm):
         return f"-{self.term}"
 
     def applies_to(self, medium):
-        return self.term not in medium.tag_names
+        return self.term not in medium.tag_names.searchable
 
     @classmethod
     def from_match(cls, match):
@@ -29,7 +29,7 @@ class PositiveSearchTerm(BasicSearchTerm):
         return f"{self.term}"
 
     def applies_to(self, medium):
-        return self.term in medium.tag_names
+        return self.term in medium.tag_names.searchable
 
     @classmethod
     def from_match(cls, match):

@@ -7,6 +7,7 @@ from flask import current_app
 from sqlalchemy.orm import load_only
 
 from ...models import Medium
+from ...spindex.spindex import SPINDEX
 from ...spindex.signals import medium_deleted
 
 from .similar import similar_media
@@ -39,7 +40,7 @@ def _get_metadata_bytes(medium):
 
 
 def get(context, medium_id):
-    maybe_medium = Medium.query.filter_by(id=medium_id).first()
+    maybe_medium = SPINDEX.get_medium(medium_id)
 
     if not maybe_medium:
         return 404, None
@@ -47,8 +48,7 @@ def get(context, medium_id):
     if context.is_sfw and maybe_medium.rating != 's':
         return 400, None
 
-    similar = similar_media(context, maybe_medium)
-    maybe_medium.similar = similar
+    maybe_medium.similar = similar_media(context, medium_id)
     return 200, maybe_medium
 
 

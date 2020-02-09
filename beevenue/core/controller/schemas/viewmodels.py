@@ -1,5 +1,5 @@
 from ....marshmallow import ma
-from ....models import Medium, Tag
+from ....models import Tag
 
 from flask import current_app
 from marshmallow import fields, Schema
@@ -10,16 +10,20 @@ class TagSchema(ma.ModelSchema):
         model = Tag
 
 
-class MediumSchema(ma.ModelSchema):
-    tags = fields.Pluck(TagSchema, "tag", many=True)
+class SpindexMediumSchema(Schema):
+    id = fields.Int()
+    tags = fields.Method("extract_innate_tags")
     similar = fields.Nested('SimilarMediumSchema', many=True, exclude=["similar"])
     aspect_ratio = fields.Decimal(dump_to="aspectRatio", as_string=True)
+    hash = fields.String()
+    rating = fields.String()
+    mime_type = fields.String()
 
-    class Meta:
-        model = Medium
+    def extract_innate_tags(self, obj):
+        return [t for t in obj.tag_names.innate]
 
 
-class MediumWithThumbsSchema(MediumSchema):
+class MediumWithThumbsSchema(SpindexMediumSchema):
     thumbs = fields.Method("get_thumbnail_urls")
 
     def get_thumbnail_urls(self, obj):
@@ -36,12 +40,12 @@ class SearchResultMediumSchema(MediumWithThumbsSchema):
 
 class SearchResultsSchema(Schema):
     items = fields.Nested(SearchResultMediumSchema, many=True)
-    pageCount = fields.Int(attribute="pages")
-    pageNumber = fields.Int(attribute="page")
-    pageSize = fields.Int(attribute="per_page")
+    pageCount = fields.Int()
+    pageNumber = fields.Int()
+    pageSize = fields.Int()
 
 
-medium_schema = MediumSchema()
+medium_schema = SpindexMediumSchema()
 
 
 search_results_schema = SearchResultsSchema()

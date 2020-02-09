@@ -28,7 +28,7 @@ class HasAnyTags(metaclass=ABCMeta):
             return False
 
         m = SPINDEX.get_medium(medium_id)
-        return len(self.tag_names & m.tag_names) > 0
+        return len(self.tag_names & m.tag_names.searchable) > 0
 
     def get_medium_ids(self, filtering_medium_ids=[]):
         self._ensure_tag_names_loaded()
@@ -40,7 +40,7 @@ class HasAnyTags(metaclass=ABCMeta):
         if filtering_medium_ids:
             all_media = [m for m in all_media if m.id in filtering_medium_ids]
 
-        all_media = [m for m in all_media if len(self.tag_names & m.tag_names) > 0]
+        all_media = [m for m in all_media if len(self.tag_names & m.tag_names.searchable) > 0]
 
         return [i.id for i in all_media]
 
@@ -58,8 +58,7 @@ class HasAnyTagsLike(HasAnyTags):
 
         all_tag_names = set()
         for m in SPINDEX.all():
-            # Note that this "accidentally" also searches implications & aliases.
-            all_tag_names |= m.tag_names
+            all_tag_names |= m.tag_names.searchable
 
         for regex in self.regexes:
             compiled_regex = re.compile(f"^{regex}$")

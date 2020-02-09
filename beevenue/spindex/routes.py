@@ -17,8 +17,7 @@ def status():
         output.append({
             "id": m.id,
             "rating": m.rating,
-            "hash": m.hash,
-            "tag_names": list(m.tag_names)
+            "hash": m.hash
         })
 
     return jsonify(output), 200

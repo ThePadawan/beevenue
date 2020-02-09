@@ -1,10 +1,15 @@
 from itertools import groupby
 
+from ...spindex.spindex import SPINDEX
 from ...models import MediaTags, Medium
 
 
-def similar_media(context, medium):
+def similar_media(context, medium_id):
     session = context.session()
+
+    medium = Medium.query.filter(Medium.id == medium_id).first()
+    if not medium:
+        return []
 
     target_tag_entities = medium.tags
     target_ids = set([t.id for t in target_tag_entities])
@@ -42,4 +47,4 @@ def similar_media(context, medium):
 
     similar_media_ids = [j["medium_id"] for j in jaccard_indices]
 
-    return Medium.query.filter(Medium.id.in_(similar_media_ids[:5])).all()
+    return SPINDEX.get_media(similar_media_ids)

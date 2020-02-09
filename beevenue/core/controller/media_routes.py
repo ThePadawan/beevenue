@@ -39,7 +39,7 @@ def get_medium(medium_id):
     if status_code == 400:
         return notifications.not_sfw(), 400
 
-    return medium_schema.jsonify(maybe_medium)
+    return medium_schema.dump(maybe_medium)
 
 
 @bp.route('/medium/<int:medium_id>', methods=["PATCH"])

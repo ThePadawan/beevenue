@@ -87,4 +87,4 @@ def test_search_with_counting_term4_succeeds(adminNsfwClient):
     assert res.status_code == 200
     result = json.loads(res.data)
     print(result)
-    assert len(result["items"]) == 3
+    assert len(result["items"]) >= 3
