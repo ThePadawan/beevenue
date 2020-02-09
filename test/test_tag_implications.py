@@ -24,6 +24,22 @@ def test_cant_add_implication_cycle(adminClient):
     assert res.status_code == 400
 
 
+def test_cant_add_implication_three_cycle(adminClient):
+    res = adminClient.patch('/tag/A/implications/B')
+    assert res.status_code == 200
+    res = adminClient.patch('/tag/B/implications/C')
+    assert res.status_code == 200
+    res = adminClient.patch('/tag/C/implications/A')
+    assert res.status_code == 400
+
+
+def test_can_add_implication_three_chain(adminClient):
+    res = adminClient.patch('/tag/A/implications/B')
+    assert res.status_code == 200
+    res = adminClient.patch('/tag/B/implications/C')
+    assert res.status_code == 200
+
+
 def test_cant_remove_missing_implication(adminClient):
     res = adminClient.delete('/tag/c:tinkerbell/implications/nothing')
 

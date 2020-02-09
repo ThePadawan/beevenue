@@ -1,4 +1,6 @@
-from sqlalchemy import or_, and_
+from collections import deque
+
+from sqlalchemy import and_
 from sqlalchemy.sql import func
 
 from ....spindex.signals import implication_added, implication_removed
@@ -14,18 +16,36 @@ def _identify_implication_tags(session, implying, implied):
     return True, (implying_tags[0], implied_tags[0])
 
 
-def _would_create_implication_chain(session, implying_tag, implied_tag):
-    # * Does "implied" imply something?
-    # * Does something imply "implying"?
-    q = \
-        session.query(TagImplication)\
-        .filter(or_(TagImplication.c.implying_tag_id == implied_tag.id,
-                    TagImplication.c.implied_tag_id == implying_tag.id))
+def _would_create_implication_cycle(session, implying_tag, implied_tag):
+    # If we add the edge (implying, implied) to the implication graph,
+    # would that form a cycle?
+    # Equivalent:
+    # * Gather "implied"s transitive neighbors
+    # * If they include "implying", we found a cycle, return True
+    # * If they stop growing, we can add the edge, return False
 
-    conflicting_implications_count = q.count()
+    visited = set()
+    visited.add(implying_tag.id)
 
-    # If any of those are true, we have a chain.
-    return conflicting_implications_count > 0
+    q = deque()
+    q.append(implied_tag.id)
+
+    while q:
+        current = q.pop()
+
+        neighbors = \
+            session.query(TagImplication)\
+            .filter(TagImplication.c.implying_tag_id == current)\
+            .all()
+
+        neighbor_ids = [n.implied_tag_id for n in neighbors]
+
+        for n in neighbor_ids:
+            if n in visited:
+                return True
+            q.append(n)
+
+    return False
 
 
 def add_implication(context, implying, implied):
@@ -51,14 +71,14 @@ def add_implication(context, implying, implied):
     if current_implication_count > 0:
         return 'This implication is already configured', True
 
-    would_create_implication_chain = _would_create_implication_chain(
+    would_create_implication_cycle = _would_create_implication_cycle(
         session,
         implying_tag,
         implied_tag
     )
 
-    if would_create_implication_chain:
-        return 'This would create a chain of implications', False
+    if would_create_implication_cycle:
+        return 'This would create a cycle of implications', False
 
     implying_tag.implied_by_this.append(implied_tag)
     session.commit()
