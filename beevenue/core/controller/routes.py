@@ -51,10 +51,14 @@ def create_thumbnails(medium_id):
 @bp.route('/thumbs/<path:full_path>')
 @permissions.get_thumb
 def get_thumb(full_path):
-    return send_from_directory('thumbs', full_path)
+    res = send_from_directory('thumbs', full_path)
+    res.headers["X-Accel-Redirect"] = f"/thumbs/{full_path}"
+    return res
 
 
 @bp.route('/files/<path:full_path>')
 @permissions.get_medium_file
 def get_file(full_path):
-    return send_from_directory('media', full_path)
+    res = send_from_directory('media', full_path)
+    res.headers["X-Accel-Redirect"] = f"/media/{full_path}"
+    return res
