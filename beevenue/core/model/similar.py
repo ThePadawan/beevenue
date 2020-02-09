@@ -1,50 +1,66 @@
-from itertools import groupby
-
+from queue import PriorityQueue
 from ...spindex.spindex import SPINDEX
-from ...models import MediaTags, Medium
+
+
+def _find_candidates(context, medium_id, target_tag_names):
+    """
+    Find all media that have *some* similarity to the medium
+    with Id `medium_id`.
+    """
+    candidates = set()
+
+    # Maybe add a reverse index (tag => media) so this query is faster
+    for m in SPINDEX.all():
+        if len(m.tag_names.innate & target_tag_names) == 0:
+            continue
+
+        if m.id == medium_id:
+            continue
+
+        if context.is_sfw and m.rating != 's':
+            continue
+
+        if context.user_role != 'admin' and m.rating == 'e':
+            continue
+
+        candidates.add(m)
+
+    return candidates
 
 
 def similar_media(context, medium_id):
-    session = context.session()
-
-    medium = Medium.query.filter(Medium.id == medium_id).first()
+    medium = SPINDEX.get_medium(medium_id)
     if not medium:
         return []
 
-    target_tag_entities = medium.tags
-    target_ids = set([t.id for t in target_tag_entities])
+    target_tag_names = medium.tag_names.innate
+    candidates = _find_candidates(context, medium_id, target_tag_names)
 
-    filters = []
-    if context.is_sfw:
-        filters.append(Medium.rating == 's')
-    if context.user_role != 'admin':
-        filters.append(Medium.rating != 'e')
+    # Keep up to 6 similar items in memory. We eject the least similar
+    # once we have more than 5.
+    jaccard_indices = PriorityQueue(maxsize=5+1)
 
-    all_media_tags = session.query(MediaTags, Medium.rating)\
-        .join(Medium, Medium.id == MediaTags.c.medium_id)\
-        .filter(MediaTags.c.tag_id.in_(target_ids), *filters)\
-        .all()
+    for candidate in candidates:
+        candidate_tags = candidate.tag_names.innate
+        intersection_size = len(candidate_tags & target_tag_names)
+        union_size = len(candidate_tags | target_tag_names)
 
-    lookup = groupby(all_media_tags, lambda mt: mt.medium_id)
+        similarity = float(intersection_size) / float(union_size)
 
-    jaccard_indices = []
+        jaccard_indices.put_nowait((similarity, candidate.id,))
 
-    for medium_id, media_tags in lookup:
-        if medium_id == medium.id:
-            continue
+        if jaccard_indices.full():
+            jaccard_indices.get_nowait()
 
-        tags = [mt for mt in media_tags]
-        rating = tags[0].rating
-        tag_id_set = frozenset([mt.tag_id for mt in tags])
-        intersection_size = len(tag_id_set & target_ids)
-        union_size = len(tag_id_set | target_ids)
-        jaccard_indices.append(
-            {'medium_id': medium_id,
-             'rating': rating,
-             'value': float(intersection_size) / float(union_size)})
+    similar_media_ids = []
+    for _ in range(0, 5):
+        if jaccard_indices.empty():
+            break
+        t = jaccard_indices.get_nowait()
+        similar_media_ids.append(t[1])
 
-    jaccard_indices.sort(key=lambda j: j['value'], reverse=True)
-
-    similar_media_ids = [j["medium_id"] for j in jaccard_indices[:5]]
+    # Since we kept Jaccard indices sorted ascendingly, we have to reverse them
+    # here so that media_ids are sorted descendingly (most similar first)
+    similar_media_ids.reverse()
 
     return SPINDEX.get_media(similar_media_ids)
