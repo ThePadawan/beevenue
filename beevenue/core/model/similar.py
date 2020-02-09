@@ -45,6 +45,6 @@ def similar_media(context, medium_id):
 
     jaccard_indices.sort(key=lambda j: j['value'], reverse=True)
 
-    similar_media_ids = [j["medium_id"] for j in jaccard_indices]
+    similar_media_ids = [j["medium_id"] for j in jaccard_indices[:5]]
 
     return SPINDEX.get_media(similar_media_ids)
