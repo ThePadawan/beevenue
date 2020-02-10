@@ -9,7 +9,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@master
       - name: Black Code Formatter
         uses: lgeiger/black-action@v1.0.1
         with:
           args: ". --check -l 80"
+      - uses: gr2m/create-or-update-pull-request-action@v1.2.10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit-message: "Black formatting"
+          title: "Black autoformat"
+          author: "PR Bot"
+          branch: black_formatter
+          body: Please merge these autoformatting changes
