@@ -1,10 +1,9 @@
-name: CI
+name: Black
 
-on:
-  push
+on: [push]
 
 jobs:
-  lint:
+  black:
     runs-on: ubuntu-latest
 
     steps:
