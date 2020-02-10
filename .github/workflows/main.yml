@@ -12,12 +12,12 @@ jobs:
         uses: lgeiger/black-action@v1.0.1
         with:
           args: ". -l 80"
-      - uses: gr2m/create-or-update-pull-request-action@v1.2.10
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Black formatting"
           title: "Black autoformat"
           author: "PRBot <prbot@prat.ch>"
-          branch: black_formatter
           body: Please merge these autoformatting changes
