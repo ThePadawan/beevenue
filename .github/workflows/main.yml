@@ -18,6 +18,6 @@ jobs:
         with:
           commit-message: "Black formatting"
           title: "Black autoformat"
-          author: "PR Bot"
+          author: "PRBot <prbot@prat.ch>"
           branch: black_formatter
           body: Please merge these autoformatting changes
