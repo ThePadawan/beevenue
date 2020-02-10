@@ -60,7 +60,9 @@ def get_thumb(medium_id, full_path):
     thumb_path = Path(f"{medium.hash}.{full_path}")
 
     res = send_from_directory('thumbs', thumb_path)
-    res.headers["X-Accel-Redirect"] = str(Path("/", "thumbs", thumb_path))
+    # Note this must be distinct from the public route ("/thumbs"),
+    # or Nginx will freak.
+    res.headers["X-Accel-Redirect"] = str(Path("/", "beevenue_thumbs", thumb_path))
     return res
 
 
@@ -68,5 +70,7 @@ def get_thumb(medium_id, full_path):
 @permissions.get_medium_file
 def get_file(full_path):
     res = send_from_directory('media', full_path)
+    # Note this must be distinct from the public route ("/files"),
+    # or Nginx will freak.
     res.headers["X-Accel-Redirect"] = str(Path("/", "media", full_path))
     return res
