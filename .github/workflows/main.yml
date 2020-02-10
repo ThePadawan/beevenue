@@ -11,7 +11,7 @@ jobs:
       - name: Black Code Formatter
         uses: lgeiger/black-action@v1.0.1
         with:
-          args: ". --check -l 80"
+          args: ". -l 80"
       - uses: gr2m/create-or-update-pull-request-action@v1.2.10
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
