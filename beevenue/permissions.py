@@ -59,11 +59,10 @@ def _can_see_spindex_medium(m):
 
 
 def _can_see_medium(medium_id):
-    maybe_medium = SPINDEX.get_medium(medium_id)
-    return _can_see_spindex_medium(maybe_medium)
+    return _can_see_spindex_medium(SPINDEX.get_medium(medium_id))
 
 
-def _can_see_file(full_path):
+def _can_see_full_path(full_path):
     hash = str(Path(full_path).with_suffix(''))
     all_media = SPINDEX.all()
 
@@ -74,6 +73,13 @@ def _can_see_file(full_path):
         m = None
 
     return _can_see_spindex_medium(m)
+
+
+def _can_see_file(**kwargs):
+    if "medium_id" in kwargs:
+        return _can_see_spindex_medium(SPINDEX.get_medium(kwargs["medium_id"]))
+    if "full_path" in kwargs:
+        return _can_see_full_path(kwargs["full_path"])
 
 
 def _requires_permission(permission):

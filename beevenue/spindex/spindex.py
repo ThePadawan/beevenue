@@ -61,42 +61,42 @@ class Spindex(object):
     def get_medium(self, id):
         with self._read_context as c:
             return c.get_medium(id)
-            
+
     def get_media(self, ids):
         with self._read_context as c:
             return [c.get_medium(id) for id in ids]
 
     def add_alias(self, tag_name, new_alias):
-        with self._write_context as old:
-            for m in old.get_all():
+        with self._write_context as ctx:
+            for m in ctx.get_all():
                 if tag_name in m.tag_names.searchable:
                     m.tag_names.searchable.add(new_alias)
 
             return True
 
     def remove_alias(self, tag_name, former_alias):
-        with self._write_context as old:
-            for m in old.get_all():
+        with self._write_context as ctx:
+            for m in ctx.get_all():
                 if former_alias in m.tag_names.searchable:
                     m.tag_names.searchable.remove(former_alias)
 
             return True
 
     def reindex_medium(self, session, id):
-        with self._write_context as old:
-            old.remove_id(id)
+        with self._write_context as ctx:
+            ctx.remove_id(id)
 
             new_spindexed_medium = single_load(session, id)
 
             if not new_spindexed_medium:
                 return False
 
-            old.add(new_spindexed_medium)
+            ctx.add(new_spindexed_medium)
             return True
 
     def rename_tag(self, old_name, new_name):
-        with self._write_context as old:
-            for m in old.get_all():
+        with self._write_context as ctx:
+            for m in ctx.get_all():
                 if old_name in m.tag_names.innate:
                     m.tag_names.innate.remove(old_name)
                     m.tag_names.innate.add(new_name)
@@ -107,29 +107,29 @@ class Spindex(object):
             return True
 
     def add_implication(self, implying, implied):
-        with self._write_context as old:
-            for m in old.get_all():
+        with self._write_context as ctx:
+            for m in ctx.get_all():
                 if implying in m.tag_names.searchable:
                     m.tag_names.searchable.add(implied)
 
             return True
 
     def remove_implication(self, implying, implied):
-        with self._write_context as old:
-            for m in old.get_all():
+        with self._write_context as ctx:
+            for m in ctx.get_all():
                 if implying in m.tag_names.searchable:
                     m.tag_names.searchable.remove(implied)
 
             return True
 
     def remove_medium(self, id):
-        with self._write_context as old:
-            old.remove_id(id)
+        with self._write_context as ctx:
+            ctx.remove_id(id)
 
     def add_media(self, media):
-        with self._write_context as old:
+        with self._write_context as ctx:
             for m in media:
-                old.add(m)
+                ctx.add(m)
 
 
 SPINDEX = Spindex()

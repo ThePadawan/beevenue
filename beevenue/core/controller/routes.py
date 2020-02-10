@@ -1,7 +1,9 @@
+from pathlib import Path
 from flask import request, send_from_directory, jsonify
 
 from ... import permissions, notifications
 from ..model import thumbnails, search
+from ...spindex.spindex import SPINDEX
 
 from .schemas.query import search_query_params_schema
 
@@ -48,13 +50,23 @@ def create_thumbnails(medium_id):
     return '', 200
 
 
-@bp.route('/thumbs/<path:full_path>')
+@bp.route('/thumbs/<int:medium_id>/<path:full_path>')
 @permissions.get_thumb
-def get_thumb(full_path):
-    return send_from_directory('thumbs', full_path)
+def get_thumb(medium_id, full_path):
+    medium = SPINDEX.get_medium(medium_id)
+    if not medium:
+        return 404
+
+    thumb_path = Path(f"{medium.hash}.{full_path}")
+
+    res = send_from_directory('thumbs', thumb_path)
+    res.headers["X-Accel-Redirect"] = str(Path("/", "thumbs", thumb_path))
+    return res
 
 
 @bp.route('/files/<path:full_path>')
 @permissions.get_medium_file
 def get_file(full_path):
-    return send_from_directory('media', full_path)
+    res = send_from_directory('media', full_path)
+    res.headers["X-Accel-Redirect"] = str(Path("/", "media", full_path))
+    return res

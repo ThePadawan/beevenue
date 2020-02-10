@@ -1,5 +1,5 @@
 def test_cannot_access_thumbs_without_logging_in(client):
-    res = client.get('/thumbs/hash1.s.jpg')
+    res = client.get('/thumbs/1/s.jpg')
     assert res.status_code == 401
 
 

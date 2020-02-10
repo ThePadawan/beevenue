@@ -27,7 +27,7 @@ class MediumWithThumbsSchema(SpindexMediumSchema):
     thumbs = fields.Method("get_thumbnail_urls")
 
     def get_thumbnail_urls(self, obj):
-        return {size: f"/thumbs/{obj.hash}.{name}.jpg" for name, size in current_app.config["BEEVENUE_THUMBNAIL_SIZES"].items()}
+        return {size: f"/thumbs/{obj.id}/{name}.jpg" for name, size in current_app.config["BEEVENUE_THUMBNAIL_SIZES"].items()}
 
 
 class SimilarMediumSchema(MediumWithThumbsSchema):
