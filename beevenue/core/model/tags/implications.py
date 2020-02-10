@@ -33,10 +33,11 @@ def _would_create_implication_cycle(session, implying_tag, implied_tag):
     while q:
         current = q.pop()
 
-        neighbors = \
-            session.query(TagImplication)\
-            .filter(TagImplication.c.implying_tag_id == current)\
+        neighbors = (
+            session.query(TagImplication)
+            .filter(TagImplication.c.implying_tag_id == current)
             .all()
+        )
 
         neighbor_ids = [n.implied_tag_id for n in neighbors]
 
@@ -52,9 +53,8 @@ def add_implication(context, implying, implied):
     session = context.session()
 
     did_find_tags, tags_or_message = _identify_implication_tags(
-        session,
-        implying,
-        implied)
+        session, implying, implied
+    )
 
     if not did_find_tags:
         return tags_or_message, False
@@ -62,56 +62,63 @@ def add_implication(context, implying, implied):
     implying_tag, implied_tag = tags_or_message
 
     # Check if the same implication already exists
-    current_implication_count = \
-        session.query(TagImplication)\
-        .filter(and_(TagImplication.c.implying_tag_id == implying_tag.id,
-                     TagImplication.c.implied_tag_id == implied_tag.id))\
+    current_implication_count = (
+        session.query(TagImplication)
+        .filter(
+            and_(
+                TagImplication.c.implying_tag_id == implying_tag.id,
+                TagImplication.c.implied_tag_id == implied_tag.id,
+            )
+        )
         .count()
+    )
 
     if current_implication_count > 0:
-        return 'This implication is already configured', True
+        return "This implication is already configured", True
 
     would_create_implication_cycle = _would_create_implication_cycle(
-        session,
-        implying_tag,
-        implied_tag
+        session, implying_tag, implied_tag
     )
 
     if would_create_implication_cycle:
-        return 'This would create a cycle of implications', False
+        return "This would create a cycle of implications", False
 
     implying_tag.implied_by_this.append(implied_tag)
     session.commit()
     implication_added.send((implying, implied,))
-    return 'Success', True
+    return "Success", True
 
 
 def remove_implication(context, implying, implied):
     session = context.session()
 
     did_find_tags, tags_or_message = _identify_implication_tags(
-        session,
-        implying,
-        implied)
+        session, implying, implied
+    )
 
     if not did_find_tags:
         return tags_or_message, False
 
     implying_tag, implied_tag = tags_or_message
 
-    maybe_current_implications = \
-        session.query(TagImplication)\
-        .filter(and_(TagImplication.c.implying_tag_id == implying_tag.id,
-                     TagImplication.c.implied_tag_id == implied_tag.id))\
+    maybe_current_implications = (
+        session.query(TagImplication)
+        .filter(
+            and_(
+                TagImplication.c.implying_tag_id == implying_tag.id,
+                TagImplication.c.implied_tag_id == implied_tag.id,
+            )
+        )
         .all()
+    )
 
     if len(maybe_current_implications) < 1:
-        return 'This implication was not configured', True
+        return "This implication was not configured", True
 
     implying_tag.implied_by_this.remove(implied_tag)
     session.commit()
     implication_removed.send((implying, implied,))
-    return 'Success', 200
+    return "Success", 200
 
 
 def simplify_implied(context, tag):
@@ -131,25 +138,25 @@ def simplify_implied(context, tag):
     tag_ids = set([implied_tag.id])
     tag_ids |= set([t.id for t in implying_tags])
 
-    media_ids_to_clean = \
-        session.query(MediaTags.c.medium_id)\
-        .filter(MediaTags.c.tag_id.in_(tag_ids))\
-        .group_by(MediaTags.c.medium_id)\
-        .having(func.count(MediaTags.c.tag_id) > 1)\
+    media_ids_to_clean = (
+        session.query(MediaTags.c.medium_id)
+        .filter(MediaTags.c.tag_id.in_(tag_ids))
+        .group_by(MediaTags.c.medium_id)
+        .having(func.count(MediaTags.c.tag_id) > 1)
         .all()
+    )
 
     if not media_ids_to_clean:
         return False
 
     media_ids_to_clean = [m[0] for m in media_ids_to_clean]
 
-    d = MediaTags\
-        .delete()\
-        .where(
-            and_(
-                MediaTags.c.tag_id == implied_tag.id,
-                MediaTags.c.medium_id.in_(media_ids_to_clean))
+    d = MediaTags.delete().where(
+        and_(
+            MediaTags.c.tag_id == implied_tag.id,
+            MediaTags.c.medium_id.in_(media_ids_to_clean),
         )
+    )
 
     session.execute(d)
     session.commit()

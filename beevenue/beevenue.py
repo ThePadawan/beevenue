@@ -1,6 +1,4 @@
-from flask import (
-    Flask
-)
+from flask import Flask
 
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -19,19 +17,14 @@ class BeevenueFlask(Flask):
             self.run(self.hostname, self.port, threaded=True)
         else:
             self.run(
-                self.hostname,
-                self.port,
-                threaded=True,
-                use_x_sendfile=True)
+                self.hostname, self.port, threaded=True, use_x_sendfile=True
+            )
 
 
 def get_application(extra_config=None, fill_db=None):
-    application = BeevenueFlask(
-        "strawberry",
-        '0.0.0.0',
-        7000)
+    application = BeevenueFlask("strawberry", "0.0.0.0", 7000)
 
-    application.config.from_envvar('BEEVENUE_CONFIG_FILE')
+    application.config.from_envvar("BEEVENUE_CONFIG_FILE")
 
     if extra_config:
         extra_config(application)
@@ -39,35 +32,41 @@ def get_application(extra_config=None, fill_db=None):
     CORS(
         application,
         supports_credentials=True,
-        origins=application.config['BEEVENUE_ALLOWED_CORS_ORIGINS'])
+        origins=application.config["BEEVENUE_ALLOWED_CORS_ORIGINS"],
+    )
 
     # if application.config['DEBUG']:
     #     application.config['SQLALCHEMY_ECHO'] = True
 
     from .db import db
+
     db.init_app(application)
     migrate = Migrate(application, db)
 
-    if application.config.get('SENTRY_DSN'):
+    if application.config.get("SENTRY_DSN"):
         import sentry_sdk
         from sentry_sdk.integrations.flask import FlaskIntegration
 
         sentry_sdk.init(
-            dsn=application.config['SENTRY_DSN'],
-            integrations=[FlaskIntegration()]
+            dsn=application.config["SENTRY_DSN"],
+            integrations=[FlaskIntegration()],
         )
 
     from .marshmallow import ma
+
     ma.init_app(application)
 
     with application.app_context():
         from .login_manager import login_manager
+
         login_manager.init_app(application)
 
         from .principal import principal
+
         principal.init_app(application)
 
         from .core.controller.context import init_app as context_init_app
+
         context_init_app(application)
 
         from .auth import blueprint as auth_bp
@@ -75,6 +74,7 @@ def get_application(extra_config=None, fill_db=None):
         from .strawberry.routes import bp as strawberry_bp
         from .sushi.routes import bp as sushi_bp
         from .spindex.routes import bp as spindex_bp
+
         application.register_blueprint(auth_bp)
         application.register_blueprint(routes_bp)
         application.register_blueprint(strawberry_bp)
@@ -93,6 +93,7 @@ def get_application(extra_config=None, fill_db=None):
             fill_db()
 
         from .spindex import init_app as spindex_init_app
+
         spindex_init_app(application, db.session)
 
     import beevenue.auth.auth

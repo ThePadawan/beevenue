@@ -18,9 +18,7 @@ class SpindexedMedium(object):
         for f in fields:
             new_kwargs[f] = getattr(medium, f)
 
-        new_kwargs.update({
-            "tag_names": tag_names
-        })
+        new_kwargs.update({"tag_names": tag_names})
         return cls(**new_kwargs)
 
     def __init__(self, **kwargs):
@@ -41,8 +39,8 @@ def single_load(session, id):
     matching_medium = matching_media[0]
 
     return _create_spindexed_medium(
-        _SingleLoadDataSource(session),
-        matching_medium)
+        _SingleLoadDataSource(session), matching_medium
+    )
 
 
 def full_load(session):
@@ -68,9 +66,8 @@ def full_load(session):
     media_to_cache = []
 
     data_source = _FullLoadDataSource(
-        implied_by_this,
-        aliases_by_id,
-        tag_name_by_id)
+        implied_by_this, aliases_by_id, tag_name_by_id
+    )
 
     for medium in all_media:
         medium_to_cache = _create_spindexed_medium(data_source, medium)
@@ -93,24 +90,30 @@ class _SingleLoadDataSource(object):
         self.session = session
 
     def alias_names(self, tag_ids):
-        tag_alias_entities = self.session.query(TagAlias)\
-            .filter(TagAlias.tag_id.in_(tag_ids))\
-            .with_entities(TagAlias.alias)\
+        tag_alias_entities = (
+            self.session.query(TagAlias)
+            .filter(TagAlias.tag_id.in_(tag_ids))
+            .with_entities(TagAlias.alias)
             .all()
+        )
 
         return set([t[0] for t in tag_alias_entities])
 
     def implied(self, tag_ids):
-        implied_tag_id_entities = self.session.query(TagImplication)\
-            .filter(TagImplication.c.implying_tag_id.in_(tag_ids))\
-            .with_entities(TagImplication.c.implied_tag_id)\
+        implied_tag_id_entities = (
+            self.session.query(TagImplication)
+            .filter(TagImplication.c.implying_tag_id.in_(tag_ids))
+            .with_entities(TagImplication.c.implied_tag_id)
             .all()
+        )
         implied_tag_ids = set([t[0] for t in implied_tag_id_entities])
 
-        implied_tag_name_entities = self.session.query(Tag)\
-            .filter(Tag.id.in_(implied_tag_ids))\
-            .with_entities(Tag.tag)\
+        implied_tag_name_entities = (
+            self.session.query(Tag)
+            .filter(Tag.id.in_(implied_tag_ids))
+            .with_entities(Tag.tag)
             .all()
+        )
         implied_tag_names = set([t[0] for t in implied_tag_name_entities])
 
         return implied_tag_ids, implied_tag_names
@@ -148,10 +151,7 @@ def _create_spindexed_medium(data_source, medium):
 
     searchable_tag_names = innate_tag_names | extra_searchable_tags
 
-    tag_names = SpindexedMediumTagNames(
-        innate_tag_names,
-        searchable_tag_names
-    )
+    tag_names = SpindexedMediumTagNames(innate_tag_names, searchable_tag_names)
 
     return SpindexedMedium.create(medium, tag_names)
 

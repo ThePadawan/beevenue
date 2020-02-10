@@ -1,4 +1,3 @@
-
 def test_spindex_get_status(adminClient):
     res = adminClient.get("/spindex/status")
     assert res.status_code == 200

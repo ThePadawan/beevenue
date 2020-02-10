@@ -8,7 +8,9 @@ def requires(validator):
         @wraps(f)
         def inner(*args, **kwargs):
             return validator(*args, **kwargs) or f(*args, **kwargs)
+
         return inner
+
     return outer
 
 

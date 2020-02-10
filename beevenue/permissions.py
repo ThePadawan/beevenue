@@ -22,10 +22,10 @@ class CanSeeMediumWithRatingNeed(object):
         return f"<CanSeeMediumWithRatingNeed rating='{self.rating}'>"
 
 
-_can_see_e = CanSeeMediumWithRatingNeed('e')
-_can_see_u = CanSeeMediumWithRatingNeed('u')
-_can_see_q = CanSeeMediumWithRatingNeed('q')
-_can_see_s = CanSeeMediumWithRatingNeed('s')
+_can_see_e = CanSeeMediumWithRatingNeed("e")
+_can_see_u = CanSeeMediumWithRatingNeed("u")
+_can_see_q = CanSeeMediumWithRatingNeed("q")
+_can_see_s = CanSeeMediumWithRatingNeed("s")
 
 _can_see_all = frozenset([_can_see_e, _can_see_q, _can_see_s, _can_see_u])
 
@@ -39,9 +39,9 @@ _admin_role_need = AdminRoleNeed()
 
 @identity_loaded.connect
 def on_identity_loaded(sender, identity):
-    if hasattr(current_user, 'role'):
+    if hasattr(current_user, "role"):
         identity.role = current_user.role
-        if current_user.role == 'admin':
+        if current_user.role == "admin":
             identity.provides.add(_admin_role_need)
             identity.provides |= _can_see_all
         else:
@@ -63,7 +63,7 @@ def _can_see_medium(medium_id):
 
 
 def _can_see_full_path(full_path):
-    hash = str(Path(full_path).with_suffix(''))
+    hash = str(Path(full_path).with_suffix(""))
     all_media = SPINDEX.all()
 
     matching = [m for m in all_media if m.hash == hash]
@@ -90,6 +90,7 @@ def _requires_permission(permission):
 
         if not p.can():
             return notifications.no_permission(), 403
+
     return requires(validator)
 
 

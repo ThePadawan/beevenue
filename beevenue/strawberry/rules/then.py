@@ -1,7 +1,4 @@
-
-from .common import (  # noqa: F401
-    HasRating, HasAnyTagsLike, HasAnyTagsIn
-)
+from .common import HasRating, HasAnyTagsLike, HasAnyTagsIn  # noqa: F401
 
 
 class Fail(object):

@@ -1,13 +1,13 @@
 from .base import SearchTerm
 
 OPS = {
-    ':': lambda x, y: x == y,
-    '=': lambda x, y: x == y,
-    '<': lambda x, y: x < y,
-    '>': lambda x, y: x > y,
-    '<=': lambda x, y: x <= y,
-    '>=': lambda x, y: x >= y,
-    '!=': lambda x, y: x != y,
+    ":": lambda x, y: x == y,
+    "=": lambda x, y: x == y,
+    "<": lambda x, y: x < y,
+    ">": lambda x, y: x > y,
+    "<=": lambda x, y: x <= y,
+    ">=": lambda x, y: x >= y,
+    "!=": lambda x, y: x != y,
 }
 
 
@@ -52,7 +52,9 @@ class CategorySearchTerm(SearchTerm):
 
     def applies_to(self, medium):
         matching_tag_names = [
-            t for t in medium.tag_names.innate if t.startswith(f"{self.category}:")
+            t
+            for t in medium.tag_names.innate
+            if t.startswith(f"{self.category}:")
         ]
 
         op = OPS.get(self.operator, None)

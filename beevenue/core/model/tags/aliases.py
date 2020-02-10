@@ -11,14 +11,16 @@ def add_alias(context, current_name, new_alias):
 
     new_alias = new_alias.strip()
 
-    conflicting_aliases = \
+    conflicting_aliases = (
         session.query(TagAlias).filter(TagAlias.alias == new_alias).all()
+    )
     if len(conflicting_aliases) > 0:
         return "This alias is already taken", False
 
     # Ensure that there is no tag with the new_alias as actual name
-    conflicting_tags_count = \
+    conflicting_tags_count = (
         session.query(Tag).filter(Tag.tag == new_alias).count()
+    )
     if conflicting_tags_count > 0:
         return "This alias is already taken", False
 
@@ -37,8 +39,9 @@ def remove_alias(context, name, alias):
     if len(old_tags) != 1:
         return "Could not find tag with that name", True
 
-    current_aliases = \
+    current_aliases = (
         session.query(TagAlias).filter(TagAlias.alias == alias).all()
+    )
     if len(current_aliases) == 0:
         return "This alias does not exist", True
 

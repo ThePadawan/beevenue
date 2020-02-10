@@ -12,11 +12,6 @@ class BeevenueContext(object):
     def session(self):
         return db.session
 
-    def paginate(self, query):
-        return query.paginate(
-            int(request.args.get("pageNumber")),
-            int(request.args.get("pageSize")))
-
 
 def context_setter():
     try:
@@ -25,12 +20,10 @@ def context_setter():
         is_sfw = True
 
     role = None
-    if hasattr(current_user, 'role'):
+    if hasattr(current_user, "role"):
         role = current_user.role
 
-    request.beevenue_context = BeevenueContext(
-        is_sfw=is_sfw,
-        user_role=role)
+    request.beevenue_context = BeevenueContext(is_sfw=is_sfw, user_role=role)
 
 
 def login_required_by_default():

@@ -1,54 +1,54 @@
 def test_can_add_and_remove_implications_as_admin(adminClient):
-    res = adminClient.patch('/tag/c:tinkerbell/implications/A')
+    res = adminClient.patch("/tag/c:tinkerbell/implications/A")
     assert res.status_code == 200
-    res = adminClient.delete('/tag/c:tinkerbell/implications/A')
+    res = adminClient.delete("/tag/c:tinkerbell/implications/A")
     assert res.status_code == 200
 
 
 def test_cant_add_missing_implication(adminClient):
-    res = adminClient.patch('/tag/c:tinkerbell/implications/nothing')
+    res = adminClient.patch("/tag/c:tinkerbell/implications/nothing")
     assert res.status_code == 400
 
 
 def test_cant_add_duplicate_to_current_implication(adminClient):
-    res = adminClient.patch('/tag/c:tinkerbell/implications/A')
+    res = adminClient.patch("/tag/c:tinkerbell/implications/A")
     assert res.status_code == 200
-    res = adminClient.patch('/tag/c:tinkerbell/implications/A')
+    res = adminClient.patch("/tag/c:tinkerbell/implications/A")
     assert res.status_code == 200
 
 
 def test_cant_add_implication_cycle(adminClient):
-    res = adminClient.patch('/tag/c:tinkerbell/implications/A')
+    res = adminClient.patch("/tag/c:tinkerbell/implications/A")
     assert res.status_code == 200
-    res = adminClient.patch('/tag/A/implications/c:tinkerbell')
+    res = adminClient.patch("/tag/A/implications/c:tinkerbell")
     assert res.status_code == 400
 
 
 def test_cant_add_implication_three_cycle(adminClient):
-    res = adminClient.patch('/tag/A/implications/B')
+    res = adminClient.patch("/tag/A/implications/B")
     assert res.status_code == 200
-    res = adminClient.patch('/tag/B/implications/C')
+    res = adminClient.patch("/tag/B/implications/C")
     assert res.status_code == 200
-    res = adminClient.patch('/tag/C/implications/A')
+    res = adminClient.patch("/tag/C/implications/A")
     assert res.status_code == 400
 
 
 def test_can_add_implication_three_chain(adminClient):
-    res = adminClient.patch('/tag/A/implications/B')
+    res = adminClient.patch("/tag/A/implications/B")
     assert res.status_code == 200
-    res = adminClient.patch('/tag/B/implications/C')
+    res = adminClient.patch("/tag/B/implications/C")
     assert res.status_code == 200
 
 
 def test_cant_remove_missing_implication(adminClient):
-    res = adminClient.delete('/tag/c:tinkerbell/implications/nothing')
+    res = adminClient.delete("/tag/c:tinkerbell/implications/nothing")
 
 
 def test_can_simplify_implications(adminClient):
-    res = adminClient.patch('/tag/u:peter.pan/clean')
+    res = adminClient.patch("/tag/u:peter.pan/clean")
     assert res.status_code == 200
 
 
 def test_simplify_does_nothing_for_tag_without_implications(adminClient):
-    res = adminClient.patch('/tag/B/clean')
+    res = adminClient.patch("/tag/B/clean")
     assert res.status_code == 200

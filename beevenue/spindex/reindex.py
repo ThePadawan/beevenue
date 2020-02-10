@@ -1,8 +1,14 @@
 from flask import request
 
 from .signals import (
-    medium_deleted, medium_added, medium_updated, tag_renamed,
-    alias_added, alias_removed, implication_added, implication_removed
+    medium_deleted,
+    medium_added,
+    medium_updated,
+    tag_renamed,
+    alias_added,
+    alias_removed,
+    implication_added,
+    implication_removed,
 )
 
 from .spindex import SPINDEX

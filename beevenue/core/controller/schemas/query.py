@@ -1,10 +1,9 @@
-
 from marshmallow import fields, Schema
 
 from ....schemas import (
     PaginationQueryParamsSchema,
     requires_json_body,
-    requires_query_params
+    requires_query_params,
 )
 
 

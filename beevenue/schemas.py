@@ -21,6 +21,7 @@ def _requires_schema(validate):
         validation_errors = validate(request)
         if validation_errors:
             return jsonify(validation_errors), 400
+
     return requires(validator)
 
 

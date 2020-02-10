@@ -40,7 +40,11 @@ class HasAnyTags(metaclass=ABCMeta):
         if filtering_medium_ids:
             all_media = [m for m in all_media if m.id in filtering_medium_ids]
 
-        all_media = [m for m in all_media if len(self.tag_names & m.tag_names.searchable) > 0]
+        all_media = [
+            m
+            for m in all_media
+            if len(self.tag_names & m.tag_names.searchable) > 0
+        ]
 
         return [i.id for i in all_media]
 
@@ -70,7 +74,7 @@ class HasAnyTagsLike(HasAnyTags):
 
     @property
     def _tags_as_str(self):
-        return ', '.join(self.regexes)
+        return ", ".join(self.regexes)
 
     def pprint_if(self):
         return f"Any medium with a tag like '{self._tags_as_str}'"
@@ -91,7 +95,7 @@ class HasAnyTagsIn(HasAnyTags):
 
     @property
     def _tags_as_str(self):
-        return ', '.join(self.tag_names)
+        return ", ".join(self.tag_names)
 
     def pprint_if(self):
         return f"Any medium with a tag in '{self._tags_as_str}'"
@@ -121,7 +125,7 @@ class HasRating(object):
         m = SPINDEX.get_medium(medium_id)
         if self.rating:
             return m.rating == self.rating
-        return m.rating != 'u'
+        return m.rating != "u"
 
     @property
     def _rating_str(self):

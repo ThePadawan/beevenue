@@ -32,7 +32,9 @@ def get_similarity_matrix(context):
     for mt in media_tags:
         grouped_media_ids[mt.tag_id].add(mt.medium_id)
 
-    nodes = {tag_name_dict[k]: {"size": len(v)} for k, v in grouped_media_ids.items()}
+    nodes = {
+        tag_name_dict[k]: {"size": len(v)} for k, v in grouped_media_ids.items()
+    }
 
     similarities = {}
 
@@ -53,7 +55,7 @@ def get_similarity_matrix(context):
 
             similarity_row[tag_name_dict[tag2_id]] = {
                 "similarity": similarity,
-                "relevance": union_size
+                "relevance": union_size,
             }
 
         similarities[tag_name_dict[tag1_id]] = similarity_row
@@ -128,9 +130,12 @@ def get_statistics(context):
 def delete_orphans(context):
     session = context.session()
 
-    tags_to_delete = session.query(Tag).outerjoin(MediaTags)\
-        .filter(MediaTags.c.tag_id.is_(None))\
+    tags_to_delete = (
+        session.query(Tag)
+        .outerjoin(MediaTags)
+        .filter(MediaTags.c.tag_id.is_(None))
         .all()
+    )
 
     # Only delete tags if they're not implied by anything
     def is_deletable(tag):
@@ -171,8 +176,9 @@ def rename(context, old_name, new_name):
 
     # if new_tag does exist, UPDATE all medium tags
     # to reference new_tag instead of old_tag, then remove old_tag
-    MediaTags.update().where(MediaTags.c.tag_id == old_tag.id)\
-        .values(tag_id=new_tag.id)
+    MediaTags.update().where(MediaTags.c.tag_id == old_tag.id).values(
+        tag_id=new_tag.id
+    )
 
     session.delete(old_tag)
     session.commit()

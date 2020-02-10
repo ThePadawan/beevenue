@@ -22,16 +22,16 @@ def test_delete_existing_rule(adminClient):
 
 
 def test_validate_new_rules(adminClient):
-    with open('test/resources/testing_rules_simple.json', 'r') as f:
+    with open("test/resources/testing_rules_simple.json", "r") as f:
         contents = f.read()
 
-    res = adminClient.post('/rules/validation', json=json.loads(contents))
+    res = adminClient.post("/rules/validation", json=json.loads(contents))
     assert res.status_code == 200
 
 
 def test_upload_new_rules(adminClient):
-    with open('test/resources/testing_rules_simple.json', 'r') as f:
+    with open("test/resources/testing_rules_simple.json", "r") as f:
         contents = f.read()
 
-    res = adminClient.post('/rules', json=json.loads(contents))
+    res = adminClient.post("/rules", json=json.loads(contents))
     assert res.status_code == 200

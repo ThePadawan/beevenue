@@ -13,7 +13,9 @@ class TagSchema(ma.ModelSchema):
 class SpindexMediumSchema(Schema):
     id = fields.Int()
     tags = fields.Method("extract_innate_tags")
-    similar = fields.Nested('SimilarMediumSchema', many=True, exclude=["similar"])
+    similar = fields.Nested(
+        "SimilarMediumSchema", many=True, exclude=["similar"]
+    )
     aspect_ratio = fields.Decimal(dump_to="aspectRatio", as_string=True)
     hash = fields.String()
     rating = fields.String()
@@ -27,7 +29,12 @@ class MediumWithThumbsSchema(SpindexMediumSchema):
     thumbs = fields.Method("get_thumbnail_urls")
 
     def get_thumbnail_urls(self, obj):
-        return {size: f"/thumbs/{obj.id}/{name}.jpg" for name, size in current_app.config["BEEVENUE_THUMBNAIL_SIZES"].items()}
+        return {
+            size: f"/thumbs/{obj.id}/{name}.jpg"
+            for name, size in current_app.config[
+                "BEEVENUE_THUMBNAIL_SIZES"
+            ].items()
+        }
 
 
 class SimilarMediumSchema(MediumWithThumbsSchema):

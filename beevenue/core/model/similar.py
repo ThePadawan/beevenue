@@ -17,10 +17,10 @@ def _find_candidates(context, medium_id, target_tag_names):
         if m.id == medium_id:
             continue
 
-        if context.is_sfw and m.rating != 's':
+        if context.is_sfw and m.rating != "s":
             continue
 
-        if context.user_role != 'admin' and m.rating == 'e':
+        if context.user_role != "admin" and m.rating == "e":
             continue
 
         candidates.add(m)
@@ -38,7 +38,7 @@ def similar_media(context, medium_id):
 
     # Keep up to 6 similar items in memory. We eject the least similar
     # once we have more than 5.
-    jaccard_indices = PriorityQueue(maxsize=5+1)
+    jaccard_indices = PriorityQueue(maxsize=5 + 1)
 
     for candidate in candidates:
         candidate_tags = candidate.tag_names.innate

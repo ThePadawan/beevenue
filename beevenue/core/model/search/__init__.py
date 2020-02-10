@@ -22,9 +22,7 @@ def run(search_term_list):
 
     media = SPINDEX.get_media(pagination["items"])
 
-    pagination.update({
-        "items": media
-    })
+    pagination.update({"items": media})
     return pagination
 
 
@@ -34,8 +32,8 @@ def _search(context, search_terms):
     if context.is_sfw:
         search_terms.add(RatingSearchTerm("s"))
     if context.user_role != "admin":
-        search_terms.add(Negative(RatingSearchTerm('e')))
-        search_terms.add(Negative(RatingSearchTerm('u')))
+        search_terms.add(Negative(RatingSearchTerm("e")))
+        search_terms.add(Negative(RatingSearchTerm("u")))
 
     all_media = SPINDEX.all()
     result = set()
@@ -62,13 +60,13 @@ def _paginate(ids):
     else:
         skip = (pageNumber - 1) * pageSize
 
-    pageCount = (len(ids) // pageSize)
+    pageCount = len(ids) // pageSize
     if (len(ids) % pageSize) != 0:
         pageCount += 1
 
     return {
-        "items": ids[skip:skip+pageSize],
+        "items": ids[skip : skip + pageSize],
         "pageCount": pageCount,
         "pageNumber": pageNumber,
-        "pageSize": pageSize
+        "pageSize": pageSize,
     }

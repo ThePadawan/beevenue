@@ -4,6 +4,7 @@ from sashimmie import sashimmie
 def test_sushi_none_saved(adminClient, monkeypatch):
     def mock_get_saved(config):
         return []
+
     monkeypatch.setattr(sashimmie, "get_saved", mock_get_saved)
 
     r = adminClient.post("/sushi/next")
@@ -13,7 +14,7 @@ def test_sushi_none_saved(adminClient, monkeypatch):
 
 
 def test_sushi_two_saved(adminClient, monkeypatch):
-    with open("test/resources/medium_to_be_uploaded.png", 'rb') as f:
+    with open("test/resources/medium_to_be_uploaded.png", "rb") as f:
         medium_bytes = f.read()
 
     def mock_get_saved(config):

@@ -1,18 +1,15 @@
 DEBUG = True
 
-SQLALCHEMY_DATABASE_URI = 'POTATO'
+SQLALCHEMY_DATABASE_URI = "POTATO"
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-COMMIT_ID = 'TESTING'
+COMMIT_ID = "TESTING"
 
-BEEVENUE_ALLOWED_CORS_ORIGINS = ['http://localhost:*']
+BEEVENUE_ALLOWED_CORS_ORIGINS = ["http://localhost:*"]
 
-BEEVENUE_THUMBNAIL_SIZES = {
-    's': 240,
-    'l': 600
-}
+BEEVENUE_THUMBNAIL_SIZES = {"s": 240, "l": 600}
 
-BEEVENUE_RULES_FILE = 'test/resources/testing_rules.json'
+BEEVENUE_RULES_FILE = "test/resources/testing_rules.json"
 
 SECRET_KEY = "TESTING_ONLY"
 

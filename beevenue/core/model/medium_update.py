@@ -8,7 +8,7 @@ from . import tags
 
 def update_rating(session, medium, new_rating):
     # Update rating
-    if (medium.rating != new_rating and new_rating != 'u'):
+    if medium.rating != new_rating and new_rating != "u":
         medium.rating = new_rating
         return True
     return False
@@ -49,12 +49,12 @@ def update_tags(session, medium, new_tags):
         session.commit()
 
     # take set of tag ids
-    target_tag_ids = set(existing_tag_id_by_name.values()) | set([t.id for t in inserted_tags])
+    target_tag_ids = set(existing_tag_id_by_name.values()) | set(
+        [t.id for t in inserted_tags]
+    )
 
     # ensure that medium_tags contains exactly that set
-    d = MediaTags\
-        .delete()\
-        .where(column('medium_id') == medium.id)
+    d = MediaTags.delete().where(column("medium_id") == medium.id)
     session.execute(d)
     session.commit()
 

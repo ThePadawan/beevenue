@@ -1,4 +1,3 @@
-
 class Rule(object):
     def __init__(self, iff, thens):
         if not iff or not thens:
@@ -19,8 +18,8 @@ class Rule(object):
         return False
 
     def pprint(self):
-        result = ''
+        result = ""
         result += self.iff.pprint_if()
-        result += ' '
-        result += ' and '.join([then.pprint_then() for then in self.thens])
+        result += " "
+        result += " and ".join([then.pprint_then() for then in self.thens])
         return result

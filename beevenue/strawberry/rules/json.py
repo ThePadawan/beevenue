@@ -65,5 +65,8 @@ class RuleEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Rule):
             i = RulePartEncoder()
-            return {'if': i.default(obj.iff), 'then': [i.default(t) for t in obj.thens]}
+            return {
+                "if": i.default(obj.iff),
+                "then": [i.default(t) for t in obj.thens],
+            }
         return json.JSONEncoder.default(self, obj)

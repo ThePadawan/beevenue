@@ -11,7 +11,7 @@ from .. import permissions
 
 from .viewmodels import this_import_schema
 
-bp = Blueprint('sushi', __name__)
+bp = Blueprint("sushi", __name__)
 
 
 class HelperBytesIO(BytesIO):
@@ -23,7 +23,7 @@ class HelperBytesIO(BytesIO):
             out_file.write(self.read())
 
 
-@bp.route('/sushi/next', methods=["POST"])
+@bp.route("/sushi/next", methods=["POST"])
 @permissions.is_owner
 def run():
     saved = sashimmie.get_saved(current_app.config)
@@ -49,7 +49,7 @@ def run():
 
                 status = thumbnails.create(medium_result.id)
                 if status == 400:
-                    return '', 400
+                    return "", 400
 
         return this_import_schema.dump(response_dict), 200
     else:

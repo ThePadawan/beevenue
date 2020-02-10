@@ -9,37 +9,33 @@ from beevenue.beevenue import get_application
 # Ignore warning that SQLite + DECIMAL sucks.
 import warnings
 from sqlalchemy.exc import SAWarning
+
 warnings.filterwarnings(
-    'ignore',
+    "ignore",
     r"^Dialect sqlite\+pysqlite does \*not\* support Decimal objects "
     r"natively\, and SQLAlchemy must convert from floating point - "
     r"rounding errors and other issues may occur\. Please consider "
     r"storing Decimal numbers as strings or integers on this platform "
     r"for lossless storage\.$",
-    SAWarning)
+    SAWarning,
+)
 
 
 def _resource(fname):
     return os.path.join(
-        os.path.join(
-            os.path.dirname(__file__),
-            'resources'),
-        fname)
+        os.path.join(os.path.dirname(__file__), "resources"), fname
+    )
 
 
 def _medium_file(fname):
-    return os.path.join(
-        os.path.dirname(__file__),
-        '..',
-        'media',
-        fname)
+    return os.path.join(os.path.dirname(__file__), "..", "media", fname)
 
 
 def _run_testing_sql(temp_path):
-    with open(_resource('testing.sql'), 'rb') as f:
-        TESTING_SQL = f.read().decode('utf-8')
+    with open(_resource("testing.sql"), "rb") as f:
+        TESTING_SQL = f.read().decode("utf-8")
 
-    escaped_temp_path = temp_path.replace('\\', "\\\\")
+    escaped_temp_path = temp_path.replace("\\", "\\\\")
     conn = sqlite3.connect(escaped_temp_path)
     conn.executescript(TESTING_SQL)
     conn.commit()
@@ -66,24 +62,24 @@ def _client(extra=None):
     temp_fd, temp_path = tempfile.mkstemp(suffix=".db")
     print(f"Temp path: {temp_path}")
     temp_nice_path = os.path.abspath(temp_path)
-    connection_string = f'sqlite:///{temp_nice_path}'
+    connection_string = f"sqlite:///{temp_nice_path}"
     print(f"connection_string: {connection_string}")
 
     def extra_config(application):
-        application.config['SQLALCHEMY_DATABASE_URI'] = connection_string
-        application.config['TESTING'] = True
+        application.config["SQLALCHEMY_DATABASE_URI"] = connection_string
+        application.config["TESTING"] = True
 
     def fill_db():
         _run_testing_sql(temp_nice_path)
 
     app = get_application(extra_config, fill_db)
 
-    _ensure_folder('media')
-    _ensure_folder('thumbs')
+    _ensure_folder("media")
+    _ensure_folder("thumbs")
 
-    shutil.copy(_resource("placeholder.jpg"), _medium_file('hash1.jpg'))
-    shutil.copy(_resource("placeholder.jpg"), _medium_file('hash2.jpg'))
-    shutil.copy(_resource("placeholder.jpg"), _medium_file('hash3.jpg'))
+    shutil.copy(_resource("placeholder.jpg"), _medium_file("hash1.jpg"))
+    shutil.copy(_resource("placeholder.jpg"), _medium_file("hash2.jpg"))
+    shutil.copy(_resource("placeholder.jpg"), _medium_file("hash3.jpg"))
 
     # Some tests ruin this file by overwriting it. So we restore it when we're done.
     with open(_resource("testing_rules.json"), "r") as rules_file:
@@ -99,8 +95,8 @@ def _client(extra=None):
     with open(_resource("testing_rules.json"), "w") as rules_file:
         rules_file.write(rules_file_contents)
 
-    _ensure_no_more_folder('media')
-    _ensure_no_more_folder('thumbs')
+    _ensure_no_more_folder("media")
+    _ensure_no_more_folder("thumbs")
 
     os.close(temp_fd)
     os.unlink(temp_path)
@@ -115,9 +111,7 @@ def client():
 @pytest.yield_fixture
 def adminClient():
     def loginAsAdmin(c):
-        res = c.post('/login', json={
-            'username': 'admin',
-            'password': 'admin'})
+        res = c.post("/login", json={"username": "admin", "password": "admin"})
         assert res.status_code == 200
 
     for c in _client(loginAsAdmin):
@@ -127,14 +121,10 @@ def adminClient():
 @pytest.yield_fixture
 def adminNsfwClient():
     def loginAsNsfwAdmin(c):
-        res = c.post('/login', json={
-            'username': 'admin',
-            'password': 'admin'})
+        res = c.post("/login", json={"username": "admin", "password": "admin"})
         assert res.status_code == 200
 
-        res = c.patch('/sfw', json={
-            'sfwSession': False
-        })
+        res = c.patch("/sfw", json={"sfwSession": False})
         assert res.status_code == 200
 
     for c in _client(loginAsNsfwAdmin):
@@ -144,9 +134,7 @@ def adminNsfwClient():
 @pytest.yield_fixture
 def userClient():
     def loginAsUser(c):
-        res = c.post('/login', json={
-            'username': 'user',
-            'password': 'user'})
+        res = c.post("/login", json={"username": "user", "password": "user"})
         assert res.status_code == 200
 
     for c in _client(loginAsUser):
