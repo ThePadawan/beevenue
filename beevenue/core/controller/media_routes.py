@@ -21,10 +21,11 @@ def list_media():
     if not media:
         return res
 
+    # Don't do this for all media since overly large headers break stuff.
     links = []
-    for m in media["items"]:
+    for m in media["items"][:20]:
         links.append(
-            f"</thumbs/{m.id}>; rel=preload; crossorigin=use-credentials; as=image"
+            f"</thumbs/{m.id}>; rel=prefetch; crossorigin=use-credentials; as=image"
         )
 
     res.headers["Link"] = ", ".join(links)

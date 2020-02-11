@@ -50,6 +50,15 @@ def set_client_hint_headers(res):
     if "Accept-CH-Lifetime" not in res.headers:
         res.headers["Accept-CH-Lifetime"] = 86400
 
+    # Turns out that Flask CORS sometimes just doesn't set this header? Hm.
+    if "Access-Control-Allow-Credentials" not in res.headers:
+        res.headers["Access-Control-Allow-Credentials"] = "true"
+
+    if "Access-Control-Allow-Origin" not in res.headers:
+        res.headers["Access-Control-Allow-Origin"] = ",".join(
+            current_app.config["BEEVENUE_ALLOWED_CORS_ORIGINS"]
+        )
+
     return res
 
 
