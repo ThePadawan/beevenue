@@ -1,5 +1,5 @@
 from pathlib import Path
-from flask import request, send_from_directory, jsonify
+from flask import request, send_from_directory, jsonify, make_response
 
 from ... import permissions, notifications
 from ..model import thumbnails, search
@@ -17,7 +17,19 @@ from . import bp
 def search_endpoint():
     search_term_list = request.args.get("q").split(" ")
     media = search.run(search_term_list)
-    return search_results_schema.dump(media)
+
+    obj = search_results_schema.dump(media)
+    res = make_response(obj)
+
+    if not media:
+        return res
+
+    links = []
+    for m in media["items"]:
+        links.append(f"</thumbs/{m.id}>; rel=preload; as=image")
+
+    res.headers["Link"] = ", ".join(links)
+    return res
 
 
 @bp.route("/thumbnails/missing", methods=["GET"])
@@ -45,6 +57,29 @@ def create_thumbnail(medium_id):
 def create_thumbnails(medium_id):
     thumbnails.create_all(medium_id)
     return "", 200
+
+
+@bp.route("/thumbs/<int:medium_id>")
+@permissions.get_medium  # TODO Fixme
+def get_magic_thumb(medium_id):
+    medium = SPINDEX.get_medium(medium_id)
+    if not medium:
+        return 404
+
+    size = "s"
+    if "Width" in request.headers:
+        if int(request.headers["Width"]) > 300:
+            size = "l"
+
+    thumb_path = Path(f"{medium.hash}.{size}.jpg")
+
+    res = send_from_directory("thumbs", thumb_path)
+    # Note this must be distinct from the public route ("/thumbs"),
+    # or Nginx will freak.
+    res.headers["X-Accel-Redirect"] = str(
+        Path("/", "beevenue_thumbs", thumb_path)
+    )
+    return res
 
 
 @bp.route("/thumbs/<int:medium_id>/<path:full_path>")

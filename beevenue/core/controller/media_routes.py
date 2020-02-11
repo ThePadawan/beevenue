@@ -15,7 +15,18 @@ from . import bp
 @schemas.paginated
 def list_media():
     media = run([])
-    return search_results_schema.dump(media)
+    obj = search_results_schema.dump(media)
+    res = make_response(obj)
+
+    if not media:
+        return res
+
+    links = []
+    for m in media["items"]:
+        links.append(f"</thumbs/{m.id}>; rel=preload; as=image")
+
+    res.headers["Link"] = ", ".join(links)
+    return res
 
 
 @bp.route("/medium/<int:medium_id>", methods=["DELETE"])

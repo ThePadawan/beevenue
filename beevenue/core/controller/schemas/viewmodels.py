@@ -30,7 +30,7 @@ class MediumWithThumbsSchema(SpindexMediumSchema):
 
     def get_thumbnail_urls(self, obj):
         return {
-            size: f"/thumbs/{obj.id}/{name}.jpg"
+            size: f"/thumbs/{obj.id}"
             for name, size in current_app.config[
                 "BEEVENUE_THUMBNAIL_SIZES"
             ].items()
