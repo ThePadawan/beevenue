@@ -43,6 +43,17 @@ def login_required_by_default():
         return current_app.login_manager.unauthorized()
 
 
+def set_client_hint_headers(res):
+    if "Accept-CH" not in res.headers:
+        res.headers["Accept-CH"] = "DPR, Viewport-Width, Width, Downlink"
+
+    if "Accept-CH-Lifetime" not in res.headers:
+        res.headers["Accept-CH-Lifetime"] = 86400
+
+    return res
+
+
 def init_app(app):
     app.before_request(context_setter)
     app.before_request(login_required_by_default)
+    app.after_request(set_client_hint_headers)
