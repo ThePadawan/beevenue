@@ -24,6 +24,7 @@ def search_endpoint():
     if not media:
         return res
 
+    # TODO Fix formatting of /api between prod and debug
     # Don't do this for all media since overly large headers break stuff.
     links = []
     for m in media["items"][:20]:
@@ -63,7 +64,7 @@ def create_thumbnails(medium_id):
 
 
 @bp.route("/thumbs/<int:medium_id>")
-@permissions.get_medium  # TODO Fixme
+@permissions.get_medium
 def get_magic_thumb(medium_id):
     medium = SPINDEX.get_medium(medium_id)
     if not medium:

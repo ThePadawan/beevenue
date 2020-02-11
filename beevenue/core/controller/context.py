@@ -44,11 +44,16 @@ def login_required_by_default():
 
 
 def set_client_hint_headers(res):
+    client_hint_fields = ["DPR", "Viewport-Width", "Width", "Downlink"]
+
     if "Accept-CH" not in res.headers:
-        res.headers["Accept-CH"] = "DPR, Viewport-Width, Width, Downlink"
+        res.headers["Accept-CH"] = ", ".join(client_hint_fields)
 
     if "Accept-CH-Lifetime" not in res.headers:
         res.headers["Accept-CH-Lifetime"] = 86400
+
+    for x in client_hint_fields:
+        res.vary.add(x)
 
     # Turns out that Flask CORS sometimes just doesn't set this header? Hm.
     if "Access-Control-Allow-Credentials" not in res.headers:
