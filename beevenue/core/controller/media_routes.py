@@ -25,7 +25,7 @@ def list_media():
     links = []
     for m in media["items"][:20]:
         links.append(
-            f"</thumbs/{m.id}>; rel=prefetch; crossorigin=use-credentials; as=image"
+            f"</api/thumbs/{m.id}>; rel=prefetch; crossorigin=use-credentials; as=image"
         )
 
     res.headers["Link"] = ", ".join(links)
