@@ -44,7 +44,7 @@ def login_required_by_default():
 
 
 def set_client_hint_headers(res):
-    client_hint_fields = ["DPR", "Viewport-Width", "Width", "Downlink"]
+    client_hint_fields = ["Viewport-Width"]
 
     if "Accept-CH" not in res.headers:
         res.headers["Accept-CH"] = ", ".join(client_hint_fields)

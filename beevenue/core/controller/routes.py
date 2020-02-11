@@ -71,9 +71,12 @@ def get_magic_thumb(medium_id):
         return 404
 
     size = "s"
-    if "Width" in request.headers:
-        if int(request.headers["Width"]) > 300:
-            size = "l"
+
+    if (
+        "Viewport-Width" in request.headers
+        and int(request.headers["Viewport-Width"]) > 1200
+    ):
+        size = "l"
 
     thumb_path = Path(f"{medium.hash}.{size}.jpg")
 
