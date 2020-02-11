@@ -26,7 +26,9 @@ def search_endpoint():
 
     links = []
     for m in media["items"]:
-        links.append(f"</thumbs/{m.id}>; rel=preload; as=image")
+        links.append(
+            f"</thumbs/{m.id}>; rel=preload; crossorigin=use-credentials; as=image"
+        )
 
     res.headers["Link"] = ", ".join(links)
     return res
