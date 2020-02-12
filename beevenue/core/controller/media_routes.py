@@ -53,7 +53,18 @@ def get_medium(medium_id):
     if status_code == 400:
         return notifications.not_sfw(), 400
 
-    return medium_schema.dump(maybe_medium)
+    obj = medium_schema.dump(maybe_medium)
+
+    res = make_response(obj)
+    links = []
+    for m in maybe_medium.similar:
+        links.append(
+            f"</api/thumbs/{m.id}>; rel=prefetch; crossorigin=use-credentials; as=image"
+        )
+
+    res.headers["Link"] = ", ".join(links)
+
+    return res
 
 
 @bp.route("/medium/<int:medium_id>", methods=["PATCH"])
