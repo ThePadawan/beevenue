@@ -106,6 +106,13 @@ def get_tag_similarity():
     return matrix, 200
 
 
+@bp.route("/tags/implications")
+@permissions.is_owner
+def get_tag_implications():
+    implications = tags.get_all_implications(request.beevenue_context)
+    return implications, 200
+
+
 @bp.route("/tag/<string:name>", methods=["GET", "OPTION"])
 @permissions.is_owner
 def get_tag(name):

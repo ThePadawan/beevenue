@@ -1,7 +1,8 @@
 from collections import defaultdict
+from itertools import groupby
 import re
 
-from ....models import Tag, TagAlias, MediaTags, Medium
+from ....models import Tag, TagAlias, MediaTags, Medium, TagImplication
 
 from ....spindex.signals import tag_renamed
 
@@ -16,6 +17,34 @@ def get(context, name):
         return None
 
     return all_tags[0]
+
+
+def get_all_implications(context):
+    session = context.session()
+    all_rows = session.query(TagImplication).all()
+
+    if not all_rows:
+        return {"nodes": {}, "links": {}}
+
+    all_tag_ids = set()
+    for row in all_rows:
+        all_tag_ids.add(row.implying_tag_id)
+        all_tag_ids.add(row.implied_tag_id)
+
+    tag_names = session.query(Tag).filter(Tag.id.in_(all_tag_ids)).all()
+    tag_name_dict = {t.id: t.tag for t in tag_names}
+
+    edges = {}
+    for left_id, rows in groupby(all_rows, lambda r: r.implying_tag_id):
+        left = tag_name_dict[left_id]
+        right = [tag_name_dict[r.implied_tag_id] for r in rows]
+        edges[left] = right
+
+    nodes = {}
+    for id in all_tag_ids:
+        nodes[tag_name_dict[id]] = {}
+
+    return {"nodes": nodes, "links": edges}
 
 
 def get_similarity_matrix(context):
