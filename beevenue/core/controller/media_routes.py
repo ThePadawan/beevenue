@@ -45,7 +45,7 @@ def delete_medium(medium_id):
 @bp.route("/medium/<int:medium_id>", methods=["GET", "OPTION"])
 @permissions.get_medium
 def get_medium(medium_id):
-    status_code, maybe_medium = media.get(request.beevenue_context, medium_id)
+    status_code, medium = media.get(request.beevenue_context, medium_id)
 
     if status_code == 404:
         return notifications.no_such_medium(medium_id), 404
@@ -53,11 +53,16 @@ def get_medium(medium_id):
     if status_code == 400:
         return notifications.not_sfw(), 400
 
-    obj = medium_schema.dump(maybe_medium)
+    obj = medium_schema.dump(medium)
 
     res = make_response(obj)
     links = []
-    for m in maybe_medium.similar:
+
+    links.append(
+        f"</api/files/{medium.hash}.{media.EXTENSIONS[medium.mime_type]}>; rel=preload; crossorigin=use-credentials; as=image"
+    )
+
+    for m in medium.similar:
         links.append(
             f"</api/thumbs/{m.id}>; rel=prefetch; crossorigin=use-credentials; as=image"
         )
