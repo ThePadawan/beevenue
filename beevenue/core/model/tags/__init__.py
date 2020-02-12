@@ -4,7 +4,7 @@ import re
 
 from ....models import Tag, TagAlias, MediaTags, Medium, TagImplication
 
-from ....spindex.signals import tag_renamed
+from ....spindex.signals import tag_renamed, medium_updated
 
 VALID_TAG_REGEX_INNER = "(?P<category>[a-z]+:)?([a-zA-Z0-9.]+)"
 VALID_TAG_REGEX = re.compile(f"^{VALID_TAG_REGEX_INNER}$")
@@ -133,6 +133,9 @@ def add_batch(context, tag_names, medium_ids):
                 medium.tags.append(tag)
 
     session.commit()
+
+    for medium in all_media:
+        medium_updated.send(medium.id)
     return True
 
 
@@ -179,7 +182,7 @@ def delete_orphans(context):
         session.commit()
 
 
-def rename(context, old_name, new_name):
+def rename(context, old_name: str, new_name: str) -> (str, bool):
     if not new_name:
         return "You must specify a new name", False
 
