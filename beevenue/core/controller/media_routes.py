@@ -59,7 +59,7 @@ def get_medium(medium_id):
     links = []
 
     links.append(
-        f"</api/files/{medium.hash}.{media.EXTENSIONS[medium.mime_type]}>; rel=preload; crossorigin=use-credentials; as=image"
+        f"</api/files/{medium.hash}.{media.EXTENSIONS[medium.mime_type]}>; rel=prefetch; crossorigin=use-credentials; as=image"
     )
 
     for m in medium.similar:
