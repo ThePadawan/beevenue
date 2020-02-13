@@ -10,7 +10,8 @@ def test_cannot_update_medium_as_user(userClient):
 
 def test_can_update_medium_as_admin(adminClient):
     res = adminClient.patch(
-        "/medium/3", json={"rating": "q", "tags": [" some_new_tag   ", "A"]}
+        "/medium/3",
+        json={"rating": "q", "tags": [" some_new_tag   ", "A", "mango"]},
     )
     assert res.status_code == 200
 

@@ -1,4 +1,4 @@
-from abc import abstractmethod, abstractproperty, ABCMeta
+from abc import abstractproperty, ABCMeta
 import re
 
 from ...spindex.spindex import SPINDEX
@@ -8,7 +8,6 @@ class HasAnyTags(metaclass=ABCMeta):
     def __init__(self):
         self.tag_names = None
 
-    @abstractmethod
     def _load_tag_names(self):
         pass
 
@@ -89,9 +88,6 @@ class HasAnyTagsIn(HasAnyTags):
         if not tag_names:
             raise Exception("You must configure at least one name")
         self.tag_names = set(tag_names)
-
-    def _load_tag_names(self):
-        pass
 
     @property
     def _tags_as_str(self):

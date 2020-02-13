@@ -12,6 +12,10 @@ def test_login_incorrect_password_failure(client):
     assert res.status_code == 401
 
 
+def test_login_allows_options_first(client):
+    client.options("/login")
+
+
 def test_double_login_does_not_modify_session(client):
     res = client.post("/login", json={"username": "user", "password": "user"})
     assert res.status_code == 200

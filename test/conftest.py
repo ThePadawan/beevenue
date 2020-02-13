@@ -27,8 +27,16 @@ def _resource(fname):
     )
 
 
+def _file(folder, fname):
+    return os.path.join(os.path.dirname(__file__), "..", folder, fname)
+
+
+def _thumbs_file(fname):
+    return _file("thumbs", fname)
+
+
 def _medium_file(fname):
-    return os.path.join(os.path.dirname(__file__), "..", "media", fname)
+    return _file("media", fname)
 
 
 def _run_testing_sql(temp_path):
@@ -80,6 +88,13 @@ def _client(extra=None):
     shutil.copy(_resource("placeholder.jpg"), _medium_file("hash1.jpg"))
     shutil.copy(_resource("placeholder.jpg"), _medium_file("hash2.jpg"))
     shutil.copy(_resource("placeholder.jpg"), _medium_file("hash3.jpg"))
+
+    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash1.s.jpg"))
+    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash1.l.jpg"))
+    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash2.s.jpg"))
+    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash2.l.jpg"))
+    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash3.s.jpg"))
+    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash3.l.jpg"))
 
     # Some tests ruin this file by overwriting it. So we restore it when we're done.
     with open(_resource("testing_rules.json"), "r") as rules_file:

@@ -7,4 +7,4 @@ def test_logout_no_longer_logged_in(userClient):
 
     res = userClient.get("/login")
     assert res.status_code == 200
-    assert json.loads(res.data) == False
+    assert res.get_json() == False

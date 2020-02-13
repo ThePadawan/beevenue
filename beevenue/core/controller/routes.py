@@ -24,15 +24,9 @@ def search_endpoint():
     if not media:
         return res
 
-    # TODO Fix formatting of /api between prod and debug
     # Don't do this for all media since overly large headers break stuff.
-    links = []
-    for m in media["items"][:20]:
-        links.append(
-            f"</api/thumbs/{m.id}>; rel=prefetch; crossorigin=use-credentials; as=image"
-        )
+    res.push_thumbs(media["items"][:20])
 
-    res.headers["Link"] = ", ".join(links)
     return res
 
 
@@ -68,7 +62,7 @@ def create_thumbnails(medium_id):
 def get_magic_thumb(medium_id):
     medium = SPINDEX.get_medium(medium_id)
     if not medium:
-        return 404
+        return "", 404
 
     size = "s"
 
@@ -94,7 +88,7 @@ def get_magic_thumb(medium_id):
 def get_thumb(medium_id, full_path):
     medium = SPINDEX.get_medium(medium_id)
     if not medium:
-        return 404
+        return "", 404
 
     thumb_path = Path(f"{medium.hash}.{full_path}")
 

@@ -164,7 +164,5 @@ def simplify_implied(context, tag):
 
 def get_all(context):
     session = context.session()
-
     all = session.query(Tag).filter(Tag.implied_by_this != None).all()
-
     return {row.tag: [t.tag for t in row.implied_by_this] for row in all}

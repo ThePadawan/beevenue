@@ -13,7 +13,7 @@ def run(search_term_list):
     medium_ids = _search(context, search_terms)
 
     if not medium_ids:
-        return []
+        return {"items": [], "pageCount": 0, "pageNumber": 1, "pageSize": 1}
 
     medium_ids = list(medium_ids)
     medium_ids.sort(reverse=True)

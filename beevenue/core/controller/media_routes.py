@@ -18,17 +18,9 @@ def list_media():
     obj = search_results_schema.dump(media)
     res = make_response(obj)
 
-    if not media:
-        return res
-
     # Don't do this for all media since overly large headers break stuff.
-    links = []
-    for m in media["items"][:20]:
-        links.append(
-            f"</api/thumbs/{m.id}>; rel=prefetch; crossorigin=use-credentials; as=image"
-        )
+    res.push_thumbs(media["items"][:20])
 
-    res.headers["Link"] = ", ".join(links)
     return res
 
 
@@ -56,18 +48,8 @@ def get_medium(medium_id):
     obj = medium_schema.dump(medium)
 
     res = make_response(obj)
-    links = []
-
-    links.append(
-        f"</api/files/{medium.hash}.{media.EXTENSIONS[medium.mime_type]}>; rel=prefetch; crossorigin=use-credentials; as=image"
-    )
-
-    for m in medium.similar:
-        links.append(
-            f"</api/thumbs/{m.id}>; rel=prefetch; crossorigin=use-credentials; as=image"
-        )
-
-    res.headers["Link"] = ", ".join(links)
+    res.push_file(medium)
+    res.push_thumbs(medium.similar)
 
     return res
 

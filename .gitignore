@@ -9,3 +9,4 @@ beevenue_rules.json
 __pycache__
 .cache
 .coverage
+coverage.xml

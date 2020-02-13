@@ -1,8 +1,9 @@
-from abc import abstractclassmethod, ABCMeta
+from abc import abstractmethod, ABCMeta
 
 
 class SearchTerm(metaclass=ABCMeta):
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def from_match(cls, match):
         pass
 

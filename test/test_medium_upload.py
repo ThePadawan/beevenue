@@ -25,6 +25,20 @@ def test_uploading_medium_as_admin_succeeds(adminClient):
     assert res.status_code == 200
 
 
+def test_uploading_same_medium_twice_fails(adminClient):
+    with open("test/resources/placeholder.jpg", "rb") as f:
+        contents = f.read()
+    res = adminClient.post(
+        "/medium", data={"file": (BytesIO(contents), "example.foo")}
+    )
+    assert res.status_code == 200
+
+    res = adminClient.post(
+        "/medium", data={"file": (BytesIO(contents), "second_example.bar")}
+    )
+    assert res.status_code == 400
+
+
 def test_uploading_medium_with_taggy_filename_succeeds(adminClient):
     with open("test/resources/placeholder.jpg", "rb") as f:
         contents = f.read()

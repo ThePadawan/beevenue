@@ -5,10 +5,6 @@ class BasicSearchTerm(SearchTerm):
     def __init__(self, term):
         self.term = term
 
-    @classmethod
-    def from_match(cls, match):
-        return cls(match.group(1))
-
 
 class NegativeSearchTerm(BasicSearchTerm):
     def __repr__(self):

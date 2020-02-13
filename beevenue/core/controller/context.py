@@ -46,24 +46,20 @@ def login_required_by_default():
 def set_client_hint_headers(res):
     client_hint_fields = ["Viewport-Width"]
 
-    if "Accept-CH" not in res.headers:
-        res.headers["Accept-CH"] = ", ".join(client_hint_fields)
-
-    if "Accept-CH-Lifetime" not in res.headers:
-        res.headers["Accept-CH-Lifetime"] = 86400
+    res.headers.setdefault("Accept-CH", ", ".join(client_hint_fields))
+    res.headers.setdefault("Accept-CH-Lifetime", 86400)
 
     for x in client_hint_fields:
         res.vary.add(x)
 
-    # Turns out that Flask CORS sometimes just doesn't set this header? Hm.
-    if "Access-Control-Allow-Credentials" not in res.headers:
-        res.headers["Access-Control-Allow-Credentials"] = "true"
+    return res
 
-    if "Access-Control-Allow-Origin" not in res.headers:
-        res.headers["Access-Control-Allow-Origin"] = ",".join(
-            current_app.config["BEEVENUE_ALLOWED_CORS_ORIGINS"]
-        )
 
+def set_server_push_link_header(res):
+    if not hasattr(res, "push_links") or not res.push_links:
+        return res
+
+    res.headers["Link"] = ", ".join(res.push_links)
     return res
 
 
@@ -71,3 +67,4 @@ def init_app(app):
     app.before_request(context_setter)
     app.before_request(login_required_by_default)
     app.after_request(set_client_hint_headers)
+    app.after_request(set_server_push_link_header)

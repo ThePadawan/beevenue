@@ -81,15 +81,12 @@ def get_tags_stats():
 @permissions.is_owner
 @add_tags_batch_schema
 def add_tags_batch():
-    success = tags.add_batch(
+    tags.add_batch(
         request.beevenue_context,
         request.json["tags"],
         request.json["mediumIds"],
     )
-    if success:
-        return "", 200
-    else:
-        return "", 400
+    return "", 200
 
 
 @bp.route("/tags/orphans", methods=["DELETE"])
@@ -150,11 +147,6 @@ def simplify_tag(current_name):
 @bp.route("/tag/<string:name>/aliases/<string:alias>", methods=["DELETE"])
 @permissions.is_owner
 def delete_alias(name, alias):
-    message, success = aliases.remove_alias(
-        request.beevenue_context, name, alias
-    )
+    aliases.remove_alias(request.beevenue_context, name, alias)
 
-    if success:
-        return "", 200
-    else:
-        return notifications.simple_error(message), 400
+    return "", 200
