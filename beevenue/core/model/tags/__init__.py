@@ -1,5 +1,6 @@
 from collections import defaultdict
 from itertools import groupby
+from typing import Tuple
 import re
 
 from ....models import Tag, TagAlias, MediaTags, Medium, TagImplication
@@ -182,7 +183,7 @@ def delete_orphans(context):
         session.commit()
 
 
-def rename(context, old_name: str, new_name: str) -> (str, bool):
+def rename(context, old_name: str, new_name: str) -> Tuple[str, bool]:
     if not new_name:
         return "You must specify a new name", False
 

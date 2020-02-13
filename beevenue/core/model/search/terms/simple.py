@@ -6,20 +6,6 @@ class BasicSearchTerm(SearchTerm):
         self.term = term
 
 
-class NegativeSearchTerm(BasicSearchTerm):
-    def __repr__(self):
-        return f"-{self.term}"
-
-    def applies_to(self, medium):
-        return self.term not in medium.tag_names.searchable
-
-    @classmethod
-    def from_match(cls, match):
-        # group 0 == whole match (e.g. "-foo")
-        # skip first character (always "-") to get term "foo"
-        return cls(match.group(0)[1:])
-
-
 class PositiveSearchTerm(BasicSearchTerm):
     def __repr__(self):
         return f"{self.term}"

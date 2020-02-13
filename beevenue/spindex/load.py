@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict, deque
+from typing import List, Set, Tuple
 from ..models import Medium, Tag, TagAlias, TagImplication
 
 
@@ -22,6 +23,9 @@ class SpindexedMedium(object):
         return cls(**new_kwargs)
 
     def __init__(self, **kwargs):
+        self.id = None
+        self.hash = None
+        self.mime_type = None
         self.__dict__.update(kwargs)
 
     def __str__(self):
@@ -31,7 +35,7 @@ class SpindexedMedium(object):
         return self.__str__()
 
 
-def single_load(session, id):
+def single_load(session, id: int):
     matching_media = session.query(Medium).filter_by(id=id).all()
     if not matching_media:
         return None
@@ -78,14 +82,14 @@ def full_load(session):
 
 class _AbstractDataSource(ABC):
     @abstractmethod
-    def alias_names(self, tag_ids):
+    def alias_names(self, tag_ids: List[int]) -> Set[str]:
         pass
 
-    def implied(self, tag_ids):
+    def implied(self, tag_ids: List[int]) -> Tuple[Set[str], Set[str]]:
         pass
 
 
-class _SingleLoadDataSource(object):
+class _SingleLoadDataSource(_AbstractDataSource):
     def __init__(self, session):
         self.session = session
 
@@ -99,7 +103,7 @@ class _SingleLoadDataSource(object):
 
         return set([t[0] for t in tag_alias_entities])
 
-    def implied(self, tag_ids):
+    def implied(self, tag_ids: List[int]):
         implied_tag_id_entities = (
             self.session.query(TagImplication)
             .filter(TagImplication.c.implying_tag_id.in_(tag_ids))
@@ -119,7 +123,7 @@ class _SingleLoadDataSource(object):
         return implied_tag_ids, implied_tag_names
 
 
-class _FullLoadDataSource(object):
+class _FullLoadDataSource(_AbstractDataSource):
     def __init__(self, implied_by_this, aliases_by_id, tag_name_by_id):
         self.implied_by_this = implied_by_this
         self.aliases_by_id = aliases_by_id
@@ -141,7 +145,7 @@ class _FullLoadDataSource(object):
         return implied_ids, implied_names
 
 
-def _create_spindexed_medium(data_source, medium):
+def _create_spindexed_medium(data_source: _AbstractDataSource, medium):
     # First, get innate tags. These will never change.
     innate_tag_names = set([t.tag for t in medium.tags])
 
@@ -156,15 +160,15 @@ def _create_spindexed_medium(data_source, medium):
     return SpindexedMedium.create(medium, tag_names)
 
 
-def _gather_extra(data_source, medium):
-    extra = set()
+def _gather_extra(data_source: _AbstractDataSource, medium):
+    extra: Set[str] = set()
 
     q = deque()
     initial_tag_ids = set([t.id for t in medium.tags])
     q.append(initial_tag_ids)
 
     while q:
-        tag_ids = q.pop()
+        tag_ids: List[int] = q.pop()
         if not tag_ids:
             continue
 
