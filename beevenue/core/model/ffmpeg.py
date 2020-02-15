@@ -38,7 +38,9 @@ def _get_length_in_seconds(in_path):
         "-",
     ]
 
-    completed_process = subprocess.run(cmd, text=True, stderr=subprocess.PIPE)
+    completed_process = subprocess.run(
+        cmd, encoding="utf-8", stderr=subprocess.PIPE
+    )
 
     td = _get_timedelta(completed_process.stderr)
     seconds = ceil(td.total_seconds())
