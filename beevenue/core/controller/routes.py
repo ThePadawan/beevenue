@@ -50,6 +50,35 @@ def create_thumbnail(medium_id):
     return "", status_code
 
 
+@bp.route("/medium/<int:medium_id>/thumbnail/picks/<int:n>", methods=["GET"])
+@permissions.is_owner
+def show_thumbnail_picks(medium_id, n):
+    status_code, list_of_bytes = thumbnails.generate_picks(medium_id, n)
+
+    if status_code != 200:
+        return "", status_code
+
+    # Idea: We could also use a zip file.
+    base64_strings = []
+    from base64 import b64encode
+
+    for b in list_of_bytes:
+        base64_strings.append(b64encode(b).decode("utf-8"))
+
+    return {"thumbs": base64_strings}
+
+
+@bp.route(
+    "/medium/<int:medium_id>/thumbnail/pick/<int:thumb_index>/<int:n>",
+    methods=["PATCH"],
+)
+@permissions.is_owner
+def pick_thumbnail(medium_id, thumb_index, n):
+    status_code = thumbnails.pick(medium_id, thumb_index, n)
+
+    return notifications.new_thumbnail(), status_code
+
+
 @bp.route("/thumbnails/after/<int:medium_id>", methods=["PATCH"])
 @permissions.is_owner
 def create_thumbnails(medium_id):

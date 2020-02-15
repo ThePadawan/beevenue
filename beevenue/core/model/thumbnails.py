@@ -1,96 +1,54 @@
 import collections
 import os
-from pathlib import Path
 import re
-import subprocess
-from math import ceil
+from pathlib import Path
 
 from flask import current_app, request
 
-import magic
-from PIL import Image
-
-from .media import EXTENSIONS
 from ...models import Medium
+from .media import EXTENSIONS
+from . import ffmpeg
 
 
-class Ffmpeg(object):
-    def _image_thumbnails(self, in_path, out_path_base):
-        with Image.open(in_path) as img:
-            width, height = img.size
-            aspect_ratio = float(width) / height
+def _thumbnailable_video(medium_id):
+    session = request.beevenue_context.session()
+    medium = session.query(Medium).filter_by(id=medium_id).first()
 
-            for thumbnail_size, thumbnail_size_pixels in current_app.config[
-                "BEEVENUE_THUMBNAIL_SIZES"
-            ].items():
-                min_axis = thumbnail_size_pixels
-                out_path = out_path_base.with_suffix(f".{thumbnail_size}.jpg")
-                print(
-                    f"Creating thumb with size {min_axis}, out_path = {out_path}"
-                )
+    if not medium:
+        return 404, None
 
-                if width > height:
-                    min_height = min_axis
-                    min_width = int(ceil(aspect_ratio * min_height))
-                else:
-                    min_width = min_axis
-                    min_height = int(ceil(min_width / aspect_ratio))
+    if not re.match("video/", medium.mime_type):
+        return 400, None
 
-                thumbnail = img.copy()
-                thumbnail.thumbnail((min_width, min_height))
-                if thumbnail.mode != "RGB":
-                    thumbnail = thumbnail.convert("RGB")
-                try:
-                    thumbnail.save(
-                        out_path, quality=80, progressive=True, optimize=True
-                    )
-                except Exception:
-                    background = Image.new(
-                        "RGB", thumbnail.size, (255, 255, 255)
-                    )
-                    # 3 is the alpha channel
-                    background.paste(thumbnail, mask=thumbnail.split()[3])
-                    background.save(
-                        out_path, quality=80, progressive=True, optimize=True
-                    )
+    extension = EXTENSIONS[medium.mime_type]
 
-            thumb_width, thumb_height = thumbnail.size
-            return float(thumb_width) / thumb_height
+    origin_path = os.path.abspath(f"media/{medium.hash}.{extension}")
 
-    def _video_thumbnails(self, in_path, out_path_base):
-        for thumbnail_size, thumbnail_size_pixels in current_app.config[
-            "BEEVENUE_THUMBNAIL_SIZES"
-        ].items():
-            min_axis = thumbnail_size_pixels
-            out_path = out_path_base.with_suffix(f".{thumbnail_size}.jpg")
+    if not os.path.exists(origin_path):
+        return 404, None
 
-            cmd = [
-                "ffmpeg",
-                "-y",
-                f"-i",
-                f"{in_path}",
-                "-vf",
-                f"thumbnail,scale={min_axis}:-1",
-                "-frames:v",
-                "1",
-                f"{out_path}",
-            ]
+    return 200, (origin_path, medium)
 
-            completed_process = subprocess.run(cmd, stdout=subprocess.PIPE)
-            print(completed_process.stdout)
 
-        with Image.open(out_path) as img:
-            width, height = img.size
-            aspect_ratio = float(width) / height
-            return aspect_ratio
+def generate_picks(medium_id, n):
+    status_code, t = _thumbnailable_video(medium_id)
 
-    def thumbnails(self, in_path, out_path, mime_type):
-        still_out_path = Path(out_path).with_suffix("")
+    if status_code != 200:
+        return status_code, None
 
-        if re.match("image/", mime_type):
-            return self._image_thumbnails(in_path, still_out_path)
-        elif re.match("video/", mime_type):
-            return self._video_thumbnails(in_path, still_out_path)
+    origin_path, _ = t
+    return 200, ffmpeg.generate_picks(n, origin_path)
+
+
+def pick(medium_id, thumb_index, n):
+    status_code, t = _thumbnailable_video(medium_id)
+
+    if status_code != 200:
+        return status_code, None
+
+    origin_path, medium = t
+    ffmpeg.pick(n, origin_path, thumb_index, medium.hash)
+    return 200
 
 
 def create(medium_id):
@@ -139,7 +97,7 @@ def _create(mime_type, hash):
     if not os.path.exists(origin_path):
         return False
 
-    return Ffmpeg().thumbnails(origin_path, thumb_path, mime_type)
+    return ffmpeg.thumbnails(origin_path, thumb_path, mime_type)
 
 
 def _add_media_with_missing_media_files(all_media, result):

@@ -64,6 +64,12 @@ def tag_renamed():
     )
 
 
+def new_thumbnail():
+    return _make_notification(
+        NotificationLevel.INFO, _text(f"New thumbnail now available.")
+    )
+
+
 def medium_uploaded(medium_id):
     return _make_notification(
         NotificationLevel.INFO,
