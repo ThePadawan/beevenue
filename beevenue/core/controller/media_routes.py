@@ -102,7 +102,7 @@ def get_backup_sh():
 
     response = make_response(
         render_template(
-            "backup.sh",
+            "backup.sh.template",
             medium_ids=all_media_ids,
             base_url=base_path,
             session_cookie=session_cookie,

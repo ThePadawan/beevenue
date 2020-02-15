@@ -77,9 +77,6 @@ def get_application(extra_config=None, fill_db=None):
         origins=application.config["BEEVENUE_ALLOWED_CORS_ORIGINS"],
     )
 
-    # if application.config['DEBUG']:
-    #     application.config['SQLALCHEMY_ECHO'] = True
-
     from .db import db
 
     db.init_app(application)
@@ -133,6 +130,10 @@ def get_application(extra_config=None, fill_db=None):
         # but before filling Spindex from DB.
         if fill_db:
             fill_db()
+
+        from .cache import init_app as cache_init_app
+
+        cache_init_app(application)
 
         from .spindex import init_app as spindex_init_app
 

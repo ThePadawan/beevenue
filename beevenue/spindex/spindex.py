@@ -1,5 +1,6 @@
 from contextlib import AbstractContextManager
 from .load import single_load, SpindexedMedium
+from ..cache import cache
 
 
 class _SpindexMedia(object):
@@ -24,22 +25,17 @@ class _SpindexMedia(object):
 
 
 class _CacheContextManager(AbstractContextManager):
-    MEDIA = None
-
     def __init__(self, write_on_exit):
         self._to_write = None
         self.write_on_exit = write_on_exit
 
     def __enter__(self):
-        if not _CacheContextManager.MEDIA:
-            _CacheContextManager.MEDIA = _SpindexMedia()
-
-        self._to_write = _CacheContextManager.MEDIA
+        self._to_write = cache.get("MEDIA") or _SpindexMedia()
         return self._to_write
 
     def __exit__(self, *details):
         if self.write_on_exit:
-            _CacheContextManager.MEDIA = self._to_write
+            cache.set("MEDIA", self._to_write)
 
 
 class Spindex(object):

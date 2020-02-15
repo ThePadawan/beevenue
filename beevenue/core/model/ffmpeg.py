@@ -48,7 +48,6 @@ def _get_length_in_seconds(in_path):
 
 
 def _get_timedelta(ffmpeg_stderr):
-    # line_regex = re.compile(r".* time=(.*?) ")
     line_regex = re.compile(
         r".* time=(?P<hours>..):(?P<minutes>..):(?P<seconds>..).(?P<centiseconds>..) "
     )
