@@ -2,6 +2,7 @@ from flask import session, request, current_app
 from flask_login import current_user
 
 from ...db import db
+from ...cache import cache
 
 
 class BeevenueContext(object):
@@ -63,8 +64,37 @@ def set_server_push_link_header(res):
     return res
 
 
+class MemoizedSpindex(object):
+    def __init__(self):
+        self.spindex = None
+        self.do_write = False
+
+    def __call__(self, do_write):
+        self.do_write |= do_write
+        if self.spindex is None:
+            self.spindex = cache.get("MEDIA")
+        return self.spindex
+
+    def exit(self):
+        if self.do_write:
+            cache.set("MEDIA", self.spindex)
+
+
+def spindex_memoize():
+    request.spindex = MemoizedSpindex()
+
+
+def spindex_unmemoize(res):
+    if hasattr(request, "spindex"):
+        request.spindex.exit()
+    return res
+
+
 def init_app(app):
     app.before_request(context_setter)
     app.before_request(login_required_by_default)
+    app.before_request(spindex_memoize)
+
     app.after_request(set_client_hint_headers)
     app.after_request(set_server_push_link_header)
+    app.after_request(spindex_unmemoize)

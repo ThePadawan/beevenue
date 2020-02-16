@@ -1,4 +1,6 @@
-from contextlib import AbstractContextManager
+from flask import request
+
+from contextlib import AbstractContextManager, contextmanager
 from .load import single_load, SpindexedMedium
 from ..cache import cache
 
@@ -24,31 +26,34 @@ class _SpindexMedia(object):
             del self.data[id]
 
 
-class _CacheContextManager(AbstractContextManager):
-    def __init__(self, write_on_exit):
+@contextmanager
+def _cache_context(write_on_exit):
+    yield request.spindex(write_on_exit)
+
+
+class _InitializationContext(AbstractContextManager):
+    def __init__(self):
         self._to_write = None
-        self.write_on_exit = write_on_exit
 
     def __enter__(self):
-        self._to_write = cache.get("MEDIA") or _SpindexMedia()
+        self._to_write = _SpindexMedia()
         return self._to_write
 
     def __exit__(self, *details):
-        if self.write_on_exit:
-            cache.set("MEDIA", self._to_write)
+        cache.set("MEDIA", self._to_write)
 
 
 class Spindex(object):
     @property
     def _read_context(self):
-        return _CacheContextManager(False)
+        return _cache_context(False)
 
     @property
     def _write_context(self):
         # Note: This *always* writes, even if no actual modification
         # took place. This makes it less laborious for the caller to explicitly
         # decide when to write or not (using a "dirty" flag or similar).
-        return _CacheContextManager(True)
+        return _cache_context(True)
 
     def all(self):
         with self._read_context as c:
@@ -123,7 +128,7 @@ class Spindex(object):
             ctx.remove_id(id)
 
     def add_media(self, media):
-        with self._write_context as ctx:
+        with _InitializationContext() as ctx:
             for m in media:
                 ctx.add(m)
 
