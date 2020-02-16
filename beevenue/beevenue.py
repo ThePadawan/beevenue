@@ -80,7 +80,7 @@ def get_application(extra_config=None, fill_db=None):
     from .db import db
 
     db.init_app(application)
-    migrate = Migrate(application, db)
+    Migrate(application, db)
 
     if application.config.get("SENTRY_DSN"):
         import sentry_sdk
@@ -124,11 +124,12 @@ def get_application(extra_config=None, fill_db=None):
 
         application.json_encoder = RuleEncoder
 
-        db.create_all()
-
         # Only used for testing - needs to happen after DB is setup,
         # but before filling Spindex from DB.
         if fill_db:
+            # Tests also don't use migrations, they just create the schema
+            # from scratch.
+            db.create_all()
             fill_db()
 
         from .cache import init_app as cache_init_app

@@ -12,7 +12,7 @@ pip install -r requirements.linuxonly.txt
 # which we shorten to 8 characters.
 sed -i 's/\(COMMIT_ID = \)\(.*\)/\1\"'${1:0:8}'\"/g' beevenue_config.prod.py
 
-#echo "Running migrations"
-#/bin/bash ./flask.prod.sh db upgrade
+echo "Running migrations"
+/bin/bash ./flask.prod.sh db upgrade
 
 sudo service supervisor start

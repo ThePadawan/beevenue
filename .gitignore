@@ -5,6 +5,8 @@ test/media/
 test/thumbs/
 beevenue_config.py
 beevenue_rules.json
+beevenue_cache/
+test-cache/
 
 __pycache__
 .cache
