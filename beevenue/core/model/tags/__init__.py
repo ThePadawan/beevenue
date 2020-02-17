@@ -1,6 +1,5 @@
 from collections import defaultdict
 from itertools import groupby
-from sqlalchemy.orm import joinedload
 from typing import Tuple
 import re
 

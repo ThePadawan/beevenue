@@ -18,6 +18,18 @@ class PositiveSearchTerm(BasicSearchTerm):
         return cls(match.group(0))
 
 
+class ExactSearchTerm(BasicSearchTerm):
+    def __repr__(self):
+        return f"+{self.term}"
+
+    def applies_to(self, medium):
+        return self.term in medium.tag_names.innate
+
+    @classmethod
+    def from_match(cls, match):
+        return cls(match.group(1))
+
+
 class RatingSearchTerm(SearchTerm):
     def __init__(self, rating):
         self.rating = rating
