@@ -159,11 +159,21 @@ def create(session, name):
 
 def get_statistics(context):
     session = context.session()
-    all_tags = (
-        session.query(Tag)
-        .options(joinedload(Tag.implying_this).joinedload(Tag.implied_by_this))
-        .all()
-    )
+    all_tags = session.query(Tag).all()
+
+    all_direct_implications = session.query(TagImplication).all()
+
+    implying_this_count = defaultdict(int)
+    implied_by_this_count = defaultdict(int)
+
+    for i in all_direct_implications:
+        implying_this_count[i.implied_tag_id] += 1
+        implied_by_this_count[i.implying_tag_id] += 1
+
+    for t in all_tags:
+        t.implied_by_this_count = implied_by_this_count[t.id]
+        t.implying_this_count = implying_this_count[t.id]
+
     return all_tags
 
 
