@@ -118,7 +118,7 @@ class Spindex(object):
     def remove_implication(self, implying, implied):
         with self._write_context as ctx:
             for m in ctx.get_all():
-                if implying in m.tag_names.searchable:
+                if set([implying, implied]) <= m.tag_names.searchable:
                     m.tag_names.searchable.remove(implied)
 
             return True

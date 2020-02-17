@@ -81,12 +81,17 @@ def get_tags_stats():
 @permissions.is_owner
 @add_tags_batch_schema
 def add_tags_batch():
-    tags.add_batch(
+    result = tags.add_batch(
         request.beevenue_context,
         request.json["tags"],
         request.json["mediumIds"],
     )
-    return "", 200
+
+    if not result:
+        return notifications.simple_warning("No tags added")
+
+    tag_count, added_count = result
+    return notifications.tag_batch_added(tag_count, added_count), 200
 
 
 @bp.route("/tags/orphans", methods=["DELETE"])

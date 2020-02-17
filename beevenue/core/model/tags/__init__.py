@@ -1,5 +1,6 @@
 from collections import defaultdict
 from itertools import groupby
+from sqlalchemy.orm import joinedload
 from typing import Tuple
 import re
 
@@ -105,10 +106,10 @@ def add_batch(context, tag_names, medium_ids):
 
     # User submitted no non-empty tag names
     if not trimmed_tag_names:
-        return True
+        return None
 
     if not medium_ids:
-        return True
+        return None
 
     session = context.session()
     all_tags = session.query(Tag).filter(Tag.tag.in_(trimmed_tag_names)).all()
@@ -116,28 +117,30 @@ def add_batch(context, tag_names, medium_ids):
     # User submitted only tags that don't exist yet.
     # Note: add_batch does not autocreate tags.
     if not all_tags:
-        return True
+        return None
 
     # load media by ids
     all_media = session.query(Medium).filter(Medium.id.in_(medium_ids)).all()
 
     # User submitted only ids for nonexistant media
     if not all_media:
-        return True
+        return None
 
     tags_by_name = {t.tag: t for t in all_tags}
 
+    added_count = 0
     for tag_name in trimmed_tag_names:
         tag = tags_by_name[tag_name]
         for medium in all_media:
             if tag not in medium.tags:
                 medium.tags.append(tag)
+                added_count += 1
 
     session.commit()
 
     for medium in all_media:
         medium_updated.send(medium.id)
-    return True
+    return len(trimmed_tag_names), added_count
 
 
 def create(session, name):
@@ -156,7 +159,11 @@ def create(session, name):
 
 def get_statistics(context):
     session = context.session()
-    all_tags = session.query(Tag).all()
+    all_tags = (
+        session.query(Tag)
+        .options(joinedload(Tag.implying_this).joinedload(Tag.implied_by_this))
+        .all()
+    )
     return all_tags
 
 

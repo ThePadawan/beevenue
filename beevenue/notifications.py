@@ -24,6 +24,10 @@ def simple_error(text):
     return _make_notification(NotificationLevel.ERROR, _text(text))
 
 
+def simple_warning(text):
+    return _make_notification(NotificationLevel.WARNING, _text(text))
+
+
 def not_sfw():
     return _make_notification(
         NotificationLevel.INFO,
@@ -61,6 +65,17 @@ def no_such_tag(current_name):
 def tag_renamed():
     return _make_notification(
         NotificationLevel.INFO, _text(f"Successfully renamed tag.")
+    )
+
+
+def tag_batch_added(tag_count, added_count):
+    tag_string = "tag"
+    if tag_count > 1:
+        tag_string = "tags"
+
+    return _make_notification(
+        NotificationLevel.INFO,
+        _text(f"Added {tag_string} to {added_count} media."),
     )
 
 
