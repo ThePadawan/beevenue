@@ -71,7 +71,7 @@ def login():
 
     return (
         {
-            "id": maybe_user.id,
+            "id": username,
             "role": maybe_user.role,
             "version": current_app.config["COMMIT_ID"],
             "sfwSession": session["sfwSession"],
