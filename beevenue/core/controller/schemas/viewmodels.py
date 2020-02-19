@@ -14,7 +14,9 @@ class SpindexMediumSchema(Schema):
     id = fields.Int()
     tags = fields.Method("extract_innate_tags")
     similar = fields.Nested(
-        "SimilarMediumSchema", many=True, exclude=["similar"]
+        "SimilarMediumSchema",
+        many=True,
+        only=["id", "mime_type", "rating", "thumbs", "tags"],
     )
     aspect_ratio = fields.Decimal(dump_to="aspectRatio", as_string=True)
     hash = fields.String()
@@ -46,7 +48,11 @@ class SearchResultMediumSchema(MediumWithThumbsSchema):
 
 
 class SearchResultsSchema(Schema):
-    items = fields.Nested(SearchResultMediumSchema, many=True)
+    items = fields.Nested(
+        SearchResultMediumSchema,
+        many=True,
+        only=["id", "aspect_ratio", "hash", "thumbs"],
+    )
     pageCount = fields.Int()
     pageNumber = fields.Int()
     pageSize = fields.Int()
