@@ -15,7 +15,8 @@ search_query_params_schema = requires_query_params(SearchQueryParamsSchema())
 
 
 class UpdateTagSchema(Schema):
-    newName = fields.String(required=True)
+    tag = fields.String()
+    rating = fields.String()
 
 
 update_tag_schema = requires_json_body(UpdateTagSchema())

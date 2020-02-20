@@ -1,16 +1,16 @@
 BEGIN TRANSACTION;
 
-INSERT INTO `tag` VALUES (100, 'u:overwatch');
+INSERT INTO `tag` VALUES (100, 'u:overwatch', 's');
 
-INSERT INTO `tag` VALUES (1000, 'A');
-INSERT INTO `tag` VALUES (1001, 'B');
-INSERT INTO `tag` VALUES (1002, 'C');
+INSERT INTO `tag` VALUES (1000, 'A', 's');
+INSERT INTO `tag` VALUES (1001, 'B', 's');
+INSERT INTO `tag` VALUES (1002, 'C', 's');
 
-INSERT INTO `tag` VALUES (2000, 'u:peter.pan');
-INSERT INTO `tag` VALUES (2001, 'c:tinkerbell');
-INSERT INTO `tag` VALUES (2002, 'c:peter');
+INSERT INTO `tag` VALUES (2000, 'u:peter.pan', 's');
+INSERT INTO `tag` VALUES (2001, 'c:tinkerbell', 's');
+INSERT INTO `tag` VALUES (2002, 'c:peter', 's');
 
-INSERT INTO `tag` VALUES (3001, 's:2d');
+INSERT INTO `tag` VALUES (3001, 's:2d', 's');
 
 INSERT INTO `tagImplication` VALUES (2001, 2000);
 INSERT INTO `tagImplication` VALUES (2002, 2000);

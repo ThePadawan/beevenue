@@ -13,22 +13,20 @@ from .schemas.viewmodels import (
 from . import bp
 
 
+# TODO: Obsolete this
+#         return notifications.tag_renamed(), 200
+
+
 @bp.route("/tag/<string:tag_name>", methods=["PATCH"])
 @permissions.is_owner
 @update_tag_schema
-def update_tag(tag_name):
+def patch_tag(tag_name):
     body = request.json
-    new_name = body.get("newName", None)
+    success, error_or_tag = tags.update(tag_name, body)
+    if not success:
+        return error_or_tag, 400
 
-    session = request.beevenue_context
-    message, success = tags.rename(
-        session, old_name=tag_name, new_name=new_name
-    )
-
-    if success:
-        return notifications.tag_renamed(), 200
-    else:
-        return notifications.simple_error(message), 404
+    return tag_show_schema.dump(error_or_tag), 200
 
 
 @bp.route(

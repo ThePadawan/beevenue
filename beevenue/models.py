@@ -17,6 +17,9 @@ class Tag(db.Model):
     __tablename__ = "tag"
     id = db.Column(db.Integer, primary_key=True)
     tag = db.Column(db.String(length=256), unique=True, nullable=False)
+    rating = db.Column(
+        db.Enum("e", "s", "q", "u", name="Rating"), nullable=False
+    )
 
     aliases = db.relationship("TagAlias", lazy="joined")
 

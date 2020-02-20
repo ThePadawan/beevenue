@@ -9,10 +9,8 @@ def test_cannot_update_tag_as_user(userClient):
 
 
 def test_updating_missing_tag_as_admin_404s(adminClient):
-    res = adminClient.patch(
-        "/tag/potatoCanister", json={"newName": "u:tubular"}
-    )
-    assert res.status_code == 404
+    res = adminClient.patch("/tag/potatoCanister", json={"tag": "u:tubular"})
+    assert (res.status_code // 100) == 4
 
 
 def test_update_as_admin_validates_schema(adminClient):
@@ -23,12 +21,10 @@ def test_update_as_admin_validates_schema(adminClient):
 
 
 def test_can_update_current_tag_as_admin(adminClient):
-    res = adminClient.patch(
-        "/tag/u:overwatch", json={"newName": "u:overwatch2"}
-    )
+    res = adminClient.patch("/tag/u:overwatch", json={"tag": "u:overwatch2"})
     assert res.status_code == 200
 
 
 def test_can_merge_current_tag_as_admin(adminClient):
-    res = adminClient.patch("/tag/A", json={"newName": "B"})
+    res = adminClient.patch("/tag/A", json={"tag": "B"})
     assert res.status_code == 200

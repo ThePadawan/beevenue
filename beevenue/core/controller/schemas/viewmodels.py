@@ -68,6 +68,9 @@ class TagShowSchema(Schema):
     aliases = fields.Method("get_aliases")
     count = fields.Method("get_media_count")
 
+    rating = fields.String()
+    tag = fields.String()
+
     implied_by_this = fields.Method("get_implied_by_this")
     implying_this = fields.Method("get_implying_this")
 
@@ -100,6 +103,7 @@ class TagStatisticsSchema(TagSchema):
             "id",
             "tag",
             "media_count",
+            "rating",
             "implied_by_this_count",
             "implying_this_count",
         )

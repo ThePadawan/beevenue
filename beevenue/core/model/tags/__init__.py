@@ -3,6 +3,8 @@ from itertools import groupby
 from typing import Tuple
 import re
 
+from flask import request
+
 from ....models import Tag, TagAlias, MediaTags, Medium, TagImplication
 
 from ....spindex.signals import tag_renamed, medium_updated
@@ -199,25 +201,17 @@ def delete_orphans(context):
         session.commit()
 
 
-def rename(context, old_name: str, new_name: str) -> Tuple[str, bool]:
+def _rename(session, old_tag: Tag, new_name: str) -> Tuple[str, bool]:
     if not new_name:
         return "You must specify a new name", False
 
-    session = context.session()
-
-    old_tags = session.query(Tag).filter(Tag.tag == old_name).all()
-
-    if len(old_tags) != 1:
-        return "Could not find tag with that name", False
-
-    old_tag = old_tags[0]
+    old_name = old_tag.tag
 
     new_tags = session.query(Tag).filter(Tag.tag == new_name).all()
 
     if len(new_tags) < 1:
         # New tag doesn't exist yet. We can simply rename "old_tag".
         old_tag.tag = new_name
-        session.commit()
         tag_renamed.send((old_name, new_name,))
         return "Successfully renamed tag", True
 
@@ -230,7 +224,34 @@ def rename(context, old_name: str, new_name: str) -> Tuple[str, bool]:
     )
 
     session.delete(old_tag)
-    session.commit()
 
     tag_renamed.send((old_name, new_name,))
     return "Successfully renamed tag", True
+
+
+def update(tag_name: str, new_model: dict) -> None:
+    session = request.beevenue_context.session()
+    tag = session.query(Tag).filter(Tag.tag == tag_name).first()
+
+    if not tag:
+        # TODO Standardize
+        return False, "Could not find tag with that name"
+
+    if "tag" in new_model:
+        msg, success = _rename(session, tag, new_model["tag"])
+        if not success:
+            return False, msg
+
+    if "rating" in new_model:
+        rating = new_model["rating"]
+        # TODO Centralize
+        if rating not in ("s", "q", "e"):
+            return False, "Please specify a valid rating"
+
+        tag.rating = rating
+
+    session.commit()
+
+    # TODO Send spindex signal.
+
+    return True, tag
