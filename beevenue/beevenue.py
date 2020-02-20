@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import List
 
@@ -138,7 +139,10 @@ def get_application(extra_config=None, fill_db=None):
 
         from .spindex import init_app as spindex_init_app
 
-        spindex_init_app(application, db.session)
+        if "BEEVENUE_SKIP_SPINDEX" in os.environ:
+            print("Skipping Spindex initialization")
+        else:
+            spindex_init_app(application, db.session)
 
     import beevenue.auth.auth
 

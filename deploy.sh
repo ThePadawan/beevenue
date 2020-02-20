@@ -13,6 +13,6 @@ pip install -r requirements.linuxonly.txt
 sed -i 's/\(COMMIT_ID = \)\(.*\)/\1\"'${1:0:8}'\"/g' beevenue_config.prod.py
 
 echo "Running migrations"
-/bin/bash ./flask.prod.sh db upgrade
+env BEEVENUE_SKIP_SPINDEX=1 /bin/bash ./flask.prod.sh db upgrade
 
 sudo service supervisor start
