@@ -121,47 +121,6 @@ def remove_implication(context, implying, implied):
     return "Success", 200
 
 
-def simplify_implied(context, tag):
-    """ If 'tag' (T1) is implied by any other tags (T2),
-        it no longer makes sense for a medium to be tagged
-        as both T1 and T2. This functions will remove
-        T1 from all media tagged "T1 Tx" iff Tx => T1."""
-
-    session = context.session()
-
-    implied_tag = session.query(Tag).filter_by(tag=tag).first()
-    if not implied_tag:
-        return False
-
-    implying_tags = implied_tag.implying_this
-
-    tag_ids = set([implied_tag.id])
-    tag_ids |= set([t.id for t in implying_tags])
-
-    media_ids_to_clean = (
-        session.query(MediaTags.c.medium_id)
-        .filter(MediaTags.c.tag_id.in_(tag_ids))
-        .group_by(MediaTags.c.medium_id)
-        .having(func.count(MediaTags.c.tag_id) > 1)
-        .all()
-    )
-
-    if not media_ids_to_clean:
-        return False
-
-    media_ids_to_clean = [m[0] for m in media_ids_to_clean]
-
-    d = MediaTags.delete().where(
-        and_(
-            MediaTags.c.tag_id == implied_tag.id,
-            MediaTags.c.medium_id.in_(media_ids_to_clean),
-        )
-    )
-
-    session.execute(d)
-    session.commit()
-
-
 def get_all(context):
     session = context.session()
     all = session.query(Tag).filter(Tag.implied_by_this != None).all()

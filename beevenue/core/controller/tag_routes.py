@@ -141,14 +141,6 @@ def add_alias(current_name, new_alias):
         return notifications.simple_error(message), 400
 
 
-@bp.route("/tag/<string:current_name>/clean", methods=["PATCH"])
-@permissions.is_owner
-def simplify_tag(current_name):
-    implications.simplify_implied(request.beevenue_context, current_name)
-
-    return "", 200
-
-
 @bp.route("/tag/<string:name>/aliases/<string:alias>", methods=["DELETE"])
 @permissions.is_owner
 def delete_alias(name, alias):

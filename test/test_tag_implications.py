@@ -42,13 +42,3 @@ def test_can_add_implication_three_chain(adminClient):
 
 def test_cant_remove_missing_implication(adminClient):
     res = adminClient.delete("/tag/c:tinkerbell/implications/nothing")
-
-
-def test_can_simplify_implications(adminClient):
-    res = adminClient.patch("/tag/u:peter.pan/clean")
-    assert res.status_code == 200
-
-
-def test_simplify_does_nothing_for_tag_without_implications(adminClient):
-    res = adminClient.patch("/tag/B/clean")
-    assert res.status_code == 200
