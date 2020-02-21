@@ -145,17 +145,21 @@ def add_batch(context, tag_names, medium_ids):
 
 
 def create(session, name):
+    """
+    Returns tuple of (needs_to_be_inserted, matching_tag)
+    """
+
     # Don't create tag if there is another tag that has the same 'name'
     maybe_conflict = session.query(Tag).filter_by(tag=name).first()
     if maybe_conflict:
-        return False
+        return False, None
 
     # Don't create tag if there is another tag that has 'name' as an alias
     maybe_conflict = session.query(TagAlias).filter_by(alias=name).first()
     if maybe_conflict:
-        return False
+        return False, maybe_conflict.tag
 
-    return Tag.create(name)
+    return True, Tag.create(name)
 
 
 def get_statistics(context):

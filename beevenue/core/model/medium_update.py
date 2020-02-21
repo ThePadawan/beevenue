@@ -36,21 +36,27 @@ def update_tags(session, medium, new_tags):
     # foreach tag not found in database, create tag
     unknown_tag_names = set(new_tags) - set(existing_tag_names)
 
-    inserted_tags = []
+    new_tags = []
+    need_to_commit = False
 
     for unknown_tag_name in unknown_tag_names:
-        t = tags.create(session, unknown_tag_name)
-        if t:
-            session.add(t)
-            inserted_tags.append(t)
+        needs_to_be_inserted, matching_tag = tags.create(
+            session, unknown_tag_name
+        )
+        if not matching_tag:
+            continue
+        if needs_to_be_inserted:
+            session.add(matching_tag)
+            need_to_commit = True
+        new_tags.append(matching_tag)
 
     # We need this to get the ids to insert into MediaTags later!
-    if inserted_tags:
+    if need_to_commit:
         session.commit()
 
     # take set of tag ids
     target_tag_ids = set(existing_tag_id_by_name.values()) | set(
-        [t.id for t in inserted_tags]
+        [t.id for t in new_tags]
     )
 
     # ensure that medium_tags contains exactly that set
