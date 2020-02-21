@@ -191,6 +191,16 @@ def get_statistics(context):
         t.implied_by_this_count = implied_by_this_count[t.id]
         t.implying_this_count = implying_this_count[t.id]
 
+        if context.user_role == "admin":
+            t.media_count = len(t.media)
+        else:
+            if context.is_sfw:
+                t.media_count = len([m for m in t.media if m.rating == "s"])
+            else:
+                t.media_count = len(
+                    [m for m in t.media if m.rating in ["s", "q"]]
+                )
+
     return all_tags
 
 

@@ -91,12 +91,9 @@ tag_show_schema = TagShowSchema()
 
 
 class TagStatisticsSchema(TagSchema):
-    media_count = fields.Method("get_media_count", data_key="mediaCount")
+    media_count = fields.Int(data_key="mediaCount")
     implying_this_count = fields.Int(data_key="implyingThisCount")
     implied_by_this_count = fields.Int(data_key="impliedByThisCount")
-
-    def get_media_count(self, obj):
-        return len(obj.media)
 
     class Meta:
         fields = (
