@@ -62,12 +62,6 @@ def no_such_tag(current_name):
     )
 
 
-def tag_renamed():
-    return _make_notification(
-        NotificationLevel.INFO, _text(f"Successfully renamed tag.")
-    )
-
-
 def tag_batch_added(tag_count, added_count):
     tag_string = "tag"
     if tag_count > 1:

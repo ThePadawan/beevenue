@@ -234,7 +234,6 @@ def update(tag_name: str, new_model: dict) -> None:
     tag = session.query(Tag).filter(Tag.tag == tag_name).first()
 
     if not tag:
-        # TODO Standardize
         return False, "Could not find tag with that name"
 
     if "tag" in new_model:
@@ -244,14 +243,10 @@ def update(tag_name: str, new_model: dict) -> None:
 
     if "rating" in new_model:
         rating = new_model["rating"]
-        # TODO Centralize
         if rating not in ("s", "q", "e"):
             return False, "Please specify a valid rating"
 
         tag.rating = rating
 
     session.commit()
-
-    # TODO Send spindex signal.
-
     return True, tag

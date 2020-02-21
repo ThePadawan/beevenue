@@ -13,10 +13,6 @@ from .schemas.viewmodels import (
 from . import bp
 
 
-# TODO: Obsolete this
-#         return notifications.tag_renamed(), 200
-
-
 @bp.route("/tag/<string:tag_name>", methods=["PATCH"])
 @permissions.is_owner
 @update_tag_schema
