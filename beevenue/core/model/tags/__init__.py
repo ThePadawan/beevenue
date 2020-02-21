@@ -182,8 +182,8 @@ def get_statistics(context):
     return all_tags
 
 
-def delete_orphans(context):
-    session = context.session()
+def delete_orphans():
+    session = request.beevenue_context.session()
 
     tags_to_delete = (
         session.query(Tag)

@@ -73,6 +73,8 @@ def update_tags(session, medium, new_tags):
         session.execute(insert)
         session.commit()
 
+    tags.delete_orphans()
+
 
 def update_medium(context, medium_id, new_rating, new_tags):
     session = context.session()

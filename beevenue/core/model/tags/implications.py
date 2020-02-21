@@ -1,10 +1,11 @@
 from collections import deque
 
 from sqlalchemy import and_
-from sqlalchemy.sql import func
 
 from ....spindex.signals import implication_added, implication_removed
-from ....models import Tag, TagImplication, MediaTags
+from ....models import Tag, TagImplication
+
+from . import delete_orphans
 
 
 def _identify_implication_tags(session, implying, implied):
@@ -117,6 +118,7 @@ def remove_implication(context, implying, implied):
 
     implying_tag.implied_by_this.remove(implied_tag)
     session.commit()
+    delete_orphans()
     implication_removed.send((implying, implied,))
     return "Success", 200
 

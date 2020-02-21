@@ -91,7 +91,7 @@ def add_tags_batch():
 @bp.route("/tags/orphans", methods=["DELETE"])
 @permissions.is_owner
 def delete_orphan_tags():
-    tags.delete_orphans(request.beevenue_context)
+    tags.delete_orphans()
     return "", 200
 
 
