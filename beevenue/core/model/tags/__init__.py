@@ -188,9 +188,8 @@ def delete_orphans(context):
         .all()
     )
 
-    # Only delete tags if they're not implied by anything
     def is_deletable(tag):
-        return len(tag.implying_this) == 0
+        return len(tag.implying_this) == 0 and len(tag.aliases) == 0
 
     tags_to_delete = [t for t in tags_to_delete if is_deletable(t)]
 
