@@ -65,7 +65,6 @@ def backup_implications():
 
 
 @bp.route("/tags", methods=["GET"])
-@permissions.is_owner
 def get_tags_stats():
     stats = tags.get_statistics(request.beevenue_context)
     return tag_statistics_schema.jsonify(stats)
@@ -86,13 +85,6 @@ def add_tags_batch():
 
     tag_count, added_count = result
     return notifications.tag_batch_added(tag_count, added_count), 200
-
-
-@bp.route("/tags/orphans", methods=["DELETE"])
-@permissions.is_owner
-def delete_orphan_tags():
-    tags.delete_orphans()
-    return "", 200
 
 
 @bp.route("/tags/similarity")

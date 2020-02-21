@@ -164,7 +164,19 @@ def create(session, name):
 
 def get_statistics(context):
     session = context.session()
-    all_tags = session.query(Tag).all()
+
+    filter = None
+
+    if context.user_role != "admin":
+        if context.is_sfw:
+            filter = Tag.rating == "s"
+        else:
+            filter = Tag.rating.in_(["s", "q"])
+
+    q = session.query(Tag)
+    if filter is not None:
+        q = q.filter(*[filter])
+    all_tags = q.all()
 
     all_direct_implications = session.query(TagImplication).all()
 
