@@ -88,14 +88,12 @@ def add_tags_batch():
 
 
 @bp.route("/tags/similarity")
-@permissions.is_owner
 def get_tag_similarity():
     matrix = tags.get_similarity_matrix(request.beevenue_context)
     return matrix, 200
 
 
 @bp.route("/tags/implications")
-@permissions.is_owner
 def get_tag_implications():
     implications = tags.get_all_implications(request.beevenue_context)
     return implications, 200

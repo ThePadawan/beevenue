@@ -9,6 +9,8 @@ from ....models import Tag, TagAlias, MediaTags, Medium, TagImplication
 
 from ....spindex.signals import tag_renamed, medium_updated
 
+from .censorship import Censorship
+
 VALID_TAG_REGEX_INNER = "(?P<category>[a-z]+:)?([a-zA-Z0-9.]+)"
 VALID_TAG_REGEX = re.compile(f"^{VALID_TAG_REGEX_INNER}$")
 
@@ -35,17 +37,19 @@ def get_all_implications(context):
         all_tag_ids.add(row.implied_tag_id)
 
     tag_names = session.query(Tag).filter(Tag.id.in_(all_tag_ids)).all()
-    tag_name_dict = {t.id: t.tag for t in tag_names}
+    tag_dict = {t.id: t for t in tag_names}
+
+    censoring = Censorship(tag_dict, lambda t: t.tag)
 
     edges = {}
     for left_id, rows in groupby(all_rows, lambda r: r.implying_tag_id):
-        left = tag_name_dict[left_id]
-        right = [tag_name_dict[r.implied_tag_id] for r in rows]
+        left = censoring.get_name(left_id)
+        right = [censoring.get_name(r.implied_tag_id) for r in rows]
         edges[left] = right
 
     nodes = {}
     for id in all_tag_ids:
-        nodes[tag_name_dict[id]] = {}
+        nodes[censoring.get_name(id)] = {}
 
     return {"nodes": nodes, "links": edges}
 
@@ -53,22 +57,23 @@ def get_all_implications(context):
 def get_similarity_matrix(context):
     session = context.session()
 
-    tag_names = session.query(Tag).all()
-
-    tag_name_dict = {t.id: t.tag for t in tag_names}
+    all_tags = session.query(Tag).all()
+    tag_dict = {t.id: t for t in all_tags}
 
     media_tags = session.query(MediaTags).all()
-
     grouped_media_ids = defaultdict(set)
 
     for mt in media_tags:
         grouped_media_ids[mt.tag_id].add(mt.medium_id)
 
-    nodes = {
-        tag_name_dict[k]: {"size": len(v)} for k, v in grouped_media_ids.items()
-    }
-
     similarities = {}
+
+    censoring = Censorship(tag_dict, lambda t: t.tag)
+
+    nodes = {
+        censoring.get_name(k): {"size": len(v)}
+        for k, v in grouped_media_ids.items()
+    }
 
     for tag1_id, media1_ids in grouped_media_ids.items():
         similarity_row = {}
@@ -85,12 +90,12 @@ def get_similarity_matrix(context):
             union_size = len(media1_ids | media2_ids)
             similarity = float(intersection_size) / float(union_size)
 
-            similarity_row[tag_name_dict[tag2_id]] = {
+            similarity_row[censoring.get_name(tag2_id)] = {
                 "similarity": similarity,
                 "relevance": union_size,
             }
 
-        similarities[tag_name_dict[tag1_id]] = similarity_row
+        similarities[censoring.get_name(tag1_id)] = similarity_row
 
     return {"nodes": nodes, "links": similarities}
 
