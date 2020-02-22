@@ -1,12 +1,17 @@
 import collections
+from io import BytesIO
 import os
 import re
 from pathlib import Path
 
+from PIL import Image
 from flask import current_app, request
 
 from ...models import Medium
 from .media import EXTENSIONS
+
+from ...spindex.signals import medium_updated
+
 from . import ffmpeg
 
 
@@ -48,6 +53,7 @@ def pick(medium_id, thumb_index, n):
 
     origin_path, medium = t
     ffmpeg.pick(n, origin_path, thumb_index, medium.hash)
+    generate_tiny(medium_id)
     return 200
 
 
@@ -64,6 +70,7 @@ def create(medium_id):
         return 400
 
     maybe_medium.aspect_ratio = maybe_aspect_ratio
+    generate_tiny(medium_id)
     session.commit()
     return 200
 
@@ -145,3 +152,35 @@ def get_missing(session):
         result.append({"mediumId": medium_id, "reasons": reasons})
 
     return result
+
+
+def generate_tiny(medium_id):
+    _generate_tiny(lambda: [Medium.query.get(medium_id)])
+
+
+def generate_all_tiny():
+    _generate_tiny(lambda: Medium.query.all())
+
+
+def _generate_tiny(get_media):
+    size, _ = list(current_app.config["BEEVENUE_THUMBNAIL_SIZES"].items())[0]
+    tiny_thumb_res = current_app.config["BEEVENUE_TINY_THUMBNAIL_SIZE"]
+
+    for m in get_media():
+        out_path = os.path.abspath(f"thumbs/{m.hash}.{size}.jpg")
+
+        with Image.open(out_path, "r") as img:
+            thumbnail = img.copy()
+            thumbnail.thumbnail((tiny_thumb_res, tiny_thumb_res))
+
+            with BytesIO() as out_bytes_io:
+                thumbnail.save(
+                    out_bytes_io, format="JPEG", optimize=True, quality=75
+                )
+                out_bytes = out_bytes_io.getvalue()
+
+        m.tiny_thumbnail = out_bytes
+
+        medium_updated.send(m.id)
+
+    request.beevenue_context.session().commit()

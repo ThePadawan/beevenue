@@ -1,5 +1,6 @@
 import os
 import re
+from time import sleep
 
 import magic
 

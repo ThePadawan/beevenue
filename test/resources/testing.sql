@@ -17,11 +17,11 @@ INSERT INTO `tagImplication` VALUES (2002, 2000);
 
 INSERT INTO `tagAlias` VALUES (1, 2002, 'c:pete');
 
-INSERT INTO `medium` VALUES (1, 'hash1', 'image/jpg', 1.5, 's');
-INSERT INTO `medium` VALUES (2, 'hash2', 'image/jpg', 1.5, 's');
-INSERT INTO `medium` VALUES (3, 'hash3', 'image/jpg', 1.5, 'e');
+INSERT INTO `medium` VALUES (1, 'hash1', 'image/jpg', 1.5, 's', NULL);
+INSERT INTO `medium` VALUES (2, 'hash2', 'image/jpg', 1.5, 's', NULL);
+INSERT INTO `medium` VALUES (3, 'hash3', 'image/jpg', 1.5, 'e', NULL);
 
-INSERT INTO `medium` VALUES (1001, 'hash4', 'image/jpg', 1.5, 's');
+INSERT INTO `medium` VALUES (1001, 'hash4', 'image/jpg', 1.5, 's', NULL);
 
 -- medium_id, tag_id
 INSERT INTO `medium_tag` VALUES (1, 1000);

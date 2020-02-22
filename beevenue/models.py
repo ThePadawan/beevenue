@@ -85,6 +85,8 @@ class Medium(db.Model):
         db.Enum("e", "s", "q", "u", name="Rating"), nullable=False
     )
 
+    tiny_thumbnail = db.Column(db.LargeBinary(), nullable=True)
+
     tags = db.relationship(
         "Tag",
         secondary=MediaTags,

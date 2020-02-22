@@ -44,14 +44,21 @@ class SimilarMediumSchema(MediumWithThumbsSchema):
 
 
 class SearchResultMediumSchema(MediumWithThumbsSchema):
-    pass
+    tiny_thumbnail = fields.Method("get_thumb", data_key="tinyThumbnail")
+
+    def get_thumb(self, obj):
+        import base64
+
+        if obj.tiny_thumbnail:
+            return base64.b64encode(obj.tiny_thumbnail).decode("utf-8")
+        return None
 
 
 class SearchResultsSchema(Schema):
     items = fields.Nested(
         SearchResultMediumSchema,
         many=True,
-        only=["id", "aspect_ratio", "hash", "thumbs"],
+        only=["id", "aspect_ratio", "hash", "thumbs", "tiny_thumbnail"],
     )
     pageCount = fields.Int()
     pageNumber = fields.Int()

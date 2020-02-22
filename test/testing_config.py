@@ -9,6 +9,8 @@ BEEVENUE_ALLOWED_CORS_ORIGINS = ["http://localhost:*"]
 
 BEEVENUE_THUMBNAIL_SIZES = {"s": 240, "l": 600}
 
+BEEVENUE_TINY_THUMBNAIL_SIZE = 8
+
 BEEVENUE_RULES_FILE = "test/resources/testing_rules.json"
 
 SECRET_KEY = "TESTING_ONLY"

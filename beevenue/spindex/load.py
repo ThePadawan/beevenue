@@ -14,7 +14,14 @@ class SpindexedMedium(object):
     @classmethod
     def create(cls, medium, tag_names):
         # Pluck 1:1 fields from entity to kwargs
-        fields = ["id", "aspect_ratio", "mime_type", "hash", "rating"]
+        fields = [
+            "id",
+            "aspect_ratio",
+            "mime_type",
+            "hash",
+            "rating",
+            "tiny_thumbnail",
+        ]
         new_kwargs = {}
         for f in fields:
             new_kwargs[f] = getattr(medium, f)
