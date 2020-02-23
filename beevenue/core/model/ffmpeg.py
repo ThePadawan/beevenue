@@ -66,6 +66,17 @@ def _get_timedelta(ffmpeg_stderr):
         return td
 
 
+def _constrain_aspect_ratio(img):
+    min_aspect_ratio = current_app.config["BEEVENUE_MINIMUM_ASPECT_RATIO"]
+    aspect_ratio = img.width / img.height
+
+    if aspect_ratio < min_aspect_ratio:
+        maximum_height = round((1 / min_aspect_ratio) * img.width)
+        img = img.crop((0, 0, img.width, maximum_height))
+
+    return img
+
+
 def _image_thumbnails(in_path, out_path_base):
     with Image.open(in_path) as img:
         width, height = img.size
@@ -86,6 +97,9 @@ def _image_thumbnails(in_path, out_path_base):
 
             thumbnail = img.copy()
             thumbnail.thumbnail((min_width, min_height))
+
+            thumbnail = _constrain_aspect_ratio(thumbnail)
+
             if thumbnail.mode != "RGB":
                 thumbnail = thumbnail.convert("RGB")
             try:

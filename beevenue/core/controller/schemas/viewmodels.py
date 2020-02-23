@@ -18,7 +18,7 @@ class SpindexMediumSchema(Schema):
         many=True,
         only=["id", "mime_type", "rating", "thumbs", "tags"],
     )
-    aspect_ratio = fields.Decimal(dump_to="aspectRatio", as_string=True)
+    aspect_ratio = fields.Decimal(data_key="aspectRatio", as_string=True)
     hash = fields.String()
     rating = fields.String()
     mime_type = fields.String()
