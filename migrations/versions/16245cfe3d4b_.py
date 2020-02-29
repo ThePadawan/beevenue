@@ -26,6 +26,8 @@ def upgrade():
                 nullable=True,
             ),
         )
+
+    with op.batch_alter_table("tag") as batch_op:
         batch_op.execute("UPDATE tag SET rating = 'u'")
         batch_op.alter_column("rating", nullable=False)
     # ### end Alembic commands ###
