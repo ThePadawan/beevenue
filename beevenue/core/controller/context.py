@@ -64,7 +64,7 @@ def set_sendfile_header(res):
     if (
         not hasattr(res, "sendfile_header")
         or not res.sendfile_header
-        or not not current_app.use_x_sendfile
+        or not current_app.use_x_sendfile
     ):
         return res
 
