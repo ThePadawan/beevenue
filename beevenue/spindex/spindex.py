@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, g
 
 from contextlib import AbstractContextManager, contextmanager
 from .load import single_load, SpindexedMedium
@@ -28,7 +28,10 @@ class _SpindexMedia(object):
 
 @contextmanager
 def _cache_context(write_on_exit):
-    yield request.spindex(write_on_exit)
+    if "spindex" in g:
+        yield g.spindex(write_on_exit)
+    else:
+        yield request.spindex(write_on_exit)
 
 
 class _InitializationContext(AbstractContextManager):
@@ -83,11 +86,11 @@ class Spindex(object):
 
             return True
 
-    def reindex_medium(self, session, id):
+    def reindex_medium(self, id):
         with self._write_context as ctx:
             ctx.remove_id(id)
 
-            new_spindexed_medium = single_load(session, id)
+            new_spindexed_medium = single_load(id)
 
             if not new_spindexed_medium:
                 return False

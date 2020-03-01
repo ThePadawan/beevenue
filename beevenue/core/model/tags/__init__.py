@@ -3,10 +3,8 @@ from itertools import groupby
 from typing import Tuple
 import re
 
-from flask import request
-
+from .... import db
 from ....models import Tag, TagAlias, MediaTags, Medium, TagImplication
-
 from ....spindex.signals import tag_renamed, medium_updated
 
 from .censorship import Censorship
@@ -15,8 +13,8 @@ VALID_TAG_REGEX_INNER = "(?P<category>[a-z]+:)?([a-zA-Z0-9.]+)"
 VALID_TAG_REGEX = re.compile(f"^{VALID_TAG_REGEX_INNER}$")
 
 
-def get(context, name):
-    session = context.session()
+def get(name):
+    session = db.session()
     all_tags = session.query(Tag).filter_by(tag=name).all()
     if len(all_tags) != 1:
         return None
@@ -24,8 +22,8 @@ def get(context, name):
     return all_tags[0]
 
 
-def get_all_implications(context):
-    session = context.session()
+def get_all_implications():
+    session = db.session()
     all_rows = session.query(TagImplication).all()
 
     if not all_rows:
@@ -54,8 +52,8 @@ def get_all_implications(context):
     return {"nodes": nodes, "links": edges}
 
 
-def get_similarity_matrix(context):
-    session = context.session()
+def get_similarity_matrix():
+    session = db.session()
 
     all_tags = session.query(Tag).all()
     tag_dict = {t.id: t for t in all_tags}
@@ -107,7 +105,7 @@ def validate(tag_names):
     return [n.strip() for n in tag_names if VALID_TAG_REGEX.match(n)]
 
 
-def add_batch(context, tag_names, medium_ids):
+def add_batch(tag_names, medium_ids):
     trimmed_tag_names = validate(tag_names)
 
     # User submitted no non-empty tag names
@@ -117,7 +115,7 @@ def add_batch(context, tag_names, medium_ids):
     if not medium_ids:
         return None
 
-    session = context.session()
+    session = db.session()
     all_tags = session.query(Tag).filter(Tag.tag.in_(trimmed_tag_names)).all()
 
     # User submitted only tags that don't exist yet.
@@ -149,10 +147,11 @@ def add_batch(context, tag_names, medium_ids):
     return len(trimmed_tag_names), added_count
 
 
-def create(session, name):
+def create(name):
     """
     Returns tuple of (needs_to_be_inserted, matching_tag)
     """
+    session = db.session()
 
     # Don't create tag if there is another tag that has the same 'name'
     maybe_conflict = session.query(Tag).filter_by(tag=name).first()
@@ -168,7 +167,7 @@ def create(session, name):
 
 
 def get_statistics(context):
-    session = context.session()
+    session = db.session()
 
     filter = None
 
@@ -210,7 +209,7 @@ def get_statistics(context):
 
 
 def delete_orphans():
-    session = request.beevenue_context.session()
+    session = db.session()
 
     tags_to_delete = (
         session.query(Tag)
@@ -260,7 +259,7 @@ def _rename(session, old_tag: Tag, new_name: str) -> Tuple[str, bool]:
 
 
 def update(tag_name: str, new_model: dict) -> None:
-    session = request.beevenue_context.session()
+    session = db.session()
     tag = session.query(Tag).filter(Tag.tag == tag_name).first()
 
     if not tag:

@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from flask import Blueprint, current_app, request
+from flask import Blueprint, current_app
 
 from sashimmie import sashimmie
 
@@ -31,13 +31,12 @@ def run():
     response_dict = {"status": "done", "newIds": []}
 
     for id, files in saved:
-        session = request.beevenue_context.session()
 
         print(f"Submission {id} consists of {len(files)} files")
         for file_tuple in files:
             stream = HelperBytesIO(file_tuple[1])
             stream.filename = file_tuple[2]
-            success, medium_result = upload_file(session, stream)
+            success, medium_result = upload_file(stream)
 
             sashimmie.acknowledge(id)
             response_dict["status"] = "continue"

@@ -22,5 +22,5 @@ def status():
 @bp.route("/spindex/reindex", methods=["POST"])
 @permissions.is_owner
 def reindex():
-    full_load(request.beevenue_context.session())
+    full_load()
     return f"Full load finished. Loaded {len(SPINDEX.all())} entries.", 200

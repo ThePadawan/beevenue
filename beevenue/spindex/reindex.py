@@ -1,5 +1,3 @@
-from flask import request
-
 from .signals import (
     medium_deleted,
     medium_added,
@@ -15,7 +13,7 @@ from .spindex import SPINDEX
 
 
 def _reindex_medium(id):
-    SPINDEX.reindex_medium(request.beevenue_context.session(), id)
+    SPINDEX.reindex_medium(id)
 
 
 def _rename_tag(names):

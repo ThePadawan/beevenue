@@ -1,7 +1,7 @@
 from pathlib import Path
 from flask import request, send_from_directory, jsonify, make_response
 
-from ... import permissions, notifications
+from ... import permissions, notifications, db
 from ..model import thumbnails, search
 from ...spindex.spindex import SPINDEX
 
@@ -33,7 +33,7 @@ def search_endpoint():
 @bp.route("/thumbnails/missing", methods=["GET"])
 @permissions.is_owner
 def get_missing_thumbnails():
-    session = request.beevenue_context.session()
+    session = db.session()
     missing = thumbnails.get_missing(session)
 
     return jsonify(missing_thumbnails_schema.dump(missing))

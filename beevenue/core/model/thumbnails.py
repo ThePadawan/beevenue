@@ -5,8 +5,9 @@ import re
 from pathlib import Path
 
 from PIL import Image
-from flask import current_app, request
+from flask import current_app
 
+from ... import db
 from ...models import Medium
 from .media import EXTENSIONS
 
@@ -16,7 +17,7 @@ from . import ffmpeg
 
 
 def _thumbnailable_video(medium_id):
-    session = request.beevenue_context.session()
+    session = db.session()
     medium = session.query(Medium).filter_by(id=medium_id).first()
 
     if not medium:
@@ -58,7 +59,7 @@ def pick(medium_id, thumb_index, n):
 
 
 def create(medium_id):
-    session = request.beevenue_context.session()
+    session = db.session()
     maybe_medium = session.query(Medium).filter_by(id=medium_id).first()
 
     if not maybe_medium:
@@ -70,13 +71,13 @@ def create(medium_id):
         return 400
 
     maybe_medium.aspect_ratio = maybe_aspect_ratio
-    generate_tiny(medium_id)
+    generate_tiny(medium_id, session)
     session.commit()
     return 200
 
 
 def create_all(medium_id_threshold):
-    session = request.beevenue_context.session()
+    session = db.session()
     all_media = (
         session.query(Medium).filter(Medium.id > medium_id_threshold).all()
     )
@@ -154,15 +155,15 @@ def get_missing(session):
     return result
 
 
-def generate_tiny(medium_id):
-    _generate_tiny(lambda: [Medium.query.get(medium_id)])
+def generate_tiny(medium_id, session):
+    _generate_tiny(lambda: [Medium.query.get(medium_id)], session)
 
 
 def generate_all_tiny():
-    _generate_tiny(lambda: Medium.query.all())
+    _generate_tiny(lambda: Medium.query.all(), db.session())
 
 
-def _generate_tiny(get_media):
+def _generate_tiny(get_media, session):
     size, _ = list(current_app.config["BEEVENUE_THUMBNAIL_SIZES"].items())[0]
     tiny_thumb_res = current_app.config["BEEVENUE_TINY_THUMBNAIL_SIZE"]
 
@@ -183,4 +184,4 @@ def _generate_tiny(get_media):
 
         medium_updated.send(m.id)
 
-    request.beevenue_context.session().commit()
+    session.commit()

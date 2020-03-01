@@ -2,6 +2,7 @@ from collections import deque
 
 from sqlalchemy import and_
 
+from .... import db
 from ....spindex.signals import implication_added, implication_removed
 from ....models import Tag, TagImplication
 
@@ -50,8 +51,8 @@ def _would_create_implication_cycle(session, implying_tag, implied_tag):
     return False
 
 
-def add_implication(context, implying, implied):
-    session = context.session()
+def add_implication(implying, implied):
+    session = db.session()
 
     did_find_tags, tags_or_message = _identify_implication_tags(
         session, implying, implied
@@ -90,8 +91,8 @@ def add_implication(context, implying, implied):
     return "Success", True
 
 
-def remove_implication(context, implying, implied):
-    session = context.session()
+def remove_implication(implying, implied):
+    session = db.session()
 
     did_find_tags, tags_or_message = _identify_implication_tags(
         session, implying, implied
@@ -123,7 +124,7 @@ def remove_implication(context, implying, implied):
     return "Success", 200
 
 
-def get_all(context):
-    session = context.session()
+def get_all():
+    session = db.session()
     all = session.query(Tag).filter(Tag.implied_by_this != None).all()
     return {row.tag: [t.tag for t in row.implied_by_this] for row in all}

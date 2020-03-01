@@ -1,7 +1,6 @@
-from flask import session, request, current_app
+from flask import session, request, current_app, g
 from flask_login import current_user
 
-from ...db import db
 from ...cache import cache
 
 
@@ -9,9 +8,6 @@ class BeevenueContext(object):
     def __init__(self, is_sfw, user_role):
         self.is_sfw = is_sfw
         self.user_role = user_role
-
-    def session(self):
-        return db.session
 
 
 def context_setter():
@@ -98,3 +94,7 @@ def init_app(app):
     app.after_request(set_client_hint_headers)
     app.after_request(set_server_push_link_header)
     app.after_request(spindex_unmemoize)
+
+    @app.teardown_appcontext
+    def teardown_session(x):
+        g.pop("session", None)

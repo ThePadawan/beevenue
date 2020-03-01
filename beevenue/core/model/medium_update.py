@@ -2,11 +2,12 @@ from sqlalchemy.sql import column
 
 from ...spindex.signals import medium_updated
 from ...models import Medium, Tag, MediaTags
+from ... import db
 
 from . import tags
 
 
-def update_rating(session, medium, new_rating):
+def update_rating(medium, new_rating):
     # Update rating
     if medium.rating != new_rating and new_rating != "u":
         medium.rating = new_rating
@@ -40,9 +41,7 @@ def update_tags(session, medium, new_tags):
     need_to_commit = False
 
     for unknown_tag_name in unknown_tag_names:
-        needs_to_be_inserted, matching_tag = tags.create(
-            session, unknown_tag_name
-        )
+        needs_to_be_inserted, matching_tag = tags.create(unknown_tag_name)
         if not matching_tag:
             continue
         if needs_to_be_inserted:
@@ -76,14 +75,14 @@ def update_tags(session, medium, new_tags):
     tags.delete_orphans()
 
 
-def update_medium(context, medium_id, new_rating, new_tags):
-    session = context.session()
+def update_medium(medium_id, new_rating, new_tags):
+    session = db.session()
 
     maybe_medium = Medium.query.get(medium_id)
     if not maybe_medium:
         return False
 
-    update_rating(session, maybe_medium, new_rating)
+    update_rating(maybe_medium, new_rating)
     update_tags(session, maybe_medium, new_tags)
     medium_updated.send(maybe_medium.id)
     return True

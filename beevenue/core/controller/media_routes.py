@@ -1,6 +1,6 @@
 from flask import request, send_file, render_template, make_response
 
-from ... import notifications, permissions, schemas
+from ... import notifications, permissions, schemas, db
 
 from ..model.search import run
 from ..model.file_upload import upload_file
@@ -27,7 +27,7 @@ def list_media():
 @bp.route("/medium/<int:medium_id>", methods=["DELETE"])
 @permissions.is_owner
 def delete_medium(medium_id):
-    success = media.delete(request.beevenue_context, medium_id)
+    success = media.delete(medium_id)
     if success:
         return "", 200
 
@@ -60,10 +60,7 @@ def update_medium_post(medium_id):
     body = request.json
 
     success = update_medium(
-        request.beevenue_context,
-        medium_id,
-        body.get("rating", None),
-        body.get("tags", None),
+        medium_id, body.get("rating", None), body.get("tags", None),
     )
 
     if success:
@@ -79,8 +76,7 @@ def form_upload_medium():
         return notifications.simple_error("You must supply a file"), 400
 
     stream = next(request.files.values())
-    session = request.beevenue_context.session()
-    success, result = upload_file(session, stream)
+    success, result = upload_file(stream)
 
     if not success:
         return notifications.medium_already_exists(result), 400

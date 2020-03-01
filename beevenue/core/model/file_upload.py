@@ -4,6 +4,7 @@ from time import sleep
 
 import magic
 
+from ... import db
 from ...spindex.signals import medium_added
 from ...models import Medium
 
@@ -44,10 +45,11 @@ def _maybe_add_tags(session, m, file):
 
     update_tags(session, m, tags)
     if rating:
-        update_rating(session, m, rating)
+        update_rating(m, rating)
 
 
-def upload_file(session, file):
+def upload_file(file):
+    session = db.session()
     basename = md5sum(file)
 
     conflicting_medium = Medium.query.filter(Medium.hash == basename).first()

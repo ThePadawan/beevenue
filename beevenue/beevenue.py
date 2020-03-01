@@ -7,6 +7,8 @@ from flask import Flask, Response, current_app
 from flask_migrate import Migrate
 from flask_cors import CORS
 
+
+from .cli import init_cli
 from .core.model import media
 from .spindex.load import SpindexedMedium
 
@@ -142,7 +144,9 @@ def get_application(extra_config=None, fill_db=None):
         if "BEEVENUE_SKIP_SPINDEX" in os.environ:
             print("Skipping Spindex initialization")
         else:
-            spindex_init_app(application, db.session)
+            spindex_init_app(application)
+
+    init_cli(application)
 
     import beevenue.auth.auth
 

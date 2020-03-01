@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from typing import List, Set, Tuple
+from .. import db
 from ..models import Medium, Tag, TagAlias, TagImplication
 
 
@@ -42,7 +43,9 @@ class SpindexedMedium(object):
         return self.__str__()
 
 
-def single_load(session, id: int):
+def single_load(id: int):
+    session = db.session()
+
     matching_media = session.query(Medium).filter_by(id=id).all()
     if not matching_media:
         return None
@@ -54,7 +57,8 @@ def single_load(session, id: int):
     )
 
 
-def full_load(session):
+def full_load():
+    session = db.session()
     all_media = Medium.query.all()
 
     all_implications = session.query(TagImplication).all()

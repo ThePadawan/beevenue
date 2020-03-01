@@ -32,7 +32,7 @@ def patch_tag(tag_name):
 @permissions.is_owner
 def tag_add_implication(tag_name, implied_by_this):
     message, success = implications.add_implication(
-        request.beevenue_context, implying=tag_name, implied=implied_by_this
+        implying=tag_name, implied=implied_by_this
     )
 
     if success:
@@ -48,7 +48,7 @@ def tag_add_implication(tag_name, implied_by_this):
 @permissions.is_owner
 def tag_remove_implication(tag_name, implied_by_this):
     message, success = implications.remove_implication(
-        request.beevenue_context, implying=tag_name, implied=implied_by_this
+        implying=tag_name, implied=implied_by_this
     )
 
     if success:
@@ -60,7 +60,7 @@ def tag_remove_implication(tag_name, implied_by_this):
 @bp.route("/tag/implications/backup")
 @permissions.is_owner
 def backup_implications():
-    all_implications = implications.get_all(request.beevenue_context)
+    all_implications = implications.get_all()
     return all_implications
 
 
@@ -74,11 +74,7 @@ def get_tags_stats():
 @permissions.is_owner
 @add_tags_batch_schema
 def add_tags_batch():
-    result = tags.add_batch(
-        request.beevenue_context,
-        request.json["tags"],
-        request.json["mediumIds"],
-    )
+    result = tags.add_batch(request.json["tags"], request.json["mediumIds"],)
 
     if not result:
         return notifications.simple_warning("No tags added")
@@ -89,20 +85,20 @@ def add_tags_batch():
 
 @bp.route("/tags/similarity")
 def get_tag_similarity():
-    matrix = tags.get_similarity_matrix(request.beevenue_context)
+    matrix = tags.get_similarity_matrix()
     return matrix, 200
 
 
 @bp.route("/tags/implications")
 def get_tag_implications():
-    implications = tags.get_all_implications(request.beevenue_context)
+    implications = tags.get_all_implications()
     return implications, 200
 
 
 @bp.route("/tag/<string:name>", methods=["GET", "OPTION"])
 @permissions.is_owner
 def get_tag(name):
-    maybe_tag = tags.get(request.beevenue_context, name)
+    maybe_tag = tags.get(name)
 
     if not maybe_tag:
         return notifications.no_such_tag(name), 404
@@ -115,9 +111,7 @@ def get_tag(name):
 )
 @permissions.is_owner
 def add_alias(current_name, new_alias):
-    message, success = aliases.add_alias(
-        request.beevenue_context, current_name, new_alias
-    )
+    message, success = aliases.add_alias(current_name, new_alias)
 
     if success:
         return "", 200
@@ -128,6 +122,6 @@ def add_alias(current_name, new_alias):
 @bp.route("/tag/<string:name>/aliases/<string:alias>", methods=["DELETE"])
 @permissions.is_owner
 def delete_alias(name, alias):
-    aliases.remove_alias(request.beevenue_context, name, alias)
+    aliases.remove_alias(name, alias)
 
     return "", 200

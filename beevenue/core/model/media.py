@@ -6,6 +6,7 @@ import zipfile
 from flask import current_app
 from sqlalchemy.orm import load_only
 
+from ... import db
 from ...models import Medium
 from ...spindex.spindex import SPINDEX
 from ...spindex.signals import medium_deleted
@@ -58,7 +59,7 @@ def get_all_ids():
     ]
 
 
-def delete(context, medium_id):
+def delete(medium_id):
     maybe_medium = Medium.query.filter_by(id=medium_id).first()
 
     if not maybe_medium:
@@ -66,7 +67,7 @@ def delete(context, medium_id):
 
     # Delete "Medium" DB row. Note: SQLAlchemy
     # automatically removes MediaTags rows!
-    session = context.session()
+    session = db.session()
     try:
         _delete(session, maybe_medium)
     except FileNotFoundError:

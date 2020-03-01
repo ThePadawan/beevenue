@@ -1,11 +1,12 @@
+from .... import db
 from ....models import Tag, TagAlias
 from ....spindex.signals import alias_added, alias_removed
 
 from . import delete_orphans
 
 
-def add_alias(context, current_name, new_alias):
-    session = context.session()
+def add_alias(current_name, new_alias):
+    session = db.session()
 
     old_tags = session.query(Tag).filter(Tag.tag == current_name).all()
     if len(old_tags) != 1:
@@ -34,8 +35,8 @@ def add_alias(context, current_name, new_alias):
     return "", True
 
 
-def remove_alias(context, name, alias):
-    session = context.session()
+def remove_alias(name, alias):
+    session = db.session()
 
     old_tags = session.query(Tag).filter(Tag.tag == name).all()
     if len(old_tags) != 1:
