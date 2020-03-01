@@ -46,7 +46,7 @@ class BeevenueResponse(Response):
             self.push_links.append(
                 f"<{_thumb_path(m)}>; rel=prefetch; crossorigin=use-credentials; as=image"
             )
-        
+
     def set_sendfile_header(self, path):
         self.sendfile_header = str(path)
 
