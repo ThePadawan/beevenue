@@ -54,7 +54,7 @@ def pick(medium_id, thumb_index, n):
 
     origin_path, medium = t
     ffmpeg.pick(n, origin_path, thumb_index, medium.hash)
-    generate_tiny(medium_id)
+    generate_tiny(medium_id, db.session())
     return 200
 
 
