@@ -34,6 +34,7 @@ class BeevenueResponse(Response):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.push_links = []
+        self.sendfile_header = None
 
     def push_file(self, m: SpindexedMedium):
         self.push_links.append(
@@ -45,6 +46,9 @@ class BeevenueResponse(Response):
             self.push_links.append(
                 f"<{_thumb_path(m)}>; rel=prefetch; crossorigin=use-credentials; as=image"
             )
+        
+    def set_sendfile_header(self, path):
+        self.sendfile_header = str(path)
 
 
 class BeevenueFlask(Flask):

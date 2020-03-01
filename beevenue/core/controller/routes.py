@@ -106,9 +106,7 @@ def get_magic_thumb(medium_id):
     res = send_from_directory("thumbs", thumb_path)
     # Note this must be distinct from the public route ("/thumbs"),
     # or Nginx will freak.
-    res.headers["X-Accel-Redirect"] = str(
-        Path("/", "beevenue_thumbs", thumb_path)
-    )
+    res.set_sendfile_header(Path("/", "beevenue_thumbs", thumb_path))
 
     return res
 
@@ -125,9 +123,7 @@ def get_thumb(medium_id, full_path):
     res = send_from_directory("thumbs", thumb_path)
     # Note this must be distinct from the public route ("/thumbs"),
     # or Nginx will freak.
-    res.headers["X-Accel-Redirect"] = str(
-        Path("/", "beevenue_thumbs", thumb_path)
-    )
+    res.set_sendfile_header(Path("/", "beevenue_thumbs", thumb_path))
 
     return res
 
@@ -145,5 +141,5 @@ def get_file(full_path):
     res = send_from_directory("media", full_path)
     # Note this must be distinct from the public route ("/files"),
     # or Nginx will freak.
-    res.headers["X-Accel-Redirect"] = str(Path("/", "media", full_path))
+    res.set_sendfile_header(Path("/", "media", full_path))
     return res

@@ -60,6 +60,18 @@ def set_server_push_link_header(res):
     return res
 
 
+def set_sendfile_header(res):
+    if (
+        not hasattr(res, "sendfile_header")
+        or not res.sendfile_header
+        or not not current_app.use_x_sendfile
+    ):
+        return res
+
+    res.headers["X-Accel-Redirect"] = res.sendfile_header
+    return res
+
+
 class MemoizedSpindex(object):
     def __init__(self):
         self.spindex = None
@@ -93,6 +105,7 @@ def init_app(app):
 
     app.after_request(set_client_hint_headers)
     app.after_request(set_server_push_link_header)
+    app.after_request(set_sendfile_header)
     app.after_request(spindex_unmemoize)
 
     @app.teardown_appcontext

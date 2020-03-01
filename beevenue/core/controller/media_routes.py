@@ -1,6 +1,6 @@
 from flask import request, send_file, render_template, make_response
 
-from ... import notifications, permissions, schemas, db
+from ... import notifications, permissions, schemas
 
 from ..model.search import run
 from ..model.file_upload import upload_file
