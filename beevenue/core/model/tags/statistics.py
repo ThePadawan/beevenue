@@ -8,9 +8,7 @@ class TagStatistics(object):
         self.tags = tags
 
 
-def get_statistics(context):
-    session = db.session()
-
+def _load_tags(context, session):
     filter = None
 
     if context.user_role != "admin":
@@ -22,7 +20,23 @@ def get_statistics(context):
     q = session.query(Tag)
     if filter is not None:
         q = q.filter(*[filter])
-    all_tags = q.all()
+
+    return q.all()
+
+
+def _censored_media_count(context, media):
+    if context.user_role == "admin":
+        return len(media)
+    if context.is_sfw:
+        return len([m for m in media if m.rating == "s"])
+
+    return len([m for m in media if m.rating in ["s", "q"]])
+
+
+def get_statistics(context):
+    session = db.session()
+
+    all_tags = _load_tags(context, session)
 
     all_direct_implications = session.query(TagImplication).all()
 
@@ -36,15 +50,6 @@ def get_statistics(context):
     for t in all_tags:
         t.implied_by_this_count = implied_by_this_count[t.id]
         t.implying_this_count = implying_this_count[t.id]
-
-        if context.user_role == "admin":
-            t.media_count = len(t.media)
-        else:
-            if context.is_sfw:
-                t.media_count = len([m for m in t.media if m.rating == "s"])
-            else:
-                t.media_count = len(
-                    [m for m in t.media if m.rating in ["s", "q"]]
-                )
+        t.media_count = _censored_media_count(context, t.media)
 
     return TagStatistics(all_tags)

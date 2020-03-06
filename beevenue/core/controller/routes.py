@@ -1,5 +1,5 @@
 from pathlib import Path
-from flask import request, send_from_directory, make_response
+from flask import request, send_from_directory
 
 from ... import permissions, notifications
 from ..model import thumbnails, search
@@ -14,8 +14,7 @@ from . import bp
 @search_query_params_schema
 def search_endpoint():
     search_term_list = request.args.get("q").split(" ")
-    media = search.run(search_term_list)
-    return make_response(media)
+    return search.run(search_term_list)
 
 
 @bp.route("/thumbnail/<int:medium_id>", methods=["PATCH"])

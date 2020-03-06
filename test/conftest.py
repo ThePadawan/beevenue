@@ -107,17 +107,18 @@ def _client(extra=None):
 
     c = app.test_client()
 
-    escaped_temp_path = temp_nice_path.replace("\\", "\\\\")
-    conn = sqlite3.connect(escaped_temp_path)
+    # Example code to run some arbitrary SQL query - e.g. to set
+    # currently hardcoded constants like "what's the Id of the video medium"
+    # dynamically:
+    #
+    # escaped_temp_path = temp_nice_path.replace("\\", "\\\\")
+    # conn = sqlite3.connect(escaped_temp_path)
+    # cur = conn.cursor()
+    # cur.execute("SELECT * FROM medium")
+    # rows = cur.fetchall()
+    # c._rows = rows
 
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM medium")
-
-    rows = cur.fetchall()
-
-    c._rows = rows
-
-    conn.close()
+    # conn.close()
 
     if extra:
         extra(app, c)
@@ -126,9 +127,6 @@ def _client(extra=None):
 
     with open(_resource("testing_rules.json"), "w") as rules_file:
         rules_file.write(rules_file_contents)
-
-    # _ensure_no_more_folder("media")
-    # _ensure_no_more_folder("thumbs")
 
     os.close(temp_fd)
     os.unlink(temp_path)

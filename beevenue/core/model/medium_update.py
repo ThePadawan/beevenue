@@ -15,13 +15,7 @@ def update_rating(medium, new_rating):
     return False
 
 
-def update_tags(session, medium, new_tags):
-    # Nothing to do
-    if new_tags is None:
-        return False
-
-    new_tags = tags.validate(new_tags)
-
+def _distinguish(new_tags):
     # Lookup ids for all input tags
     if len(new_tags) == 0:
         existing_tags = []
@@ -37,8 +31,14 @@ def update_tags(session, medium, new_tags):
     # foreach tag not found in database, create tag
     unknown_tag_names = set(new_tags) - set(existing_tag_names)
 
+    return unknown_tag_names, existing_tag_id_by_name.values()
+
+
+def _autocreate(unknown_tag_names):
     new_tags = []
     need_to_commit = False
+
+    session = db.session()
 
     for unknown_tag_name in unknown_tag_names:
         needs_to_be_inserted, matching_tag = tags.create(unknown_tag_name)
@@ -53,10 +53,13 @@ def update_tags(session, medium, new_tags):
     if need_to_commit:
         session.commit()
 
-    # take set of tag ids
-    target_tag_ids = set(existing_tag_id_by_name.values()) | set(
-        [t.id for t in new_tags]
-    )
+    return new_tags
+
+
+def _ensure(medium, existing_tag_ids, new_tags):
+    session = db.session()
+
+    target_tag_ids = set(existing_tag_ids) | set([t.id for t in new_tags])
 
     # ensure that medium_tags contains exactly that set
     d = MediaTags.delete().where(column("medium_id") == medium.id)
@@ -72,17 +75,26 @@ def update_tags(session, medium, new_tags):
         session.execute(insert)
         session.commit()
 
+
+def update_tags(medium, new_tags):
+    if new_tags is None:
+        return False
+
+    validated_tags = tags.validate(new_tags)
+
+    unknown_tag_names, existing_tag_ids = _distinguish(validated_tags)
+    new_tags = _autocreate(unknown_tag_names)
+    _ensure(medium, existing_tag_ids, new_tags)
+
     tags.delete_orphans()
 
 
 def update_medium(medium_id, new_rating, new_tags):
-    session = db.session()
-
     maybe_medium = Medium.query.get(medium_id)
     if not maybe_medium:
         return False
 
     update_rating(maybe_medium, new_rating)
-    update_tags(session, maybe_medium, new_tags)
+    update_tags(maybe_medium, new_tags)
     medium_updated.send(maybe_medium.id)
     return True

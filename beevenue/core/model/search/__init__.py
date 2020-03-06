@@ -33,7 +33,7 @@ def run(search_term_list):
     return pagination
 
 
-def _search(context, search_terms):
+def _censor(context, search_terms):
     search_terms = set(search_terms)
 
     if context.is_sfw:
@@ -42,15 +42,21 @@ def _search(context, search_terms):
         search_terms.add(Negative(RatingSearchTerm("e")))
         search_terms.add(Negative(RatingSearchTerm("u")))
 
+    return search_terms
+
+
+def _search(context, search_terms):
+    search_terms = _censor(context, search_terms)
+
     all_media = SPINDEX.all()
     result = set()
 
-    for x in all_media:
+    for m in all_media:
         for search_term in search_terms:
-            if not search_term.applies_to(x):
+            if not search_term.applies_to(m):
                 break
         else:
-            result.add(x.id)
+            result.add(m.id)
 
     return result
 

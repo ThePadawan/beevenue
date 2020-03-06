@@ -28,13 +28,9 @@ def _find_candidates(context, medium_id, target_tag_names):
     return candidates
 
 
-def similar_media(context, medium_id):
-    medium = SPINDEX.get_medium(medium_id)
-    if not medium:
-        return []
-
+def _get_similarity(context, medium):
     target_tag_names = medium.tag_names.innate
-    candidates = _find_candidates(context, medium_id, target_tag_names)
+    candidates = _find_candidates(context, medium.id, target_tag_names)
 
     # Keep up to 6 similar items in memory. We eject the least similar
     # once we have more than 5.
@@ -51,6 +47,16 @@ def similar_media(context, medium_id):
 
         if jaccard_indices.full():
             jaccard_indices.get_nowait()
+
+    return jaccard_indices
+
+
+def similar_media(context, medium_id):
+    medium = SPINDEX.get_medium(medium_id)
+    if not medium:
+        return []
+
+    jaccard_indices = _get_similarity(context, medium)
 
     similar_media_ids = []
     for _ in range(0, 5):

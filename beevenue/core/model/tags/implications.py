@@ -51,6 +51,15 @@ def _would_create_implication_cycle(session, implying_tag, implied_tag):
     return False
 
 
+def _tag_implication_query(session, implying_tag, implied_tag):
+    return session.query(TagImplication).filter(
+        and_(
+            TagImplication.c.implying_tag_id == implying_tag.id,
+            TagImplication.c.implied_tag_id == implied_tag.id,
+        )
+    )
+
+
 def add_implication(implying, implied):
     session = db.session()
 
@@ -64,16 +73,9 @@ def add_implication(implying, implied):
     implying_tag, implied_tag = tags_or_message
 
     # Check if the same implication already exists
-    current_implication_count = (
-        session.query(TagImplication)
-        .filter(
-            and_(
-                TagImplication.c.implying_tag_id == implying_tag.id,
-                TagImplication.c.implied_tag_id == implied_tag.id,
-            )
-        )
-        .count()
-    )
+    current_implication_count = _tag_implication_query(
+        session, implying_tag, implied_tag
+    ).count()
 
     if current_implication_count > 0:
         return "This implication is already configured", True
@@ -103,16 +105,9 @@ def remove_implication(implying, implied):
 
     implying_tag, implied_tag = tags_or_message
 
-    maybe_current_implications = (
-        session.query(TagImplication)
-        .filter(
-            and_(
-                TagImplication.c.implying_tag_id == implying_tag.id,
-                TagImplication.c.implied_tag_id == implied_tag.id,
-            )
-        )
-        .all()
-    )
+    maybe_current_implications = _tag_implication_query(
+        session, implying_tag, implied_tag
+    ).all()
 
     if len(maybe_current_implications) < 1:
         return "This implication was not configured", True

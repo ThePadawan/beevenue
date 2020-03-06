@@ -27,11 +27,9 @@ class HelperBytesIO(BytesIO):
 @permissions.is_owner
 def run():
     saved = sashimmie.get_saved(current_app.config)
-
     response_dict = {"status": "done", "newIds": []}
 
     for id, files in saved:
-
         print(f"Submission {id} consists of {len(files)} files")
         for file_tuple in files:
             stream = HelperBytesIO(file_tuple[1])

@@ -2,9 +2,7 @@ from flask import request
 from ... import notifications, permissions
 from ..model import tags
 from ..model.tags import implications, aliases, statistics
-
 from .schemas.query import update_tag_schema, add_tags_batch_schema
-
 from . import bp
 
 
@@ -20,10 +18,12 @@ def patch_tag(tag_name):
     return error_or_tag
 
 
-@bp.route(
-    "/tag/<string:tag_name>/implications/<string:implied_by_this>",
-    methods=["PATCH"],
+IMPLICATION_ROUTE_PATH = (
+    "/tag/<string:tag_name>/implications/<string:implied_by_this>"
 )
+
+
+@bp.route(IMPLICATION_ROUTE_PATH, methods=["PATCH"])
 @permissions.is_owner
 def tag_add_implication(tag_name, implied_by_this):
     message, success = implications.add_implication(
@@ -36,10 +36,7 @@ def tag_add_implication(tag_name, implied_by_this):
         return notifications.simple_error(message), 400
 
 
-@bp.route(
-    "/tag/<string:tag_name>/implications/<string:implied_by_this>",
-    methods=["DELETE"],
-)
+@bp.route(IMPLICATION_ROUTE_PATH, methods=["DELETE"])
 @permissions.is_owner
 def tag_remove_implication(tag_name, implied_by_this):
     message, success = implications.remove_implication(

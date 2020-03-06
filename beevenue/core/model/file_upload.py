@@ -17,7 +17,7 @@ TAGGY_FILENAME_REGEX = re.compile(r"^\d+ - (?P<tags>.*)\.([a-zA-Z0-9]+)$")
 RATING_TAG_REGEX = re.compile(r"rating:(?P<rating>u|q|s|e)")
 
 
-def _maybe_add_tags(session, m, file):
+def _maybe_add_tags(m, file):
     filename = file.filename
     if not filename:
         print("Filename not useful")
@@ -43,7 +43,7 @@ def _maybe_add_tags(session, m, file):
         for (r, match) in ratings:
             tags.remove(r)
 
-    update_tags(session, m, tags)
+    update_tags(m, tags)
     if rating:
         update_rating(m, rating)
 
@@ -71,7 +71,7 @@ def upload_file(file):
     while not os.path.exists(p):
         sleep(1)
 
-    _maybe_add_tags(session, m, file)
+    _maybe_add_tags(m, file)
 
     session.commit()
     medium_added.send(m.id)

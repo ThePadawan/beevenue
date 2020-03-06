@@ -52,34 +52,15 @@ def get_all_implications():
     return {"nodes": nodes, "links": edges}
 
 
-def get_similarity_matrix():
-    session = db.session()
-
-    all_tags = session.query(Tag).all()
-    tag_dict = {t.id: t for t in all_tags}
-
-    media_tags = session.query(MediaTags).all()
-    grouped_media_ids = defaultdict(set)
-
-    for mt in media_tags:
-        grouped_media_ids[mt.tag_id].add(mt.medium_id)
-
+def _get_similarities(censoring, grouped_media_ids):
     similarities = {}
-
-    censoring = Censorship(tag_dict, lambda t: t.tag)
-
-    nodes = {
-        censoring.get_name(k): {"size": len(v)}
-        for k, v in grouped_media_ids.items()
-    }
-
     for tag1_id, media1_ids in grouped_media_ids.items():
         similarity_row = {}
 
         for tag2_id, media2_ids in grouped_media_ids.items():
-
             if tag1_id == tag2_id:
                 continue
+
             intersection_size = len(media1_ids & media2_ids)
 
             if intersection_size == 0:
@@ -95,6 +76,30 @@ def get_similarity_matrix():
 
         similarities[censoring.get_name(tag1_id)] = similarity_row
 
+    return similarities
+
+
+def get_similarity_matrix():
+    session = db.session()
+
+    all_tags = session.query(Tag).all()
+    tag_dict = {t.id: t for t in all_tags}
+
+    media_tags = session.query(MediaTags).all()
+    grouped_media_ids = defaultdict(set)
+
+    for mt in media_tags:
+        grouped_media_ids[mt.tag_id].add(mt.medium_id)
+
+    censoring = Censorship(tag_dict, lambda t: t.tag)
+
+    nodes = {
+        censoring.get_name(k): {"size": len(v)}
+        for k, v in grouped_media_ids.items()
+    }
+
+    similarities = _get_similarities(censoring, grouped_media_ids)
+
     return {"nodes": nodes, "links": similarities}
 
 
@@ -105,9 +110,7 @@ def validate(tag_names):
     return [n.strip() for n in tag_names if VALID_TAG_REGEX.match(n)]
 
 
-def add_batch(tag_names, medium_ids):
-    trimmed_tag_names = validate(tag_names)
-
+def _load(trimmed_tag_names, medium_ids):
     # User submitted no non-empty tag names
     if not trimmed_tag_names:
         return None
@@ -116,7 +119,7 @@ def add_batch(tag_names, medium_ids):
         return None
 
     session = db.session()
-    all_tags = session.query(Tag).filter(Tag.tag.in_(trimmed_tag_names)).all()
+    all_tags = Tag.query.filter(Tag.tag.in_(trimmed_tag_names)).all()
 
     # User submitted only tags that don't exist yet.
     # Note: add_batch does not autocreate tags.
@@ -124,26 +127,42 @@ def add_batch(tag_names, medium_ids):
         return None
 
     # load media by ids
-    all_media = session.query(Medium).filter(Medium.id.in_(medium_ids)).all()
+    all_media = Medium.query.filter(Medium.id.in_(medium_ids)).all()
 
     # User submitted only ids for nonexistant media
     if not all_media:
         return None
 
-    tags_by_name = {t.tag: t for t in all_tags}
+    return session, all_tags, all_media
+
+
+def _add_all(trimmed_tag_names, session, tags, media):
+    tags_by_name = {t.tag: t for t in tags}
 
     added_count = 0
     for tag_name in trimmed_tag_names:
         tag = tags_by_name[tag_name]
-        for medium in all_media:
+        for medium in media:
             if tag not in medium.tags:
                 medium.tags.append(tag)
                 added_count += 1
 
     session.commit()
 
-    for medium in all_media:
+    for medium in media:
         medium_updated.send(medium.id)
+
+    return added_count
+
+
+def add_batch(tag_names, medium_ids):
+    trimmed_tag_names = validate(tag_names)
+    loaded = _load(trimmed_tag_names, medium_ids)
+
+    if not loaded:
+        return None
+
+    added_count = _add_all(trimmed_tag_names, *loaded)
     return len(trimmed_tag_names), added_count
 
 

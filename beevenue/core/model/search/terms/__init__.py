@@ -19,36 +19,45 @@ EXACT_TERM_REGEX = re.compile(r"\+(" + VALID_TAG_REGEX_INNER + ")")
 POSITIVE_TERM_REGEX = re.compile(VALID_TAG_REGEX_INNER)
 
 
+FILTERS = [
+    (COUNTING_TERM_REGEX, CountingSearchTerm),
+    (CATEGORY_TERM_REGEX, CategorySearchTerm),
+    (RATING_TERM_REGEX, RatingSearchTerm),
+    (EXACT_TERM_REGEX, ExactSearchTerm),
+    (POSITIVE_TERM_REGEX, PositiveSearchTerm),
+]
+
+
+def _maybe_match(term):
+    if len(term) < 1:
+        return set()
+
+    do_negate = False
+    if term[0] == "-":
+        do_negate = True
+        term = term[1:]
+
+    match = None
+    matching_class = None
+    for (regex, klass) in FILTERS:
+        match = regex.match(term)
+        matching_class = klass
+        if match:
+            break
+
+    if not match:
+        return set()
+
+    term_obj = matching_class.from_match(match)
+    if do_negate:
+        term_obj = Negative(term_obj)
+    return set([term_obj])
+
+
 def get_search_terms(search_term_list):
     result = set()
 
-    filters = [
-        (COUNTING_TERM_REGEX, CountingSearchTerm),
-        (CATEGORY_TERM_REGEX, CategorySearchTerm),
-        (RATING_TERM_REGEX, RatingSearchTerm),
-        (EXACT_TERM_REGEX, ExactSearchTerm),
-        (POSITIVE_TERM_REGEX, PositiveSearchTerm),
-    ]
-
-    def _maybe_match(term):
-        if len(term) < 1:
-            return
-
-        do_negate = False
-        if term[0] == "-":
-            do_negate = True
-            term = term[1:]
-
-        for (regex, klass) in filters:
-            maybe_match = regex.match(term)
-            if maybe_match:
-                term_obj = klass.from_match(maybe_match)
-                if do_negate:
-                    term_obj = Negative(term_obj)
-                result.add(term_obj)
-                return
-
     for term in search_term_list:
-        _maybe_match(term)
+        result |= _maybe_match(term)
 
     return result
