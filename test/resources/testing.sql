@@ -20,8 +20,7 @@ INSERT INTO `tagAlias` VALUES (1, 2002, 'c:pete');
 INSERT INTO `medium` VALUES (1, 'hash1', 'image/jpg', 1.5, 's', NULL);
 INSERT INTO `medium` VALUES (2, 'hash2', 'image/jpg', 1.5, 's', NULL);
 INSERT INTO `medium` VALUES (3, 'hash3', 'image/jpg', 1.5, 'e', NULL);
-
-INSERT INTO `medium` VALUES (1001, 'hash4', 'image/jpg', 1.5, 's', NULL);
+INSERT INTO `medium` VALUES (4, 'hash4', 'image/jpg', 1.5, 's', NULL);
 
 -- medium_id, tag_id
 INSERT INTO `medium_tag` VALUES (1, 1000);
@@ -31,9 +30,9 @@ INSERT INTO `medium_tag` VALUES (2, 1001);
 INSERT INTO `medium_tag` VALUES (2, 1002);
 
 -- A picture of peter and tinkerbell together
-INSERT INTO `medium_tag` VALUES (1001, 2001);
-INSERT INTO `medium_tag` VALUES (1001, 2002);
-INSERT INTO `medium_tag` VALUES (1001, 2000);
+INSERT INTO `medium_tag` VALUES (4, 2001);
+INSERT INTO `medium_tag` VALUES (4, 2002);
+INSERT INTO `medium_tag` VALUES (4, 2000);
 
 -- username/password 'admin'/'admin'
 INSERT INTO `user` VALUES (1, 'admin', '$2y$12$57DpiLm0eSz9NT8THnsvzOZ8k4rtAZjOOp3zjXpmFI/YoqXG/tiNK', 'admin');

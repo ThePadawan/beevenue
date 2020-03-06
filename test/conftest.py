@@ -66,7 +66,11 @@ def _ensure_no_more_folder(fname):
         shutil.rmtree(files_path)
 
 
+RAN_ONCE = False
+
+
 def _client(extra=None):
+    global RAN_ONCE
     temp_fd, temp_path = tempfile.mkstemp(suffix=".db")
     print(f"Temp path: {temp_path}")
     temp_nice_path = os.path.abspath(temp_path)
@@ -85,16 +89,17 @@ def _client(extra=None):
     _ensure_folder("media")
     _ensure_folder("thumbs")
 
-    shutil.copy(_resource("placeholder.jpg"), _medium_file("hash1.jpg"))
-    shutil.copy(_resource("placeholder.jpg"), _medium_file("hash2.jpg"))
-    shutil.copy(_resource("placeholder.jpg"), _medium_file("hash3.jpg"))
+    if not RAN_ONCE:
+        shutil.copy(_resource("placeholder.jpg"), _medium_file("hash1.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _medium_file("hash2.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _medium_file("hash3.jpg"))
 
-    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash1.s.jpg"))
-    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash1.l.jpg"))
-    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash2.s.jpg"))
-    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash2.l.jpg"))
-    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash3.s.jpg"))
-    shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash3.l.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash1.s.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash1.l.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash2.s.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash2.l.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash3.s.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash3.l.jpg"))
 
     # Some tests ruin this file by overwriting it. So we restore it when we're done.
     with open(_resource("testing_rules.json"), "r") as rules_file:
@@ -102,19 +107,32 @@ def _client(extra=None):
 
     c = app.test_client()
 
+    escaped_temp_path = temp_nice_path.replace("\\", "\\\\")
+    conn = sqlite3.connect(escaped_temp_path)
+
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM medium")
+
+    rows = cur.fetchall()
+
+    c._rows = rows
+
+    conn.close()
+
     if extra:
-        extra(c)
+        extra(app, c)
 
     yield c
 
     with open(_resource("testing_rules.json"), "w") as rules_file:
         rules_file.write(rules_file_contents)
 
-    _ensure_no_more_folder("media")
-    _ensure_no_more_folder("thumbs")
+    # _ensure_no_more_folder("media")
+    # _ensure_no_more_folder("thumbs")
 
     os.close(temp_fd)
     os.unlink(temp_path)
+    RAN_ONCE = True
 
 
 @pytest.yield_fixture
@@ -125,7 +143,7 @@ def client():
 
 @pytest.yield_fixture
 def adminClient():
-    def loginAsAdmin(c):
+    def loginAsAdmin(app, c):
         res = c.post("/login", json={"username": "admin", "password": "admin"})
         assert res.status_code == 200
 
@@ -135,7 +153,23 @@ def adminClient():
 
 @pytest.yield_fixture
 def adminNsfwClient():
-    def loginAsNsfwAdmin(c):
+    def loginAsNsfwAdmin(app, c):
+        res = c.post("/login", json={"username": "admin", "password": "admin"})
+        assert res.status_code == 200
+
+        res = c.patch("/sfw", json={"sfwSession": False})
+        assert res.status_code == 200
+
+    for c in _client(loginAsNsfwAdmin):
+        yield c
+
+
+@pytest.yield_fixture
+def adminNsfwClientWithVideo(adminNsfwClient):
+    def loginAsNsfwAdmin(app, c):
+        runner = app.test_cli_runner()
+        runner.invoke(args=["import", _resource("tiny_video.mp4")])
+
         res = c.post("/login", json={"username": "admin", "password": "admin"})
         assert res.status_code == 200
 
@@ -148,7 +182,7 @@ def adminNsfwClient():
 
 @pytest.yield_fixture
 def userClient():
-    def loginAsUser(c):
+    def loginAsUser(app, c):
         res = c.post("/login", json={"username": "user", "password": "user"})
         assert res.status_code == 200
 

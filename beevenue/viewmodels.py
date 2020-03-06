@@ -1,22 +1,14 @@
-from ....marshmallow import ma
-from ....models import Tag
+from .marshmallow import ma
+from .models import Tag
 
-from flask import current_app
 from marshmallow import fields, Schema
-
-
-class TagSchema(ma.ModelSchema):
-    class Meta:
-        model = Tag
 
 
 class SpindexMediumSchema(Schema):
     id = fields.Int()
     tags = fields.Method("extract_innate_tags")
     similar = fields.Nested(
-        "SimilarMediumSchema",
-        many=True,
-        only=["id", "mime_type", "rating", "thumbs", "tags"],
+        "SpindexMediumSchema", many=True, exclude=["similar"]
     )
     aspect_ratio = fields.Decimal(data_key="aspectRatio", as_string=True)
     hash = fields.String()
@@ -27,23 +19,7 @@ class SpindexMediumSchema(Schema):
         return [t for t in obj.tag_names.innate]
 
 
-class MediumWithThumbsSchema(SpindexMediumSchema):
-    thumbs = fields.Method("get_thumbnail_urls")
-
-    def get_thumbnail_urls(self, obj):
-        return {
-            size: f"/thumbs/{obj.id}"
-            for name, size in current_app.config[
-                "BEEVENUE_THUMBNAIL_SIZES"
-            ].items()
-        }
-
-
-class SimilarMediumSchema(MediumWithThumbsSchema):
-    pass
-
-
-class SearchResultMediumSchema(MediumWithThumbsSchema):
+class PaginationMediumSchema(SpindexMediumSchema):
     tiny_thumbnail = fields.Method("get_thumb", data_key="tinyThumbnail")
 
     def get_thumb(self, obj):
@@ -54,11 +30,11 @@ class SearchResultMediumSchema(MediumWithThumbsSchema):
         return None
 
 
-class SearchResultsSchema(Schema):
+class PaginationSchema(Schema):
     items = fields.Nested(
-        SearchResultMediumSchema,
+        PaginationMediumSchema,
         many=True,
-        only=["id", "aspect_ratio", "hash", "thumbs", "tiny_thumbnail"],
+        only=["id", "aspect_ratio", "hash", "tiny_thumbnail"],
     )
     pageCount = fields.Int()
     pageNumber = fields.Int()
@@ -68,7 +44,7 @@ class SearchResultsSchema(Schema):
 medium_schema = SpindexMediumSchema()
 
 
-search_results_schema = SearchResultsSchema()
+pagination_schema = PaginationSchema()
 
 
 class TagShowSchema(Schema):
@@ -97,7 +73,12 @@ class TagShowSchema(Schema):
 tag_show_schema = TagShowSchema()
 
 
-class TagStatisticsSchema(TagSchema):
+class TagSchema(ma.ModelSchema):
+    class Meta:
+        model = Tag
+
+
+class TagStatisticSchema(TagSchema):
     media_count = fields.Int(data_key="mediaCount")
     implying_this_count = fields.Int(data_key="implyingThisCount")
     implied_by_this_count = fields.Int(data_key="impliedByThisCount")
@@ -113,12 +94,8 @@ class TagStatisticsSchema(TagSchema):
         )
 
 
-tag_statistics_schema = TagStatisticsSchema(many=True)
+class TagStatisticsSchema(Schema):
+    tags = fields.Nested(TagStatisticSchema, many=True)
 
 
-class MissingThumbnailSchema(Schema):
-    mediumId = fields.Int()
-    reasons = fields.List(fields.String)
-
-
-missing_thumbnails_schema = MissingThumbnailSchema(many=True)
+tag_statistics_schema = TagStatisticsSchema()

@@ -6,6 +6,15 @@ from .terms import get_search_terms
 from .terms.simple import RatingSearchTerm, Negative
 
 
+class Pagination(object):
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    @classmethod
+    def empty(cls):
+        return cls(items=[], pageCount=0, pageNumber=1, pageSize=1)
+
+
 def run(search_term_list):
     search_terms = get_search_terms(search_term_list)
 
@@ -13,16 +22,14 @@ def run(search_term_list):
     medium_ids = _search(context, search_terms)
 
     if not medium_ids:
-        return {"items": [], "pageCount": 0, "pageNumber": 1, "pageSize": 1}
+        return Pagination.empty()
 
     medium_ids = list(medium_ids)
     medium_ids.sort(reverse=True)
-
     pagination = _paginate(medium_ids)
+    media = SPINDEX.get_media(pagination.items)
 
-    media = SPINDEX.get_media(pagination["items"])
-
-    pagination.update({"items": media})
+    pagination.items = media
     return pagination
 
 
@@ -64,9 +71,9 @@ def _paginate(ids):
     if (len(ids) % pageSize) != 0:
         pageCount += 1
 
-    return {
-        "items": ids[skip : skip + pageSize],
-        "pageCount": pageCount,
-        "pageNumber": pageNumber,
-        "pageSize": pageSize,
-    }
+    return Pagination(
+        items=ids[skip : skip + pageSize],
+        pageCount=pageCount,
+        pageNumber=pageNumber,
+        pageSize=pageSize,
+    )

@@ -3,7 +3,6 @@ import os
 
 from flask import g
 
-from .db import db
 from .sushi.routes import HelperBytesIO
 from .core.model.file_upload import upload_file
 from .core.model import thumbnails

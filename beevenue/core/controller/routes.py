@@ -1,13 +1,11 @@
 from pathlib import Path
-from flask import request, send_from_directory, jsonify, make_response
+from flask import request, send_from_directory, make_response
 
-from ... import permissions, notifications, db
+from ... import permissions, notifications
 from ..model import thumbnails, search
 from ...spindex.spindex import SPINDEX
 
 from .schemas.query import search_query_params_schema
-
-from .schemas.viewmodels import search_results_schema, missing_thumbnails_schema
 
 from . import bp
 
@@ -17,26 +15,7 @@ from . import bp
 def search_endpoint():
     search_term_list = request.args.get("q").split(" ")
     media = search.run(search_term_list)
-
-    obj = search_results_schema.dump(media)
-    res = make_response(obj)
-
-    if not media:
-        return res
-
-    # Don't do this for all media since overly large headers break stuff.
-    res.push_thumbs(media["items"][:20])
-
-    return res
-
-
-@bp.route("/thumbnails/missing", methods=["GET"])
-@permissions.is_owner
-def get_missing_thumbnails():
-    session = db.session()
-    missing = thumbnails.get_missing(session)
-
-    return jsonify(missing_thumbnails_schema.dump(missing))
+    return make_response(media)
 
 
 @bp.route("/thumbnail/<int:medium_id>", methods=["PATCH"])
@@ -79,13 +58,6 @@ def pick_thumbnail(medium_id, thumb_index, n):
     return notifications.new_thumbnail(), status_code
 
 
-@bp.route("/thumbnails/after/<int:medium_id>", methods=["PATCH"])
-@permissions.is_owner
-def create_thumbnails(medium_id):
-    thumbnails.create_all(medium_id)
-    return "", 200
-
-
 @bp.route("/thumbs/<int:medium_id>")
 @permissions.get_medium
 def get_magic_thumb(medium_id):
@@ -102,23 +74,6 @@ def get_magic_thumb(medium_id):
         size = "l"
 
     thumb_path = Path(f"{medium.hash}.{size}.jpg")
-
-    res = send_from_directory("thumbs", thumb_path)
-    # Note this must be distinct from the public route ("/thumbs"),
-    # or Nginx will freak.
-    res.set_sendfile_header(Path("/", "beevenue_thumbs", thumb_path))
-
-    return res
-
-
-@bp.route("/thumbs/<int:medium_id>/<path:full_path>")
-@permissions.get_thumb
-def get_thumb(medium_id, full_path):
-    medium = SPINDEX.get_medium(medium_id)
-    if not medium:
-        return "", 404
-
-    thumb_path = Path(f"{medium.hash}.{full_path}")
 
     res = send_from_directory("thumbs", thumb_path)
     # Note this must be distinct from the public route ("/thumbs"),

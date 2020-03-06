@@ -1,22 +1,24 @@
-def test_cannot_create_thumb_without_logging_in(client):
-    res = client.patch("/thumbnail/1")
-    assert res.status_code == 401
+def test_thumbnail_picks_generate(adminNsfwClientWithVideo):
+    res = adminNsfwClientWithVideo.get("/medium/5/thumbnail/picks/3")
+    assert res.status_code == 200
+    assert "thumbs" in res.get_json()
 
 
-def test_cannot_create_thumb_as_user(userClient):
-    res = userClient.patch("/thumbnail/1")
-    assert res.status_code == 403
-
-
-def test_cannot_create_thumb_for_missing_file(adminClient):
-    res = adminClient.patch("/thumbnail/15433425")
+def test_thumbnail_picks_generate_medium_does_not_exist(adminNsfwClient):
+    res = adminNsfwClient.get("/medium/5555/thumbnail/picks/3")
     assert res.status_code == 404
 
 
-def test_can_create_thumb_for_current_file(adminClient):
-    res = adminClient.patch("/thumbnail/1")
+def test_thumbnail_picks_generate_medium_is_not_video(adminNsfwClient):
+    res = adminNsfwClient.get("/medium/1/thumbnail/picks/3")
+    assert res.status_code == 400
 
 
-def test_can_create_thumbs_for_multiple_file(adminClient):
-    res = adminClient.patch("/thumbnails/after/2")
+def test_thumbnail_picks_pick_succeeds(adminNsfwClientWithVideo):
+    res = adminNsfwClientWithVideo.patch("/medium/5/thumbnail/pick/0/3")
     assert res.status_code == 200
+
+
+def test_thumbnail_picks_pick_medium_does_not_exist(adminNsfwClient):
+    res = adminNsfwClient.patch("/medium/5555/thumbnail/pick/0/3")
+    assert res.status_code == 404

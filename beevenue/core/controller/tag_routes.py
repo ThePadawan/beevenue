@@ -1,14 +1,9 @@
 from flask import request
 from ... import notifications, permissions
 from ..model import tags
-from ..model.tags import implications, aliases
+from ..model.tags import implications, aliases, statistics
 
 from .schemas.query import update_tag_schema, add_tags_batch_schema
-
-from .schemas.viewmodels import (
-    tag_statistics_schema,
-    tag_show_schema,
-)
 
 from . import bp
 
@@ -22,7 +17,7 @@ def patch_tag(tag_name):
     if not success:
         return error_or_tag, 400
 
-    return tag_show_schema.dump(error_or_tag), 200
+    return error_or_tag
 
 
 @bp.route(
@@ -66,8 +61,7 @@ def backup_implications():
 
 @bp.route("/tags", methods=["GET"])
 def get_tags_stats():
-    stats = tags.get_statistics(request.beevenue_context)
-    return tag_statistics_schema.jsonify(stats)
+    return statistics.get_statistics(request.beevenue_context)
 
 
 @bp.route("/tags/batch", methods=["POST"])
@@ -103,7 +97,7 @@ def get_tag(name):
     if not maybe_tag:
         return notifications.no_such_tag(name), 404
 
-    return tag_show_schema.dump(maybe_tag)
+    return maybe_tag
 
 
 @bp.route(

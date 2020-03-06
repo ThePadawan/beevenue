@@ -7,21 +7,13 @@ from ..model.file_upload import upload_file
 from ..model.medium_update import update_medium
 from ..model import thumbnails, media
 
-from .schemas.viewmodels import medium_schema, search_results_schema
 from . import bp
 
 
 @bp.route("/media")
 @schemas.paginated
 def list_media():
-    media = run([])
-    obj = search_results_schema.dump(media)
-    res = make_response(obj)
-
-    # Don't do this for all media since overly large headers break stuff.
-    res.push_thumbs(media["items"][:20])
-
-    return res
+    return run([])
 
 
 @bp.route("/medium/<int:medium_id>", methods=["DELETE"])
@@ -45,13 +37,7 @@ def get_medium(medium_id):
     if status_code == 400:
         return notifications.not_sfw(), 400
 
-    obj = medium_schema.dump(medium)
-
-    res = make_response(obj)
-    res.push_file(medium)
-    res.push_thumbs(medium.similar)
-
-    return res
+    return medium
 
 
 @bp.route("/medium/<int:medium_id>", methods=["PATCH"])

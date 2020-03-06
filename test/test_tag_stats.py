@@ -12,6 +12,8 @@ def test_can_get_tag_stats_as_admin(adminClient):
     res = adminClient.get("/tags")
     assert res.status_code == 200
     result_json = res.get_json()
+    assert "tags" in result_json
+    result_json = result_json["tags"]
     assert len(result_json) >= 4
     assert len([t for t in result_json if t["mediaCount"] == 0]) >= 1
     assert len([t for t in result_json if t["mediaCount"] == 1]) >= 2
