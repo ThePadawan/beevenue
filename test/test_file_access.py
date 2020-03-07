@@ -18,6 +18,11 @@ def test_can_access_files(client, asAdmin):
     assert res.status_code == 200
 
 
+def test_cannot_access_nonexistant_file(client, asAdmin):
+    res = client.get("/files/12345678.jpg")
+    assert (res.status_code // 100) == 4
+
+
 def test_can_access_magic_thumbs_without_client_hint(client, asAdmin):
     res = client.get("/thumbs/1")
     assert res.status_code == 200

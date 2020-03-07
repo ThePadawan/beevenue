@@ -1,5 +1,7 @@
 import json
 
+INVALID_RULES_JSON = '{"a": 3}'
+
 
 def test_get_rules(client, asAdmin):
     r = client.get("/rules")
@@ -27,6 +29,13 @@ def test_validate_new_rules(client, asAdmin):
 
     res = client.post("/rules/validation", json=json.loads(contents))
     assert res.status_code == 200
+    assert res.get_json()["ok"]
+
+
+def test_validate_invalid_rules(client, asAdmin):
+    res = client.post("/rules/validation", json=json.loads(INVALID_RULES_JSON))
+    assert res.status_code == 200
+    assert not res.get_json()["ok"]
 
 
 def test_upload_new_rules(client, asAdmin):
@@ -35,3 +44,8 @@ def test_upload_new_rules(client, asAdmin):
 
     res = client.post("/rules", json=json.loads(contents))
     assert res.status_code == 200
+
+
+def test_upload_invalid_rules(client, asAdmin):
+    res = client.post("/rules", json=json.loads(INVALID_RULES_JSON))
+    assert res.status_code == 400

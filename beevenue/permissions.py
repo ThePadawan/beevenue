@@ -75,13 +75,6 @@ def _can_see_full_path(full_path):
     return _can_see_spindex_medium(m)
 
 
-def _can_see_file(**kwargs):
-    if "medium_id" in kwargs:
-        return _can_see_spindex_medium(SPINDEX.get_medium(kwargs["medium_id"]))
-    if "full_path" in kwargs:
-        return _can_see_full_path(kwargs["full_path"])
-
-
 def _requires_permission(permission):
     def validator(*args, **kwargs):
         p = permission
@@ -95,7 +88,6 @@ def _requires_permission(permission):
 
 
 get_medium = _requires_permission(_can_see_medium)
-get_thumb = _requires_permission(_can_see_file)
-get_medium_file = _requires_permission(_can_see_file)
+get_medium_file = _requires_permission(_can_see_full_path)
 
 is_owner = _requires_permission(Permission(_admin_role_need))

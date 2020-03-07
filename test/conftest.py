@@ -66,6 +66,15 @@ def _ensure_no_more_folder(fname):
         shutil.rmtree(files_path)
 
 
+def _add_simple_images(fname, hash_prefixes):
+    res = _resource(f"{fname}.jpg")
+
+    for hash_prefix in hash_prefixes:
+        shutil.copy(res, _medium_file(f"{hash_prefix}.jpg"))
+        shutil.copy(res, _thumbs_file(f"{hash_prefix}.s.jpg"))
+        shutil.copy(res, _thumbs_file(f"{hash_prefix}.l.jpg"))
+
+
 RAN_ONCE = False
 
 
@@ -87,24 +96,9 @@ def _client():
     if not RAN_ONCE:
         _ensure_folder("media")
         _ensure_folder("thumbs")
-
-        # TODO Don't do this, use CLI import instead. For that, find some actually distinct pictures.
-        shutil.copy(_resource("placeholder.jpg"), _medium_file("hash1.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _medium_file("hash2.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _medium_file("hash3.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _medium_file("hash4.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _medium_file("hash5.jpg"))
-
-        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash1.s.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash1.l.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash2.s.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash2.l.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash3.s.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash3.l.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash4.s.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash4.l.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash5.s.jpg"))
-        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash5.l.jpg"))
+        _add_simple_images(
+            "placeholder", ["hash1", "hash2", "hash3", "hash4", "hash5"]
+        )
 
     # Some tests ruin this file by overwriting it. So we restore it when we're done.
     with open(_resource("testing_rules.json"), "r") as rules_file:

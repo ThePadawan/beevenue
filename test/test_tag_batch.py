@@ -1,10 +1,14 @@
 def test_tag_batch_update(client, asAdmin):
-    res = client.post("/tags/batch", json={"tags": ["C"], "mediumIds": [1]})
+    res = client.post(
+        "/tags/batch", json={"tags": ["C", "tobecensored"], "mediumIds": [1]}
+    )
     assert res.status_code == 200
 
     res = client.get("/medium/1")
     assert res.status_code == 200
-    assert "C" in res.get_json()["tags"]
+    tags = res.get_json()["tags"]
+    assert "C" in tags
+    assert "tobecensored" in tags
 
 
 def test_tag_cannot_add_tags_to_zero_media(client, asAdmin):
