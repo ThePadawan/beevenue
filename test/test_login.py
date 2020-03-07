@@ -38,8 +38,8 @@ def test_double_login_does_not_modify_session(client):
     assert res.get_json()["sfwSession"] == False
 
 
-def test_get_logged_in_as_user(userClient):
-    res = userClient.get("/login")
+def test_get_logged_in_as_user(client, asUser):
+    res = client.get("/login")
     assert res.status_code == 200
 
 

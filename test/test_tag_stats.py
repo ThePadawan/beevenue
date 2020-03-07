@@ -3,13 +3,18 @@ def test_cannot_get_tag_stats_without_login(client):
     assert res.status_code == 401
 
 
-def test_can_get_tag_stats_as_user(userClient):
-    res = userClient.get("/tags")
+def test_can_get_tag_stats_as_user(client, asUser):
+    res = client.get("/tags")
     assert res.status_code == 200
 
 
-def test_can_get_tag_stats_as_admin(adminClient):
-    res = adminClient.get("/tags")
+def test_can_get_tag_stats_as_nsfw_user(client, asUser, nsfw):
+    res = client.get("/tags")
+    assert res.status_code == 200
+
+
+def test_can_get_tag_stats_as_admin(client, asAdmin):
+    res = client.get("/tags")
     assert res.status_code == 200
     result_json = res.get_json()
     assert "tags" in result_json

@@ -82,13 +82,6 @@ def get_magic_thumb(medium_id):
     return res
 
 
-@bp.route("/thumbs/gentiny", methods=["POST"])
-@permissions.is_owner
-def gen_tiny():
-    thumbnails.generate_all_tiny()
-    return "", 200
-
-
 @bp.route("/files/<path:full_path>")
 @permissions.get_medium_file
 def get_file(full_path):

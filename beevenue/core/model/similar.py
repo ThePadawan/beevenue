@@ -11,9 +11,6 @@ def _find_candidates(context, medium_id, target_tag_names):
 
     # Maybe add a reverse index (tag => media) so this query is faster
     for m in SPINDEX.all():
-        if len(m.tag_names.innate & target_tag_names) == 0:
-            continue
-
         if m.id == medium_id:
             continue
 
@@ -21,6 +18,9 @@ def _find_candidates(context, medium_id, target_tag_names):
             continue
 
         if context.user_role != "admin" and m.rating == "e":
+            continue
+
+        if len(m.tag_names.innate & target_tag_names) == 0:
             continue
 
         candidates.add(m)
@@ -51,11 +51,7 @@ def _get_similarity(context, medium):
     return jaccard_indices
 
 
-def similar_media(context, medium_id):
-    medium = SPINDEX.get_medium(medium_id)
-    if not medium:
-        return []
-
+def similar_media(context, medium):
     jaccard_indices = _get_similarity(context, medium)
 
     similar_media_ids = []

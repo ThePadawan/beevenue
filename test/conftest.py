@@ -69,13 +69,11 @@ def _ensure_no_more_folder(fname):
 RAN_ONCE = False
 
 
-def _client(extra=None):
+def _client():
     global RAN_ONCE
     temp_fd, temp_path = tempfile.mkstemp(suffix=".db")
-    print(f"Temp path: {temp_path}")
     temp_nice_path = os.path.abspath(temp_path)
     connection_string = f"sqlite:///{temp_nice_path}"
-    print(f"connection_string: {connection_string}")
 
     def extra_config(application):
         application.config["SQLALCHEMY_DATABASE_URI"] = connection_string
@@ -86,13 +84,16 @@ def _client(extra=None):
 
     app = get_application(extra_config, fill_db)
 
-    _ensure_folder("media")
-    _ensure_folder("thumbs")
-
     if not RAN_ONCE:
+        _ensure_folder("media")
+        _ensure_folder("thumbs")
+
+        # TODO Don't do this, use CLI import instead. For that, find some actually distinct pictures.
         shutil.copy(_resource("placeholder.jpg"), _medium_file("hash1.jpg"))
         shutil.copy(_resource("placeholder.jpg"), _medium_file("hash2.jpg"))
         shutil.copy(_resource("placeholder.jpg"), _medium_file("hash3.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _medium_file("hash4.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _medium_file("hash5.jpg"))
 
         shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash1.s.jpg"))
         shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash1.l.jpg"))
@@ -100,12 +101,17 @@ def _client(extra=None):
         shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash2.l.jpg"))
         shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash3.s.jpg"))
         shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash3.l.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash4.s.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash4.l.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash5.s.jpg"))
+        shutil.copy(_resource("placeholder.jpg"), _thumbs_file("hash5.l.jpg"))
 
     # Some tests ruin this file by overwriting it. So we restore it when we're done.
     with open(_resource("testing_rules.json"), "r") as rules_file:
         rules_file_contents = rules_file.read()
 
     c = app.test_client()
+    c.app_under_test = app
 
     # Example code to run some arbitrary SQL query - e.g. to set
     # currently hardcoded constants like "what's the Id of the video medium"
@@ -119,9 +125,6 @@ def _client(extra=None):
     # c._rows = rows
 
     # conn.close()
-
-    if extra:
-        extra(app, c)
 
     yield c
 
@@ -140,49 +143,26 @@ def client():
 
 
 @pytest.yield_fixture
-def adminClient():
-    def loginAsAdmin(app, c):
-        res = c.post("/login", json={"username": "admin", "password": "admin"})
-        assert res.status_code == 200
-
-    for c in _client(loginAsAdmin):
-        yield c
+def nsfw(client):
+    res = client.patch("/sfw", json={"sfwSession": False})
+    assert res.status_code == 200
+    return None
 
 
 @pytest.yield_fixture
-def adminNsfwClient():
-    def loginAsNsfwAdmin(app, c):
-        res = c.post("/login", json={"username": "admin", "password": "admin"})
-        assert res.status_code == 200
-
-        res = c.patch("/sfw", json={"sfwSession": False})
-        assert res.status_code == 200
-
-    for c in _client(loginAsNsfwAdmin):
-        yield c
+def asAdmin(client):
+    res = client.post("/login", json={"username": "admin", "password": "admin"})
+    assert res.status_code == 200
 
 
 @pytest.yield_fixture
-def adminNsfwClientWithVideo(adminNsfwClient):
-    def loginAsNsfwAdmin(app, c):
-        runner = app.test_cli_runner()
-        runner.invoke(args=["import", _resource("tiny_video.mp4")])
-
-        res = c.post("/login", json={"username": "admin", "password": "admin"})
-        assert res.status_code == 200
-
-        res = c.patch("/sfw", json={"sfwSession": False})
-        assert res.status_code == 200
-
-    for c in _client(loginAsNsfwAdmin):
-        yield c
+def withVideo(client):
+    runner = client.app_under_test.test_cli_runner()
+    runner.invoke(args=["import", _resource("tiny_video.mp4")])
+    yield None
 
 
 @pytest.yield_fixture
-def userClient():
-    def loginAsUser(app, c):
-        res = c.post("/login", json={"username": "user", "password": "user"})
-        assert res.status_code == 200
-
-    for c in _client(loginAsUser):
-        yield c
+def asUser(client):
+    res = client.post("/login", json={"username": "user", "password": "user"})
+    assert res.status_code == 200

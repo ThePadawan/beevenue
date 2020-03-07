@@ -2,7 +2,7 @@ from flask import request, send_file, render_template, make_response
 
 from ... import notifications, permissions, schemas
 
-from ..model.search import run
+from ..model.search import find_all
 from ..model.file_upload import upload_file
 from ..model.medium_update import update_medium
 from ..model import thumbnails, media
@@ -13,7 +13,7 @@ from . import bp
 @bp.route("/media")
 @schemas.paginated
 def list_media():
-    return run([])
+    return find_all()
 
 
 @bp.route("/medium/<int:medium_id>", methods=["DELETE"])

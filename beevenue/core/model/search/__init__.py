@@ -15,9 +15,20 @@ class Pagination(object):
         return cls(items=[], pageCount=0, pageNumber=1, pageSize=1)
 
 
+def find_all():
+    return _run([])
+
+
 def run(search_term_list):
     search_terms = get_search_terms(search_term_list)
 
+    if not search_terms:
+        return Pagination.empty()
+
+    return _run(search_terms)
+
+
+def _run(search_terms):
     context = request.beevenue_context
     medium_ids = _search(context, search_terms)
 

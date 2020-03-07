@@ -2,13 +2,13 @@ import zipfile
 from io import BytesIO
 
 
-def test_get_backup_sh_as_admin(adminClient):
-    res = adminClient.get("/media/backup.sh")
+def test_get_backup_sh_as_admin(client, asAdmin):
+    res = client.get("/media/backup.sh")
     assert res.status_code == 200
 
 
-def test_get_single_existing_medium_as_admin(adminClient):
-    res = adminClient.get("/medium/1/backup")
+def test_get_single_existing_medium_as_admin(client, asAdmin):
+    res = client.get("/medium/1/backup")
     assert res.status_code == 200
     assert res.mimetype == "application/zip"
 
@@ -24,6 +24,6 @@ def test_get_single_existing_medium_as_admin(adminClient):
         assert len([x for x in infolist if x.filename.endswith(".jpg")]) == 1
 
 
-def test_get_single_nonexisting_medium_as_admin(adminClient):
-    res = adminClient.get("/medium/5678/backup")
+def test_get_single_nonexisting_medium_as_admin(client, asAdmin):
+    res = client.get("/medium/5678/backup")
     assert res.status_code == 404

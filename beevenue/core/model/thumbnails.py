@@ -51,7 +51,7 @@ def pick(medium_id, thumb_index, n):
 
     origin_path, medium = t
     ffmpeg.pick(n, origin_path, thumb_index, medium.hash)
-    generate_tiny(medium_id, db.session())
+    _generate_tiny(medium_id, db.session())
     return 200
 
 
@@ -68,8 +68,8 @@ def create(medium_id):
         return 400
 
     maybe_medium.aspect_ratio = maybe_aspect_ratio
-    generate_tiny(medium_id, session)
     session.commit()
+    _generate_tiny(medium_id, session)
     return 200
 
 
@@ -88,33 +88,23 @@ def _create(mime_type, hash):
     return ffmpeg.thumbnails(origin_path, thumb_path, mime_type)
 
 
-def generate_tiny(medium_id, session):
-    _generate_tiny(lambda: [Medium.query.get(medium_id)], session)
-
-
-def generate_all_tiny():
-    _generate_tiny(lambda: Medium.query.all(), db.session())
-
-
-def _generate_tiny(get_media, session):
+def _generate_tiny(medium_id, session):
     size, _ = list(current_app.config["BEEVENUE_THUMBNAIL_SIZES"].items())[0]
     tiny_thumb_res = current_app.config["BEEVENUE_TINY_THUMBNAIL_SIZE"]
 
-    for m in get_media():
-        out_path = os.path.abspath(f"thumbs/{m.hash}.{size}.jpg")
+    m = Medium.query.get(medium_id)
+    out_path = os.path.abspath(f"thumbs/{m.hash}.{size}.jpg")
 
-        with Image.open(out_path, "r") as img:
-            thumbnail = img.copy()
-            thumbnail.thumbnail((tiny_thumb_res, tiny_thumb_res))
+    with Image.open(out_path, "r") as img:
+        thumbnail = img.copy()
+        thumbnail.thumbnail((tiny_thumb_res, tiny_thumb_res))
 
-            with BytesIO() as out_bytes_io:
-                thumbnail.save(
-                    out_bytes_io, format="JPEG", optimize=True, quality=75
-                )
-                out_bytes = out_bytes_io.getvalue()
+        with BytesIO() as out_bytes_io:
+            thumbnail.save(
+                out_bytes_io, format="JPEG", optimize=True, quality=75
+            )
+            out_bytes = out_bytes_io.getvalue()
 
-        m.tiny_thumbnail = out_bytes
-
-        medium_updated.send(m.id)
-
+    m.tiny_thumbnail = out_bytes
+    medium_updated.send(m.id)
     session.commit()

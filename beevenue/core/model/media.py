@@ -46,7 +46,7 @@ def get(context, medium_id):
     if context.is_sfw and maybe_medium.rating != "s":
         return 400, None
 
-    maybe_medium.similar = similar_media(context, medium_id)
+    maybe_medium.similar = similar_media(context, maybe_medium)
     return 200, maybe_medium
 
 
