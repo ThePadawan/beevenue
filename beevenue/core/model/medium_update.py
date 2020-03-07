@@ -1,10 +1,13 @@
+from flask import request
 from sqlalchemy.sql import column
 
+from ...spindex.spindex import SPINDEX
 from ...spindex.signals import medium_updated
 from ...models import Medium, Tag, MediaTags
 from ... import db
 
 from . import tags
+from .media import similar_media
 
 
 def update_rating(medium, new_rating):
@@ -92,9 +95,12 @@ def update_tags(medium, new_tags):
 def update_medium(medium_id, new_rating, new_tags):
     maybe_medium = Medium.query.get(medium_id)
     if not maybe_medium:
-        return False
+        return None
 
     update_rating(maybe_medium, new_rating)
     update_tags(maybe_medium, new_tags)
     medium_updated.send(maybe_medium.id)
-    return True
+
+    result = SPINDEX.get_medium(maybe_medium.id)
+    result.similar = similar_media(request.beevenue_context, result)
+    return result

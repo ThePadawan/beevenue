@@ -50,7 +50,7 @@ def update_medium_post(medium_id):
     )
 
     if success:
-        return "", 200
+        return success
     else:
         return notifications.could_not_update_medium(), 400
 
