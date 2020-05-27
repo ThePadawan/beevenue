@@ -60,17 +60,19 @@ def create(medium_id):
     maybe_medium = session.query(Medium).filter_by(id=medium_id).first()
 
     if not maybe_medium:
-        return 404
+        return 404, ""
 
-    maybe_aspect_ratio = _create(maybe_medium.mime_type, maybe_medium.hash)
+    success, aspect_ratio_or_error = _create(
+        maybe_medium.mime_type, maybe_medium.hash
+    )
 
-    if not maybe_aspect_ratio:
-        return 400
+    if not success:
+        return 400, aspect_ratio_or_error
 
-    maybe_medium.aspect_ratio = maybe_aspect_ratio
+    maybe_medium.aspect_ratio = aspect_ratio_or_error
     session.commit()
     _generate_tiny(medium_id, session)
-    return 200
+    return 200, ""
 
 
 def _create(mime_type, hash):

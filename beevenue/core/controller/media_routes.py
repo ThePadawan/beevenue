@@ -67,9 +67,9 @@ def form_upload_medium():
     if not success:
         return notifications.medium_already_exists(result), 400
 
-    status = thumbnails.create(result.id)
+    status, error = thumbnails.create(result.id)
     if status == 400:
-        return "", 400
+        return notifications.simple_error(error), 400
 
     return notifications.medium_uploaded(result.id), 200
 

@@ -137,19 +137,25 @@ def _video_thumbnails(in_path, out_path_base):
             f"{out_path}",
         ]
 
-        subprocess.run(cmd, stdout=subprocess.PIPE)
+        ffmpeg_result = subprocess.run(cmd, capture_output=True)
+
+        if ffmpeg_result.returncode != 0:
+            return (
+                False,
+                f"Could not create thumbnail for video: {ffmpeg.stderr}",
+            )
 
     with Image.open(out_path) as img:
         width, height = img.size
         aspect_ratio = float(width) / height
-        return aspect_ratio
+        return True, aspect_ratio
 
 
 def thumbnails(in_path, out_path, mime_type):
     still_out_path = Path(out_path).with_suffix("")
 
     if re.match("image/", mime_type):
-        return _image_thumbnails(in_path, still_out_path)
+        return True, _image_thumbnails(in_path, still_out_path)
     elif re.match("video/", mime_type):
         return _video_thumbnails(in_path, still_out_path)
 

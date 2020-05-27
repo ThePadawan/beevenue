@@ -20,12 +20,12 @@ def search_endpoint():
 @bp.route("/thumbnail/<int:medium_id>", methods=["PATCH"])
 @permissions.is_owner
 def create_thumbnail(medium_id):
-    status_code = thumbnails.create(medium_id)
+    status_code, message = thumbnails.create(medium_id)
 
     if status_code == 404:
         return notifications.no_such_medium(medium_id), 404
 
-    return "", status_code
+    return message, status_code
 
 
 @bp.route("/medium/<int:medium_id>/thumbnail/picks/<int:n>", methods=["GET"])
