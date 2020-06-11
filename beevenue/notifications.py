@@ -69,7 +69,7 @@ def tag_batch_added(tag_count, added_count):
 
     return _make_notification(
         NotificationLevel.INFO,
-        _text(f"Added {tag_string} to {added_count} media."),
+        _text(f"Added {added_count} {tag_string} to selected media."),
     )
 
 
