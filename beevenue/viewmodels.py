@@ -73,12 +73,7 @@ class TagShowSchema(Schema):
 tag_show_schema = TagShowSchema()
 
 
-class TagSchema(ma.ModelSchema):
-    class Meta:
-        model = Tag
-
-
-class TagStatisticSchema(TagSchema):
+class TagStatisticSchema(Schema):
     media_count = fields.Int(data_key="mediaCount")
     implying_this_count = fields.Int(data_key="implyingThisCount")
     implied_by_this_count = fields.Int(data_key="impliedByThisCount")
