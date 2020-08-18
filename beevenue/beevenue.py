@@ -1,5 +1,6 @@
 import os
 
+from flask_compress import Compress
 from flask_migrate import Migrate
 from flask_cors import CORS
 
@@ -21,6 +22,8 @@ def get_application(extra_config=None, fill_db=None):
         supports_credentials=True,
         origins=application.config["BEEVENUE_ALLOWED_CORS_ORIGINS"],
     )
+
+    Compress(application)
 
     from .db import db
 
