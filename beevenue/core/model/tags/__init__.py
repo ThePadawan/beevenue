@@ -94,8 +94,7 @@ def get_similarity_matrix():
     censoring = Censorship(tag_dict, lambda t: t.tag)
 
     nodes = {
-        censoring.get_name(k): {"size": len(v)}
-        for k, v in grouped_media_ids.items()
+        censoring.get_name(k): {"size": len(v)} for k, v in grouped_media_ids.items()
     }
 
     similarities = _get_similarities(censoring, grouped_media_ids)
@@ -141,6 +140,10 @@ def _add_all(trimmed_tag_names, session, tags, media):
 
     added_count = 0
     for tag_name in trimmed_tag_names:
+        if tag_name not in tags_by_name:
+            # User might have entered a valid, but non-existant tag
+            continue
+
         tag = tags_by_name[tag_name]
         for medium in media:
             if tag not in medium.tags:
@@ -225,9 +228,7 @@ def _rename(session, old_tag: Tag, new_name: str) -> Tuple[str, bool]:
 
     # if new_tag does exist, UPDATE all medium tags
     # to reference new_tag instead of old_tag, then remove old_tag
-    MediaTags.update().where(MediaTags.c.tag_id == old_tag.id).values(
-        tag_id=new_tag.id
-    )
+    MediaTags.update().where(MediaTags.c.tag_id == old_tag.id).values(tag_id=new_tag.id)
 
     session.delete(old_tag)
 
