@@ -1,3 +1,4 @@
+from enum import Enum
 import os
 import re
 from time import sleep
@@ -48,17 +49,26 @@ def _maybe_add_tags(m, file):
         update_rating(m, rating)
 
 
+class UploadResult(Enum):
+    SUCCESS = 0
+    CONFLICTING_MEDIUM = 1
+    UNKNOWN_MIME_TYPE = 2
+
+
 def upload_file(file):
     session = db.session()
     basename = md5sum(file)
 
     conflicting_medium = Medium.query.filter(Medium.hash == basename).first()
     if conflicting_medium:
-        return False, conflicting_medium.id
+        return UploadResult.CONFLICTING_MEDIUM, conflicting_medium.id
 
     file.seek(0)
     mime_type = magic.from_buffer(file.read(1024), mime=True)
-    extension = EXTENSIONS[mime_type]
+    extension = EXTENSIONS.get(mime_type)
+
+    if not extension:
+        return UploadResult.UNKNOWN_MIME_TYPE, mime_type
 
     m = Medium(mime_type=mime_type, hash=basename)
     session.add(m)
@@ -75,4 +85,4 @@ def upload_file(file):
 
     session.commit()
     medium_added.send(m.id)
-    return True, m
+    return UploadResult.SUCCESS, m

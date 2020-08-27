@@ -3,7 +3,7 @@ from flask import request, send_file, render_template, make_response
 from ... import notifications, permissions, schemas
 
 from ..model.search import find_all
-from ..model.file_upload import upload_file
+from ..model.file_upload import upload_file, UploadResult
 from ..model.medium_update import update_medium
 from ..model import thumbnails, media
 
@@ -64,8 +64,10 @@ def form_upload_medium():
     stream = next(request.files.values())
     success, result = upload_file(stream)
 
-    if not success:
-        return notifications.medium_already_exists(result), 400
+    if success == UploadResult.UNKNOWN_MIME_TYPE:
+        return notifications.unknown_mime_type(stream.filename, result), 400
+    if success == UploadResult.CONFLICTING_MEDIUM:
+        return notifications.medium_already_exists(stream.filename, result), 400
 
     status, error = thumbnails.create(result.id)
     if status == 400:

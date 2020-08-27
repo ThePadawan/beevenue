@@ -41,6 +41,15 @@ def test_uploading_same_medium_twice_fails(client, asAdmin):
     assert res.status_code == 400
 
 
+def test_uploading_weird_mime_type_fails(client, asAdmin):
+    with open("test/resources/testing.sql", "rb") as f:
+        contents = f.read()
+    res = client.post(
+        "/medium", data={"file": (BytesIO(contents), "example.foo")}
+    )
+    assert res.status_code == 400
+
+
 def test_uploading_medium_with_taggy_filename_succeeds(client, asAdmin):
     with open("test/resources/placeholder.jpg", "rb") as f:
         contents = f.read()

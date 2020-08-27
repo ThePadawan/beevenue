@@ -31,20 +31,20 @@ def simple_warning(text):
 def not_sfw():
     return _make_notification(
         NotificationLevel.INFO,
-        _text(f"Your SFW setting does not allow you to see this."),
+        _text("Your SFW setting does not allow you to see this."),
     )
 
 
 def could_not_update_medium():
     return _make_notification(
-        NotificationLevel.ERROR, _text(f"Could not update medium.")
+        NotificationLevel.ERROR, _text("Could not update medium.")
     )
 
 
 def no_permission():
     return _make_notification(
         NotificationLevel.ERROR,
-        _text(f"You do not have the permission to do this."),
+        _text("You do not have the permission to do this."),
     )
 
 
@@ -75,21 +75,28 @@ def tag_batch_added(tag_count, added_count):
 
 def new_thumbnail():
     return _make_notification(
-        NotificationLevel.INFO, _text(f"New thumbnail now available.")
+        NotificationLevel.INFO, _text("New thumbnail now available.")
     )
 
 
 def medium_uploaded(medium_id):
     return _make_notification(
         NotificationLevel.INFO,
-        _text(f"Medium successfully uploaded:"),
+        _text("Medium successfully uploaded:"),
         _link(f"/show/{medium_id}", f"{medium_id}"),
     )
 
 
-def medium_already_exists(medium_id):
+def medium_already_exists(filename, medium_id):
     return _make_notification(
         NotificationLevel.ERROR,
-        _text(f"Medium already exists:"),
-        _link(f"/show/{medium_id}", f"{medium_id}"),
+        _text(f'Cannot handle file "{filename}" since it already exists:'),
+        _link(f"/show/{medium_id}", f"Medium {medium_id}"),
+    )
+
+
+def unknown_mime_type(filename, mime_type):
+    return _make_notification(
+        NotificationLevel.ERROR,
+        _text(f'Cannot handle file "{filename}" with mime type "{mime_type}".'),
     )
