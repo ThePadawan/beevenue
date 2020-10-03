@@ -64,7 +64,7 @@ def no_such_tag(current_name):
 
 def tag_batch_added(tag_count, added_count):
     tag_string = "tag"
-    if tag_count > 1:
+    if added_count > 1:
         tag_string = "tags"
 
     return _make_notification(
