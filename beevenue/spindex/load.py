@@ -94,10 +94,10 @@ def full_load():
 class _AbstractDataSource(ABC):
     @abstractmethod
     def alias_names(self, tag_ids: List[int]) -> Set[str]:
-        pass
+        """Returns all names of aliases for the given tag_ids."""
 
     def implied(self, tag_ids: List[int]) -> Tuple[Set[str], Set[str]]:
-        pass
+        """Returns set of ids and names of tags implied by the given tag_ids."""
 
 
 class _SingleLoadDataSource(_AbstractDataSource):

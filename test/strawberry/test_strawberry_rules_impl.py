@@ -8,6 +8,7 @@ from beevenue.strawberry.rules.common import (
 )
 from beevenue.strawberry.rules.iff import All
 from beevenue.strawberry.rules.then import Fail
+from beevenue.strawberry.rules.json import RulePartEncoder, RuleEncoder
 
 
 rules = [
@@ -51,3 +52,13 @@ def test_fail_never_has_medium_ids():
 def test_pprint_normal_case(rule):
     printed = rule.pprint()
     assert len(printed) > 0
+
+
+def test_rule_part_encoder_throws_on_unknown():
+    with pytest.raises(Exception):
+        RulePartEncoder().default("")
+
+
+def test_rule_encoder_throws_on_unknown():
+    with pytest.raises(Exception):
+        RuleEncoder().default("")

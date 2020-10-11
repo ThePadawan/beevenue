@@ -1,6 +1,23 @@
 import json
+import pytest
 
-INVALID_RULES_JSON = '{"a": 3}'
+INVALID_RULES_JSONS = [
+    '{"a": 3}',
+    """[{
+        "if": {
+            "data": "maris_piper",
+            "type": "hasPotatoes"
+        },
+        "then": [
+            {
+                "data": [
+                    "A"
+                ],
+                "type": "hasAnyTagsIn"
+            }
+        ]
+    }]""",
+]
 
 
 def test_get_rules(client, asAdmin):
@@ -32,8 +49,9 @@ def test_validate_new_rules(client, asAdmin):
     assert res.get_json()["ok"]
 
 
-def test_validate_invalid_rules(client, asAdmin):
-    res = client.post("/rules/validation", json=json.loads(INVALID_RULES_JSON))
+@pytest.mark.parametrize("rules_json", INVALID_RULES_JSONS)
+def test_validate_invalid_rules(client, asAdmin, rules_json):
+    res = client.post("/rules/validation", json=json.loads(rules_json))
     assert res.status_code == 200
     assert not res.get_json()["ok"]
 
@@ -46,6 +64,7 @@ def test_upload_new_rules(client, asAdmin):
     assert res.status_code == 200
 
 
-def test_upload_invalid_rules(client, asAdmin):
-    res = client.post("/rules", json=json.loads(INVALID_RULES_JSON))
+@pytest.mark.parametrize("rules_json", INVALID_RULES_JSONS)
+def test_upload_invalid_rules(client, asAdmin, rules_json):
+    res = client.post("/rules", json=json.loads(rules_json))
     assert res.status_code == 400

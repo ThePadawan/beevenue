@@ -33,6 +33,16 @@
         },
         "then": [
             {
+                "type": "hasRating"
+            }
+        ]
+    },
+    {
+        "if": {
+            "type": "all"
+        },
+        "then": [
+            {
                 "data": [
                     "s:.*"
                 ],

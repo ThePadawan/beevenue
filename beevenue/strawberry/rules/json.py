@@ -20,7 +20,7 @@ def _decode_part(obj):
     if obj["type"] == "hasAnyTagsLike":
         return iff.HasAnyTagsLike(*obj["data"])
 
-    raise Exception("Unknown rule IF")
+    raise Exception(f'Unknown rule part type "{obj["type"]}"')
 
 
 def _decode_thens(thens_obj):

@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import pytest
@@ -159,4 +160,13 @@ def withVideo(client):
 @pytest.yield_fixture
 def asUser(client):
     res = client.post("/login", json={"username": "user", "password": "user"})
+    assert res.status_code == 200
+
+
+@pytest.yield_fixture
+def withTrivialRules(client):
+    with open("test/resources/testing_rules_trivial.json", "r") as f:
+        contents = f.read()
+
+    res = client.post("/rules", json=json.loads(contents))
     assert res.status_code == 200

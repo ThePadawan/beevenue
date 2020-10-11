@@ -9,11 +9,11 @@ class HasAnyTags(metaclass=ABCMeta):
         self.tag_names = None
 
     def _load_tag_names(self):
-        pass
+        """Preload the concrete tag names (e.g. based on a more general regex) into self.tag_names."""
 
     @abstractproperty
     def _tags_as_str(self):
-        pass
+        """Pretty-printed version of self.tag_names for user display."""
 
     def _ensure_tag_names_loaded(self):
         if self.tag_names is not None:
