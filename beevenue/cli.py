@@ -1,11 +1,20 @@
 import click
 import os
+from io import BytesIO
 
 from flask import g
 
-from .sushi.routes import HelperBytesIO
 from .core.model.file_upload import upload_file
 from .core.model import thumbnails
+
+
+class HelperBytesIO(BytesIO):
+    def save(self, p):
+        """
+        Helper to enable BytesIO to save itself to a path.
+        """
+        with open(p, "wb") as out_file:
+            out_file.write(self.read())
 
 
 class Nop(object):
@@ -34,12 +43,12 @@ def init_cli(app):
             stream = HelperBytesIO(file_bytes)
             stream.filename = os.path.basename(p)
 
-            print(f"Uploading...")
+            print("Uploading...")
             success, result = upload_file(stream)
             if not success:
                 print(f"Could not upload file {p}: {result}")
                 continue
 
-            print(f"Creating thumbnails...")
+            print("Creating thumbnails...")
             thumbnails.create(result.id)
             print(f"Successfulyl imported {p}")

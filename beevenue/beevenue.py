@@ -59,13 +59,11 @@ def get_application(extra_config=None, fill_db=None):
         from .auth import blueprint as auth_bp
         from .core.controller.routes import bp as routes_bp
         from .strawberry.routes import bp as strawberry_bp
-        from .sushi.routes import bp as sushi_bp
         from .spindex.routes import bp as spindex_bp
 
         application.register_blueprint(auth_bp)
         application.register_blueprint(routes_bp)
         application.register_blueprint(strawberry_bp)
-        application.register_blueprint(sushi_bp)
         application.register_blueprint(spindex_bp)
 
         from .strawberry.rules.json import RuleEncoder
