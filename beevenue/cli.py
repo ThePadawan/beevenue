@@ -4,7 +4,7 @@ from io import BytesIO
 
 from flask import g
 
-from .core.model.file_upload import upload_file, UploadResult
+from .core.model.file_upload import create_medium_from_upload, UploadResult
 from .core.model import thumbnails
 
 
@@ -44,7 +44,7 @@ def init_cli(app):
             stream.filename = os.path.basename(p)
 
             print("Uploading...")
-            success, result = upload_file(stream)
+            success, result = create_medium_from_upload(stream)
             if success != UploadResult.SUCCESS:
                 print(f"Could not upload file {p}: {result}")
                 continue

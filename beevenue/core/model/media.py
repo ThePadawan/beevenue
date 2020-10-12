@@ -84,7 +84,10 @@ def _delete(session, medium):
     session.commit()
 
     medium_deleted.send(medium.id)
+    delete_medium_files(hash, extension)
 
+
+def delete_medium_files(hash, extension):
     _try_and_remove(f"media/{hash}.{extension}")
 
     for thumbnail_size, _ in current_app.config[

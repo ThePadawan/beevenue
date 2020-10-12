@@ -36,7 +36,12 @@ def _maybe_add_tags(m, file):
     for r in tags:
         match = RATING_TAG_REGEX.match(r)
         if match:
-            ratings.append((r, match,))
+            ratings.append(
+                (
+                    r,
+                    match,
+                )
+            )
 
     rating = None
     if ratings:
@@ -55,31 +60,47 @@ class UploadResult(Enum):
     UNKNOWN_MIME_TYPE = 2
 
 
-def upload_file(file):
-    session = db.session()
+def can_upload(file):
     basename = md5sum(file)
 
     conflicting_medium = Medium.query.filter(Medium.hash == basename).first()
     if conflicting_medium:
-        return UploadResult.CONFLICTING_MEDIUM, conflicting_medium.id
+        return False, (UploadResult.CONFLICTING_MEDIUM, conflicting_medium.id)
 
     file.seek(0)
+
     mime_type = magic.from_buffer(file.read(1024), mime=True)
+    file.seek(0)
     extension = EXTENSIONS.get(mime_type)
 
     if not extension:
-        return UploadResult.UNKNOWN_MIME_TYPE, mime_type
+        return False, (UploadResult.UNKNOWN_MIME_TYPE, mime_type)
 
-    m = Medium(mime_type=mime_type, hash=basename)
-    session.add(m)
+    return True, (mime_type, basename, extension)
 
+
+def upload_file(file, basename, extension):
     p = os.path.join("media", f"{basename}.{extension}")
 
-    file.seek(0)
     file.save(p)
 
     while not os.path.exists(p):
         sleep(1)
+
+
+def create_medium_from_upload(file):
+    success, details = can_upload(file)
+
+    if not success:
+        return details
+
+    mime_type, basename, extension = details
+
+    session = db.session()
+    m = Medium(mime_type=mime_type, hash=basename)
+    session.add(m)
+
+    upload_file(file, basename, extension)
 
     _maybe_add_tags(m, file)
 

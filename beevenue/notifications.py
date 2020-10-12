@@ -87,6 +87,13 @@ def medium_uploaded(medium_id):
     )
 
 
+def medium_replaced():
+    return _make_notification(
+        NotificationLevel.INFO,
+        _text("File successfully replaced.")
+    )
+
+
 def medium_already_exists(filename, medium_id):
     return _make_notification(
         NotificationLevel.ERROR,

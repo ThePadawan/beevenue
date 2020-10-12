@@ -3,8 +3,9 @@ from flask import request, send_file, render_template, make_response
 from ... import notifications, permissions, schemas
 
 from ..model.search import find_all
-from ..model.file_upload import upload_file, UploadResult
+from ..model.file_upload import create_medium_from_upload, UploadResult
 from ..model.medium_update import update_medium
+from ..model.medium_replace import replace_medium
 from ..model import thumbnails, media
 
 from . import bp
@@ -40,13 +41,19 @@ def get_medium(medium_id):
     return medium
 
 
-@bp.route("/medium/<int:medium_id>", methods=["PATCH"])
+@bp.route("/medium/<int:medium_id>/metadata", methods=["PATCH"])
 @permissions.is_owner
-def update_medium_post(medium_id):
+def update_medium_metadata(medium_id):
+    """Update some or all of the medium's metadata (e.g. rating).
+
+    Note: This is *not* used to update the medium itself. See the /file endpoint for that.
+    """
     body = request.json
 
     success = update_medium(
-        medium_id, body.get("rating", None), body.get("tags", None),
+        medium_id,
+        body.get("rating", None),
+        body.get("tags", None),
     )
 
     if success:
@@ -62,7 +69,7 @@ def form_upload_medium():
         return notifications.simple_error("You must supply a file"), 400
 
     stream = next(request.files.values())
-    success, result = upload_file(stream)
+    success, result = create_medium_from_upload(stream)
 
     if success == UploadResult.UNKNOWN_MIME_TYPE:
         return notifications.unknown_mime_type(stream.filename, result), 400
@@ -74,6 +81,30 @@ def form_upload_medium():
         return notifications.simple_error(error), 400
 
     return notifications.medium_uploaded(result.id), 200
+
+
+@bp.route("/medium/<int:medium_id>/file", methods=["PATCH"])
+@permissions.is_owner
+def replace_medium_file(medium_id):
+    """Replace this medium's file. Use the /metadata route to replace e.g. rating."""
+
+    if not request.files:
+        return notifications.simple_error("You must supply a file"), 400
+
+    stream = next(request.files.values())
+    success, error = replace_medium(medium_id, stream)
+
+    if success:
+        return get_medium(medium_id)
+
+    error_type, result = error
+
+    if error_type == UploadResult.UNKNOWN_MIME_TYPE:
+        return notifications.unknown_mime_type(stream.filename, result), 400
+    elif error_type == UploadResult.CONFLICTING_MEDIUM:
+        return notifications.medium_already_exists(stream.filename, result), 400
+
+    return notifications.simple_error(error_type), 400
 
 
 @bp.route("/media/backup.sh")
