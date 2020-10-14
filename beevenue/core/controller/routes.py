@@ -10,13 +10,6 @@ from .schemas.query import search_query_params_schema
 from . import bp
 
 
-@bp.route("/search")
-@search_query_params_schema
-def search_endpoint():
-    search_term_list = request.args.get("q").split(" ")
-    return search.run(search_term_list)
-
-
 @bp.route("/thumbnail/<int:medium_id>", methods=["PATCH"])
 @permissions.is_owner
 def create_thumbnail(medium_id):

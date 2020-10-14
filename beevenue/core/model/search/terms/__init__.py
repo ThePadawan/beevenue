@@ -28,6 +28,9 @@ FILTERS = [
 ]
 
 
+VALID_SEARCH_TERM_REGEXES = [f[0] for f in FILTERS]
+
+
 def _maybe_match(term):
     if len(term) < 1:
         return set()

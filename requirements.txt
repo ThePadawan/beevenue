@@ -12,10 +12,12 @@ flask-marshmallow==0.14.0
 Flask-Migrate==2.4.0
 Flask-Principal==0.4.0
 Flask-SQLAlchemy==2.4.3
+fuzzywuzzy==0.18.0
 graphene==2.1.8
 marshmallow==3.8.0
 marshmallow-sqlalchemy==0.21.0
 pathlib==1.0.1
+python-Levenshtein==0.12.0
 Pillow==7.2.0
 psycopg2==2.7.6
 sentry-sdk[flask]==0.18.0

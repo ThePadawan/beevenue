@@ -34,10 +34,7 @@ def get_all_implications():
         all_tag_ids.add(row.implying_tag_id)
         all_tag_ids.add(row.implied_tag_id)
 
-    tag_names = session.query(Tag).filter(Tag.id.in_(all_tag_ids)).all()
-    tag_dict = {t.id: t for t in tag_names}
-
-    censoring = Censorship(tag_dict, lambda t: t.tag)
+    censoring = Censorship(session, all_tag_ids)
 
     edges = {}
     for left_id, rows in groupby(all_rows, lambda r: r.implying_tag_id):
@@ -82,16 +79,13 @@ def _get_similarities(censoring, grouped_media_ids):
 def get_similarity_matrix():
     session = db.session()
 
-    all_tags = session.query(Tag).all()
-    tag_dict = {t.id: t for t in all_tags}
-
     media_tags = session.query(MediaTags).all()
     grouped_media_ids = defaultdict(set)
 
     for mt in media_tags:
         grouped_media_ids[mt.tag_id].add(mt.medium_id)
 
-    censoring = Censorship(tag_dict, lambda t: t.tag)
+    censoring = Censorship(session)
 
     nodes = {
         censoring.get_name(k): {"size": len(v)}
@@ -222,7 +216,12 @@ def _rename(session, old_tag: Tag, new_name: str) -> Tuple[str, bool]:
     if len(new_tags) < 1:
         # New tag doesn't exist yet. We can simply rename "old_tag".
         old_tag.tag = new_name
-        tag_renamed.send((old_name, new_name,))
+        tag_renamed.send(
+            (
+                old_name,
+                new_name,
+            )
+        )
         return "Successfully renamed tag", True
 
     new_tag = new_tags[0]
@@ -235,7 +234,12 @@ def _rename(session, old_tag: Tag, new_name: str) -> Tuple[str, bool]:
 
     session.delete(old_tag)
 
-    tag_renamed.send((old_name, new_name,))
+    tag_renamed.send(
+        (
+            old_name,
+            new_name,
+        )
+    )
     return "Successfully renamed tag", True
 
 
