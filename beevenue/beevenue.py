@@ -47,10 +47,11 @@ def get_application(
     if application.config.get("SENTRY_DSN"):
         import sentry_sdk
         from sentry_sdk.integrations.flask import FlaskIntegration
+        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
         sentry_sdk.init(
             dsn=application.config["SENTRY_DSN"],
-            integrations=[FlaskIntegration()],
+            integrations=[FlaskIntegration(), SqlalchemyIntegration()],
         )
 
     ma.init_app(application)
