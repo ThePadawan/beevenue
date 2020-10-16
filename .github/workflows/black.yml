@@ -8,10 +8,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@master
-      - name: Black Code Formatter
-        uses: lgeiger/black-action@v1.0.1
-        with:
-          args: ". -l 80"
+      - uses: psf/black@stable # Should respect pyproject.toml automatically
       - name: Create Pull Request
         id: cpr
         uses: peter-evans/create-pull-request@v2
