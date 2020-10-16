@@ -1,4 +1,5 @@
 import json
+
 import pytest
 
 INVALID_RULES_JSONS = [

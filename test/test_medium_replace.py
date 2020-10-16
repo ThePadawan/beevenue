@@ -1,6 +1,6 @@
-from beevenue.core.model.md5sum import md5sum
-
 from io import BytesIO
+
+from beevenue.core.model.md5sum import md5sum
 
 
 def _assert_hash_is_now(client, expected_hash_func):

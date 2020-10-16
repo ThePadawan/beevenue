@@ -1,25 +1,25 @@
-from flask import request, send_file, render_template, make_response
+from flask import make_response, render_template, send_file
 
-from ... import notifications, permissions, schemas
-
-from ..model.search import find_all
-from ..model.file_upload import create_medium_from_upload, UploadResult
-from ..model.medium_update import update_medium
-from ..model.medium_replace import replace_medium
-from ..model import thumbnails, media
+from beevenue.request import request
 
 from . import bp
+from ... import notifications, permissions, schemas
+from ..model import media, thumbnails
+from ..model.file_upload import create_medium_from_upload, UploadFailureType
+from ..model.medium_replace import replace_medium, ReplacementFailureType
+from ..model.medium_update import update_medium
+from ..model.search.search import find_all
 
 
 @bp.route("/media")
 @schemas.paginated
-def list_media():
+def list_media():  # type: ignore
     return find_all()
 
 
 @bp.route("/medium/<int:medium_id>", methods=["DELETE"])
 @permissions.is_owner
-def delete_medium(medium_id):
+def delete_medium(medium_id: int):  # type: ignore
     success = media.delete(medium_id)
     if success:
         return "", 200
@@ -29,7 +29,7 @@ def delete_medium(medium_id):
 
 @bp.route("/medium/<int:medium_id>", methods=["GET", "OPTION"])
 @permissions.get_medium
-def get_medium(medium_id):
+def get_medium(medium_id: int):  # type: ignore
     status_code, medium = media.get(request.beevenue_context, medium_id)
 
     if status_code == 404:
@@ -43,7 +43,7 @@ def get_medium(medium_id):
 
 @bp.route("/medium/<int:medium_id>/metadata", methods=["PATCH"])
 @permissions.is_owner
-def update_medium_metadata(medium_id):
+def update_medium_metadata(medium_id: int):  # type: ignore
     """Update some or all of the medium's metadata (e.g. rating).
 
     Note: This is *not* used to update the medium itself. See the /file endpoint for that.
@@ -64,52 +64,72 @@ def update_medium_metadata(medium_id):
 
 @bp.route("/medium", methods=["POST"])
 @permissions.is_owner
-def form_upload_medium():
+def form_upload_medium():  # type: ignore
     if not request.files:
         return notifications.simple_error("You must supply a file"), 400
 
     stream = next(request.files.values())
-    success, result = create_medium_from_upload(stream)
+    medium_id, failure = create_medium_from_upload(stream)
 
-    if success == UploadResult.UNKNOWN_MIME_TYPE:
-        return notifications.unknown_mime_type(stream.filename, result), 400
-    if success == UploadResult.CONFLICTING_MEDIUM:
-        return notifications.medium_already_exists(stream.filename, result), 400
+    if failure and failure["type"] == UploadFailureType.UNKNOWN_MIME_TYPE:
+        return (
+            notifications.unknown_mime_type(
+                stream.filename, failure["mime_type"]
+            ),
+            400,
+        )
+    if failure and failure["type"] == UploadFailureType.CONFLICTING_MEDIUM:
+        return (
+            notifications.medium_already_exists(
+                stream.filename, failure["medium_id"]
+            ),
+            400,
+        )
 
-    status, error = thumbnails.create(result.id)
+    status, error = thumbnails.create(medium_id)
     if status == 400:
         return notifications.simple_error(error), 400
 
-    return notifications.medium_uploaded(result.id), 200
+    return notifications.medium_uploaded(medium_id), 200
 
 
 @bp.route("/medium/<int:medium_id>/file", methods=["PATCH"])
 @permissions.is_owner
-def replace_medium_file(medium_id):
+def replace_medium_file(medium_id: int):  # type: ignore
     """Replace this medium's file. Use the /metadata route to replace e.g. rating."""
 
     if not request.files:
         return notifications.simple_error("You must supply a file"), 400
 
     stream = next(request.files.values())
-    success, error = replace_medium(medium_id, stream)
+    error = replace_medium(medium_id, stream)
 
-    if success:
+    if not error:
         return get_medium(medium_id)
 
-    error_type, result = error
+    if error["type"] == UploadFailureType.UNKNOWN_MIME_TYPE:
+        return (
+            notifications.unknown_mime_type(
+                stream.filename, error["mime_type"]
+            ),
+            400,
+        )
+    elif error["type"] == UploadFailureType.CONFLICTING_MEDIUM:
+        return (
+            notifications.medium_already_exists(
+                stream.filename, error["medium_id"]
+            ),
+            400,
+        )
+    elif error["type"] == ReplacementFailureType.UNKNOWN_MEDIUM:
+        return notifications.no_such_medium(medium_id), 400
 
-    if error_type == UploadResult.UNKNOWN_MIME_TYPE:
-        return notifications.unknown_mime_type(stream.filename, result), 400
-    elif error_type == UploadResult.CONFLICTING_MEDIUM:
-        return notifications.medium_already_exists(stream.filename, result), 400
-
-    return notifications.simple_error(error_type), 400
+    raise Exception(f"Unknown error occurred when replacing medium: {error}")
 
 
 @bp.route("/media/backup.sh")
 @permissions.is_owner
-def get_backup_sh():
+def get_backup_sh():  # type: ignore
     all_media_ids = media.get_all_ids()
 
     base_path = request.url_root
@@ -129,7 +149,7 @@ def get_backup_sh():
 
 @bp.route("/medium/<int:medium_id>/backup")
 @permissions.is_owner
-def get_medium_zip(medium_id):
+def get_medium_zip(medium_id: int):  # type: ignore
     status, b = media.get_zip(medium_id)
 
     if status == 404:

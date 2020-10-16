@@ -1,8 +1,16 @@
-from flask import request
+from typing import Callable, Dict, Union
+
+from beevenue.request import request
+
+from ....models import Medium, Tag
+
+Rateable = Union[Tag, Medium]
 
 
 class Censorship(object):
-    def __init__(self, lookup, name_func):
+    def __init__(
+        self, lookup: Dict[int, Rateable], name_func: Callable[[Rateable], str]
+    ):
         self.lookup = lookup
         self.name_func = name_func
 
@@ -15,9 +23,9 @@ class Censorship(object):
             self.ratings_to_censor |= set(["q", "e"])
 
         self.censored_counter = 0
-        self.names = dict()
+        self.names: Dict[int, str] = dict()
 
-    def get_name(self, id):
+    def get_name(self, id: int) -> str:
         if id not in self.names:
             thing = self.lookup[id]
 

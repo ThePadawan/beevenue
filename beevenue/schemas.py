@@ -1,26 +1,33 @@
-from flask import request, jsonify
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from flask import jsonify, Request
 from marshmallow import fields, Schema
 
-from .decorators import requires
+from beevenue.request import request
+
+from .decorators import RequirementDecorator, requires
 
 
 # View decorator that validates requests' query params
 # against the specified schema.
-def requires_query_params(schema):
+def requires_query_params(schema: Schema) -> RequirementDecorator:
     return _requires_schema(lambda r: schema.validate(r.args))
 
 
 # View decorator that validates request's json body
 # against the specified schema.
-def requires_json_body(schema):
+def requires_json_body(schema: Schema) -> RequirementDecorator:
     return _requires_schema(lambda r: schema.validate(r.json))
 
 
-def _requires_schema(validate):
-    def validator(*args, **kwargs):
+def _requires_schema(
+    validate: Callable[[Request], Dict[str, List[str]]]
+) -> RequirementDecorator:
+    def validator(*args: Any, **kwargs: Any) -> Optional[Tuple[Any, int]]:
         validation_errors = validate(request)
         if validation_errors:
             return jsonify(validation_errors), 400
+        return None
 
     return requires(validator)
 

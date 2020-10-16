@@ -1,39 +1,32 @@
-import click
 import os
-from io import BytesIO
+from typing import Iterable
 
+import click
 from flask import g
 
-from .core.model.file_upload import create_medium_from_upload, UploadResult
 from .core.model import thumbnails
-
-
-class HelperBytesIO(BytesIO):
-    def save(self, p):
-        """
-        Helper to enable BytesIO to save itself to a path.
-        """
-        with open(p, "wb") as out_file:
-            out_file.write(self.read())
+from .core.model.file_upload import create_medium_from_upload, UploadFailure
+from .flask import BeevenueFlask
+from .io import HelperBytesIO
 
 
 class Nop(object):
-    def remove_id(self, id):
-        pass
+    def remove_id(self, id: int) -> None:
+        """Do nothing, intentionally."""
 
-    def add(self, x):
-        pass
+    def add(self, x: object) -> None:
+        """Do nothing, intentionally."""
 
 
 class NopSpindex(object):
-    def __call__(self, do_write):
+    def __call__(self, do_write: bool) -> Nop:
         return Nop()
 
 
-def init_cli(app):
+def init_cli(app: BeevenueFlask) -> None:
     @app.cli.command("import")
     @click.argument("file_paths", nargs=-1, type=click.Path(exists=True))
-    def _import(file_paths):
+    def _import(file_paths: Iterable[str]) -> None:
         g.spindex = NopSpindex()
 
         for p in file_paths:
@@ -44,11 +37,11 @@ def init_cli(app):
             stream.filename = os.path.basename(p)
 
             print("Uploading...")
-            success, result = create_medium_from_upload(stream)
-            if success != UploadResult.SUCCESS:
-                print(f"Could not upload file {p}: {result}")
+            medium_id, failure = create_medium_from_upload(stream)
+            if failure or not medium_id:
+                print(f"Could not upload file {p}: {failure}")
                 continue
 
             print("Creating thumbnails...")
-            thumbnails.create(result.id)
-            print(f"Successfulyl imported {p}")
+            thumbnails.create(medium_id)
+            print(f"Successfully imported {p}")

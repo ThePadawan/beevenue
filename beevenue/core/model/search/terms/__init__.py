@@ -1,14 +1,16 @@
 import re
+from re import Pattern
+from typing import List, Optional, Set, Tuple, Type
 
 from ...tags import VALID_TAG_REGEX_INNER
-
+from .base import SearchTerm
+from .complex import CategorySearchTerm, CountingSearchTerm
 from .simple import (
-    PositiveSearchTerm,
-    RatingSearchTerm,
     ExactSearchTerm,
     Negative,
+    PositiveSearchTerm,
+    RatingSearchTerm,
 )
-from .complex import CategorySearchTerm, CountingSearchTerm
 
 COMPARISON = r"(?P<operator>(:|=|<|>|<=|>=|!=))(?P<number>[0-9]+)"
 
@@ -19,7 +21,7 @@ EXACT_TERM_REGEX = re.compile(r"\+(" + VALID_TAG_REGEX_INNER + ")")
 POSITIVE_TERM_REGEX = re.compile(VALID_TAG_REGEX_INNER)
 
 
-FILTERS = [
+FILTERS: List[Tuple[Pattern, Type[SearchTerm]]] = [
     (COUNTING_TERM_REGEX, CountingSearchTerm),
     (CATEGORY_TERM_REGEX, CategorySearchTerm),
     (RATING_TERM_REGEX, RatingSearchTerm),
@@ -28,9 +30,9 @@ FILTERS = [
 ]
 
 
-def _maybe_match(term):
+def _maybe_match(term: str) -> Optional[SearchTerm]:
     if len(term) < 1:
-        return set()
+        return None
 
     do_negate = False
     if term[0] == "-":
@@ -45,19 +47,22 @@ def _maybe_match(term):
         if match:
             break
 
-    if not match:
-        return set()
+    # (This double check is a bit superfluous, but calms the type checker)
+    if not match or not matching_class:
+        return None
 
     term_obj = matching_class.from_match(match)
     if do_negate:
         term_obj = Negative(term_obj)
-    return set([term_obj])
+    return term_obj
 
 
-def get_search_terms(search_term_list):
+def get_search_terms(search_term_list: List[str]) -> Set[SearchTerm]:
     result = set()
 
     for term in search_term_list:
-        result |= _maybe_match(term)
+        maybe_term = _maybe_match(term)
+        if maybe_term:
+            result.add(maybe_term)
 
     return result

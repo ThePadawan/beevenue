@@ -1,14 +1,18 @@
 from collections import defaultdict
+from typing import Any, Callable, Dict, List, Type
 
 import graphene
 
 from ...spindex.spindex import SPINDEX
 
+ratings: List[str] = ["u", "s", "q", "e"]
 
-ratings = ["u", "s", "q", "e"]
+
+class StatisticsType(object):
+    stats: Dict[str, int]
 
 
-def generate_statistics_type():
+def generate_statistics_type() -> Type:
     """
     Generates a Graphene type with an Int field and resolver per rating.
     i.e.
@@ -16,19 +20,19 @@ def generate_statistics_type():
         resolve_q = ...
     """
 
-    def ctor(self):
-        stats = defaultdict(int)
+    def ctor(self: Any) -> None:
+        stats: Dict[str, int] = defaultdict(int)
         for m in SPINDEX.all():
             stats[m.rating] += 1
         self.stats = stats
 
-    type_dict = {"__init__": ctor}
+    type_dict: Dict[str, Callable] = {"__init__": ctor}
 
     for rating in ratings:
         type_dict[rating] = graphene.Int()
 
-        def generate_resolver(rating_query):
-            def resolver(root, info):
+        def generate_resolver(rating_query: str) -> Callable[[Any, Any], int]:
+            def resolver(root: StatisticsType, info: Any) -> int:
                 return root.stats[rating_query]
 
             return resolver
@@ -44,14 +48,14 @@ RatingStatistics = generate_statistics_type()
 class Statistics(graphene.ObjectType):
     ratings = graphene.Field(RatingStatistics)
 
-    def resolve_ratings(root, info):
+    def resolve_ratings(root: Any, info: Any) -> object:
         return RatingStatistics()
 
 
 class Query(graphene.ObjectType):
     statistics = graphene.Field(Statistics)
 
-    def resolve_statistics(root, info):
+    def resolve_statistics(root: Any, info: Any) -> Statistics:
         return Statistics()
 
 

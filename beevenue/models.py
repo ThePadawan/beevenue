@@ -1,5 +1,6 @@
-from .db import db
+from typing import List, Optional
 
+from .db import db
 
 TagImplication = db.Table(
     "tagImplication",
@@ -39,12 +40,12 @@ class Tag(db.Model):
         lazy="joined",
     )
 
-    def __init__(self, tag):
+    def __init__(self, tag: str):
         self.tag = tag
         self.rating = "u"
 
     @staticmethod
-    def create(tag):
+    def create(tag: str) -> Optional["Tag"]:
         clean_tag = tag.strip()
         if clean_tag:
             return Tag(clean_tag)
@@ -60,7 +61,7 @@ class TagAlias(db.Model):
 
     tag = db.relationship(Tag, lazy="joined")
 
-    def __init__(self, tag_id, alias):
+    def __init__(self, tag_id: int, alias: str):
         self.tag_id = tag_id
         self.alias = alias
 
@@ -94,7 +95,14 @@ class Medium(db.Model):
         backref=db.backref("media", lazy="joined"),
     )
 
-    def __init__(self, hash, mime_type, rating="u", tags=[], aspect_ratio=None):
+    def __init__(
+        self,
+        hash: str,
+        mime_type: str,
+        rating: str = "u",
+        tags: List[Tag] = [],
+        aspect_ratio: Optional[float] = None,
+    ):
         self.rating = rating
         self.mime_type = mime_type
         self.hash = hash

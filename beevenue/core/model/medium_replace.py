@@ -1,24 +1,41 @@
-from ...spindex.signals import medium_updated
-from ...models import Medium
-from ... import db
+from enum import Enum
+from typing import Literal, Optional, TypedDict, Union
 
-from .file_upload import can_upload, upload_file
+from werkzeug.datastructures import FileStorage
+
 from . import thumbnails
+from ... import db
+from ...models import Medium
+from ...spindex.signals import medium_updated
+from .file_upload import can_upload, upload_file, UploadFailure
 from .media import delete_medium_files, EXTENSIONS
 
 
-def replace_medium(medium_id, file):
+class ReplacementFailureType(Enum):
+    UNKNOWN_MEDIUM = 3
+
+
+class UnknownMediumResult(TypedDict):
+    type: Literal[ReplacementFailureType.UNKNOWN_MEDIUM]
+
+
+ReplacementFailure = Union[UploadFailure, UnknownMediumResult]
+
+
+def replace_medium(
+    medium_id: int, file: FileStorage
+) -> Optional[ReplacementFailure]:
+    """Try to replace the medium with id ``medium_id`` with the specified file."""
     maybe_medium = Medium.query.get(medium_id)
     if not maybe_medium:
-        return False, (f"Could not find medium with id {medium_id}.", None)
+        return {"type": ReplacementFailureType.UNKNOWN_MEDIUM}
 
-    success, details = can_upload(file)
+    details, failure = can_upload(file)
 
-    if not success:
-        return success, details
+    if (not details) or failure:
+        return failure
 
     old_hash = maybe_medium.hash
-
     old_extension = EXTENSIONS[maybe_medium.mime_type]
 
     mime_type, basename, extension = details
@@ -41,4 +58,4 @@ def replace_medium(medium_id, file):
     delete_medium_files(old_hash, old_extension)
 
     medium_updated.send(medium_id)
-    return True, None
+    return None

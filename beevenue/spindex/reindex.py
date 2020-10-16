@@ -1,51 +1,52 @@
+from typing import Tuple
+
 from .signals import (
-    medium_deleted,
-    medium_added,
-    medium_updated,
-    tag_renamed,
     alias_added,
     alias_removed,
     implication_added,
     implication_removed,
+    medium_added,
+    medium_deleted,
+    medium_updated,
+    tag_renamed,
 )
-
 from .spindex import SPINDEX
 
 
-def _reindex_medium(id):
+def _reindex_medium(id: int) -> None:
     SPINDEX.reindex_medium(id)
 
 
-def _rename_tag(names):
+def _rename_tag(names: Tuple[str, str]) -> None:
     old_name, new_name = names
     SPINDEX.rename_tag(old_name, new_name)
 
 
-def _unindex_medium(id):
+def _unindex_medium(id: int) -> None:
     SPINDEX.remove_medium(id)
 
 
-def _add_alias(msg):
+def _add_alias(msg: Tuple[str, str]) -> None:
     tag_name, new_alias = msg
     SPINDEX.add_alias(tag_name, new_alias)
 
 
-def _remove_alias(msg):
+def _remove_alias(msg: Tuple[str, str]) -> None:
     tag_name, former_alias = msg
     SPINDEX.remove_alias(tag_name, former_alias)
 
 
-def _add_implication(msg):
+def _add_implication(msg: Tuple[str, str]) -> None:
     implying, implied = msg
     SPINDEX.add_implication(implying, implied)
 
 
-def _remove_implication(msg):
+def _remove_implication(msg: Tuple[str, str]) -> None:
     implying, implied = msg
     SPINDEX.remove_implication(implying, implied)
 
 
-def setup_signals():
+def setup_signals() -> None:
     medium_updated.connect(_reindex_medium)
     medium_added.connect(_reindex_medium)
     medium_deleted.connect(_unindex_medium)

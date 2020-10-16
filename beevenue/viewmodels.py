@@ -1,30 +1,32 @@
-from .marshmallow import ma
-from .models import Tag
+import base64
+from typing import List, Optional
 
 from marshmallow import fields, Schema
+
+from .models import Tag
+from .spindex.models import SpindexedMedium
 
 
 class SpindexMediumSchema(Schema):
     id = fields.Int()
     tags = fields.Method("extract_innate_tags")
-    similar = fields.Nested(
-        "SpindexMediumSchema", many=True, exclude=["similar"]
-    )
     aspect_ratio = fields.Decimal(data_key="aspectRatio", as_string=True)
     hash = fields.String()
     rating = fields.String()
     mime_type = fields.String()
 
-    def extract_innate_tags(self, obj):
+    def extract_innate_tags(self, obj: SpindexedMedium) -> List[str]:
         return [t for t in obj.tag_names.innate]
+
+
+class SpindexMediumDetailSchema(SpindexMediumSchema):
+    similar = fields.Nested("SpindexMediumDetailSchema", many=True, only=["id"])
 
 
 class PaginationMediumSchema(SpindexMediumSchema):
     tiny_thumbnail = fields.Method("get_thumb", data_key="tinyThumbnail")
 
-    def get_thumb(self, obj):
-        import base64
-
+    def get_thumb(self, obj: SpindexedMedium) -> Optional[str]:
         if obj.tiny_thumbnail:
             return base64.b64encode(obj.tiny_thumbnail).decode("utf-8")
         return None
@@ -41,12 +43,6 @@ class PaginationSchema(Schema):
     pageSize = fields.Int()
 
 
-medium_schema = SpindexMediumSchema()
-
-
-pagination_schema = PaginationSchema()
-
-
 class TagShowSchema(Schema):
     aliases = fields.Method("get_aliases")
     count = fields.Method("get_media_count")
@@ -57,23 +53,20 @@ class TagShowSchema(Schema):
     implied_by_this = fields.Method("get_implied_by_this")
     implying_this = fields.Method("get_implying_this")
 
-    def get_aliases(self, obj):
+    def get_aliases(self, obj: Tag) -> List[str]:
         return [t.alias for t in obj.aliases]
 
-    def get_media_count(self, obj):
+    def get_media_count(self, obj: Tag) -> int:
         return len(obj.media)
 
-    def get_implied_by_this(self, obj):
+    def get_implied_by_this(self, obj: Tag) -> List[str]:
         return [t.tag for t in obj.implied_by_this]
 
-    def get_implying_this(self, obj):
+    def get_implying_this(self, obj: Tag) -> List[str]:
         return [t.tag for t in obj.implying_this]
 
 
-tag_show_schema = TagShowSchema()
-
-
-class TagStatisticSchema(Schema):
+class TagSummaryItemSchema(Schema):
     media_count = fields.Int(data_key="mediaCount")
     implying_this_count = fields.Int(data_key="implyingThisCount")
     implied_by_this_count = fields.Int(data_key="impliedByThisCount")
@@ -89,8 +82,11 @@ class TagStatisticSchema(Schema):
         )
 
 
-class TagStatisticsSchema(Schema):
-    tags = fields.Nested(TagStatisticSchema, many=True)
+class TagSummarySchema(Schema):
+    tags = fields.Nested(TagSummaryItemSchema, many=True)
 
 
-tag_statistics_schema = TagStatisticsSchema()
+medium_detail_schema = SpindexMediumDetailSchema()
+pagination_schema = PaginationSchema()
+tag_summary_schema = TagSummarySchema()
+tag_show_schema = TagShowSchema()

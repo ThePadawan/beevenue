@@ -1,15 +1,16 @@
 import json
 import os
-import tempfile
-import pytest
-import sqlite3
 import shutil
-
-from beevenue.beevenue import get_application
+import sqlite3
+import tempfile
 
 # Ignore warning that SQLite + DECIMAL sucks.
 import warnings
+
+import pytest
 from sqlalchemy.exc import SAWarning
+
+from beevenue.beevenue import get_application
 
 warnings.filterwarnings(
     "ignore",

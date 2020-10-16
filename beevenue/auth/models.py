@@ -8,7 +8,7 @@ class User(db.Model):
     hash = db.Column(db.String(length=256), nullable=False)
     role = db.Column(db.String(length=256), nullable=False)
 
-    def __init__(self, username, hash):
+    def __init__(self, username: str, hash: str):
         self.username = username
         self.hash = hash
         self.role = "user"

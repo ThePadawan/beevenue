@@ -1,12 +1,12 @@
 import bcrypt
-
-from flask import current_app, jsonify, session, request
+from flask import current_app, jsonify, session
 from flask_login import current_user, login_user, logout_user
-from flask_principal import identity_changed, Identity, AnonymousIdentity
+from flask_principal import AnonymousIdentity, Identity, identity_changed
 
-from ..decorators import does_not_require_login
+from beevenue.request import request
 
 from . import blueprint
+from ..decorators import does_not_require_login
 from .logged_in_user import LoggedInUser
 from .models import User
 from .schemas import login_params_schema, sfw_mode_schema
@@ -15,7 +15,7 @@ from .schemas import login_params_schema, sfw_mode_schema
 # "Am I logged in"? This simply reads the session cookie and replies true/false
 @blueprint.route("/login", methods=["GET"])
 @does_not_require_login
-def get_login_state():
+def get_login_state():  # type: ignore
     if current_user.is_anonymous:
         return jsonify(False)
 
@@ -29,7 +29,7 @@ def get_login_state():
 
 
 @blueprint.route("/logout", methods=["POST"])
-def logout():
+def logout():  # type: ignore
     logout_user()
 
     for key in ("identity.id", "identity.auth_type", "identity.role"):
@@ -45,7 +45,7 @@ def logout():
 @blueprint.route("/login", methods=["POST"])
 @login_params_schema
 @does_not_require_login
-def login():
+def login():  # type: ignore
     username = request.json["username"]
     password = request.json["password"]
 
@@ -82,7 +82,7 @@ def login():
 
 @blueprint.route("/sfw", methods=["PATCH"])
 @sfw_mode_schema
-def set_sfw_mode():
+def set_sfw_mode():  # type: ignore
     session["sfwSession"] = bool(request.json["sfwSession"])
     session.modified = True
     return "", 200

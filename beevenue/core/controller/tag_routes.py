@@ -1,15 +1,16 @@
-from flask import request
+from beevenue.request import request
+
+from . import bp
 from ... import notifications, permissions
 from ..model import tags
-from ..model.tags import implications, aliases, statistics
-from .schemas.query import update_tag_schema, add_tags_batch_schema
-from . import bp
+from ..model.tags import aliases, implications, summary
+from .schemas.query import add_tags_batch_schema, update_tag_schema
 
 
 @bp.route("/tag/<string:tag_name>", methods=["PATCH"])
 @permissions.is_owner
 @update_tag_schema
-def patch_tag(tag_name):
+def patch_tag(tag_name: str):  # type: ignore
     body = request.json
     success, error_or_tag = tags.update(tag_name, body)
     if not success:
@@ -25,47 +26,50 @@ IMPLICATION_ROUTE_PATH = (
 
 @bp.route(IMPLICATION_ROUTE_PATH, methods=["PATCH"])
 @permissions.is_owner
-def tag_add_implication(tag_name, implied_by_this):
-    message, success = implications.add_implication(
+def tag_add_implication(tag_name: str, implied_by_this: str):  # type: ignore
+    error = implications.add_implication(
         implying=tag_name, implied=implied_by_this
     )
 
-    if success:
+    if not error:
         return "", 200
     else:
-        return notifications.simple_error(message), 400
+        return notifications.simple_error(error), 400
 
 
 @bp.route(IMPLICATION_ROUTE_PATH, methods=["DELETE"])
 @permissions.is_owner
-def tag_remove_implication(tag_name, implied_by_this):
-    message, success = implications.remove_implication(
+def tag_remove_implication(tag_name: str, implied_by_this: str):  # type: ignore
+    error = implications.remove_implication(
         implying=tag_name, implied=implied_by_this
     )
 
-    if success:
+    if not error:
         return "", 200
     else:
-        return notifications.simple_error(message), 400
+        return notifications.simple_error(error), 400
 
 
 @bp.route("/tag/implications/backup")
 @permissions.is_owner
-def backup_implications():
+def backup_implications():  # type: ignore
     all_implications = implications.get_all()
     return all_implications
 
 
 @bp.route("/tags", methods=["GET"])
-def get_tags_stats():
-    return statistics.get_statistics(request.beevenue_context)
+def get_tags_stats():  # type: ignore
+    return summary.get_summary(request.beevenue_context)
 
 
 @bp.route("/tags/batch", methods=["POST"])
 @permissions.is_owner
 @add_tags_batch_schema
-def add_tags_batch():
-    result = tags.add_batch(request.json["tags"], request.json["mediumIds"],)
+def add_tags_batch():  # type: ignore
+    result = tags.add_batch(
+        request.json["tags"],
+        request.json["mediumIds"],
+    )
 
     if not result:
         return notifications.simple_warning("No tags added")
@@ -75,20 +79,20 @@ def add_tags_batch():
 
 
 @bp.route("/tags/similarity")
-def get_tag_similarity():
+def get_tag_similarity():  # type: ignore
     matrix = tags.get_similarity_matrix()
     return matrix, 200
 
 
 @bp.route("/tags/implications")
-def get_tag_implications():
+def get_tag_implications():  # type: ignore
     implications = tags.get_all_implications()
     return implications, 200
 
 
 @bp.route("/tag/<string:name>", methods=["GET", "OPTION"])
 @permissions.is_owner
-def get_tag(name):
+def get_tag(name: str):  # type: ignore
     maybe_tag = tags.get(name)
 
     if not maybe_tag:
@@ -101,18 +105,17 @@ def get_tag(name):
     "/tag/<string:current_name>/aliases/<string:new_alias>", methods=["POST"]
 )
 @permissions.is_owner
-def add_alias(current_name, new_alias):
-    message, success = aliases.add_alias(current_name, new_alias)
+def add_alias(current_name: str, new_alias: str):  # type: ignore
+    error = aliases.add_alias(current_name, new_alias)
 
-    if success:
+    if not error:
         return "", 200
-    else:
-        return notifications.simple_error(message), 400
+    return notifications.simple_error(error), 400
 
 
 @bp.route("/tag/<string:name>/aliases/<string:alias>", methods=["DELETE"])
 @permissions.is_owner
-def delete_alias(name, alias):
+def delete_alias(name: str, alias: str):  # type: ignore
     aliases.remove_alias(name, alias)
 
     return "", 200

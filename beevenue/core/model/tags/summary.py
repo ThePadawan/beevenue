@@ -1,15 +1,20 @@
 from collections import defaultdict
+from typing import Callable, Dict, List
+
+from sqlalchemy.orm.scoping import scoped_session
+
+from beevenue.context import BeevenueContext
+
 from .... import db
 from ....models import Tag, TagImplication
 from ....spindex.spindex import SPINDEX
+from .tag_summary import TagSummary, TagSummaryEntry
+
+SingleCountType = Dict[str, int]
+CountsType = Dict[str, SingleCountType]
 
 
-class TagStatistics(object):
-    def __init__(self, tags):
-        self.tags = tags
-
-
-def _load_tags(context, session):
+def _load_tags(context: BeevenueContext, session: scoped_session) -> List[Tag]:
     filter = None
 
     if context.user_role != "admin":
@@ -22,19 +27,20 @@ def _load_tags(context, session):
     if filter is not None:
         q = q.filter(*[filter])
 
-    return q.all()
+    all_tags: List[Tag] = q.all()
+    return all_tags
 
 
-def _load_media_counts(session):
+def _load_media_counts(session: scoped_session) -> CountsType:
     """
-        Returns a data structure that answers the question
-        "Given this tag, how many media of each rating exist?".
+    Returns a data structure that answers the question
+    "Given this tag, how many media of each rating exist?".
 
-        i.e. d["foo"] = {"q": 2, "e": 1, "s": 0, "u": 0}
+    i.e. d["foo"] = {"q": 2, "e": 1, "s": 0, "u": 0}
     """
 
     all_media = SPINDEX.all()
-    counts = defaultdict(lambda: defaultdict(int))
+    counts: CountsType = defaultdict(lambda: defaultdict(int))
 
     for m in all_media:
         for name in m.tag_names.innate:
@@ -43,14 +49,16 @@ def _load_media_counts(session):
     return counts
 
 
-def _get_censor_func(context):
-    def no_censor(counts):
+def _get_censor_func(
+    context: BeevenueContext,
+) -> Callable[[SingleCountType], int]:
+    def no_censor(counts: SingleCountType) -> int:
         return sum(counts.values())
 
-    def sfw_censor(counts):
+    def sfw_censor(counts: SingleCountType) -> int:
         return counts["s"]
 
-    def q_censor(counts):
+    def q_censor(counts: SingleCountType) -> int:
         return counts["s"] + counts["q"]
 
     if context.user_role == "admin":
@@ -61,7 +69,7 @@ def _get_censor_func(context):
     return q_censor
 
 
-def get_statistics(context):
+def get_summary(context: BeevenueContext) -> TagSummary:
     session = db.session()
 
     all_tags = _load_tags(context, session)
@@ -70,8 +78,8 @@ def get_statistics(context):
 
     all_direct_implications = session.query(TagImplication).all()
 
-    implying_this_count = defaultdict(int)
-    implied_by_this_count = defaultdict(int)
+    implying_this_count: Dict[int, int] = defaultdict(int)
+    implied_by_this_count: Dict[int, int] = defaultdict(int)
 
     for i in all_direct_implications:
         implying_this_count[i.implied_tag_id] += 1
@@ -82,8 +90,7 @@ def get_statistics(context):
     results = []
 
     for t in all_tags:
-        r = {
-            "id": t.id,
+        r: TagSummaryEntry = {
             "tag": t.tag,
             "rating": t.rating,
             "implied_by_this_count": implied_by_this_count[t.id],
@@ -93,4 +100,4 @@ def get_statistics(context):
 
         results.append(r)
 
-    return TagStatistics(results)
+    return TagSummary(results)

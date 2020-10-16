@@ -1,8 +1,15 @@
 from queue import PriorityQueue
+from typing import List, Set
+
+from beevenue.context import BeevenueContext
+
+from ...spindex.models import SpindexedMedium
 from ...spindex.spindex import SPINDEX
 
 
-def _find_candidates(context, medium_id, target_tag_names):
+def _find_candidates(
+    context: BeevenueContext, medium_id: int, target_tag_names: Set[str]
+) -> Set[SpindexedMedium]:
     """
     Find all media that have *some* similarity to the medium
     with Id `medium_id`.
@@ -28,13 +35,15 @@ def _find_candidates(context, medium_id, target_tag_names):
     return candidates
 
 
-def _get_similarity(context, medium):
+def _get_similarity(
+    context: BeevenueContext, medium: SpindexedMedium
+) -> PriorityQueue:
     target_tag_names = medium.tag_names.innate
     candidates = _find_candidates(context, medium.id, target_tag_names)
 
     # Keep up to 6 similar items in memory. We eject the least similar
     # once we have more than 5.
-    jaccard_indices = PriorityQueue(maxsize=5 + 1)
+    jaccard_indices: PriorityQueue = PriorityQueue(maxsize=5 + 1)
 
     for candidate in candidates:
         candidate_tags = candidate.tag_names.innate
@@ -43,7 +52,12 @@ def _get_similarity(context, medium):
 
         similarity = float(intersection_size) / float(union_size)
 
-        jaccard_indices.put_nowait((similarity, candidate.id,))
+        jaccard_indices.put_nowait(
+            (
+                similarity,
+                candidate.id,
+            )
+        )
 
         if jaccard_indices.full():
             jaccard_indices.get_nowait()
@@ -51,7 +65,9 @@ def _get_similarity(context, medium):
     return jaccard_indices
 
 
-def similar_media(context, medium):
+def similar_media(
+    context: BeevenueContext, medium: SpindexedMedium
+) -> List[SpindexedMedium]:
     jaccard_indices = _get_similarity(context, medium)
 
     similar_media_ids = []

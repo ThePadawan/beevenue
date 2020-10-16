@@ -12,7 +12,8 @@ jobs:
           python-version: 3.8
       - uses: jamescurtin/isort-action@master
         with:
-            requirementsFiles: "requirements.txt requirements.linuxonly.txt"
+          configuration: "."
+          requirementsFiles: "requirements.txt requirements.cionly.txt requirements.linuxonly.txt"
       - name: Create Pull Request
         id: cpr
         uses: peter-evans/create-pull-request@v2

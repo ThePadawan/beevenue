@@ -1,20 +1,23 @@
 from io import BytesIO
 import os
 import re
+from typing import List, Optional, Tuple
 
 from PIL import Image
 from flask import current_app
-
-from ... import db
-from ...models import Medium
-from .media import EXTENSIONS
-
-from ...spindex.signals import medium_updated
+from sqlalchemy.orm.scoping import scoped_session
 
 from . import ffmpeg
+from ... import db
+from ...models import Medium
+from ...spindex.signals import medium_updated
+from .extensions import EXTENSIONS
+from .interface import ThumbnailingResult
 
 
-def _thumbnailable_video(medium_id):
+def _thumbnailable_video(
+    medium_id: int,
+) -> Tuple[int, Optional[Tuple[str, Medium]]]:
     session = db.session()
     medium = session.query(Medium).filter_by(id=medium_id).first()
 
@@ -33,20 +36,20 @@ def _thumbnailable_video(medium_id):
     return 200, (origin_path, medium)
 
 
-def generate_picks(medium_id, n):
+def generate_picks(medium_id: int, n: int) -> Tuple[int, Optional[List[bytes]]]:
     status_code, t = _thumbnailable_video(medium_id)
 
-    if status_code != 200:
+    if status_code != 200 or (t is None):
         return status_code, None
 
     origin_path, _ = t
     return 200, ffmpeg.generate_picks(n, origin_path)
 
 
-def pick(medium_id, thumb_index, n):
+def pick(medium_id: int, thumb_index: int, n: int) -> int:
     status_code, t = _thumbnailable_video(medium_id)
 
-    if status_code != 200:
+    if status_code != 200 or (t is None):
         return status_code
 
     origin_path, medium = t
@@ -55,27 +58,25 @@ def pick(medium_id, thumb_index, n):
     return 200
 
 
-def create(medium_id):
+def create(medium_id: int) -> Tuple[int, str]:
     session = db.session()
     maybe_medium = session.query(Medium).filter_by(id=medium_id).first()
 
     if not maybe_medium:
         return 404, ""
 
-    success, aspect_ratio_or_error = _create(
-        maybe_medium.mime_type, maybe_medium.hash
-    )
+    thumbnailing_result = _create(maybe_medium.mime_type, maybe_medium.hash)
 
-    if not success:
-        return 400, aspect_ratio_or_error
+    if thumbnailing_result.error:
+        return 400, thumbnailing_result.error
 
-    maybe_medium.aspect_ratio = aspect_ratio_or_error
+    maybe_medium.aspect_ratio = thumbnailing_result.aspect_ratio
     session.commit()
     _generate_tiny(medium_id, session)
     return 200, ""
 
 
-def _create(mime_type, hash):
+def _create(mime_type: str, hash: str) -> ThumbnailingResult:
     thumb_path = os.path.abspath(f"thumbs/{hash}.jpg")
     if os.path.exists(thumb_path):
         os.remove(thumb_path)
@@ -85,12 +86,14 @@ def _create(mime_type, hash):
     origin_path = os.path.abspath(f"media/{hash}.{extension}")
 
     if not os.path.exists(origin_path):
-        return False
+        raise Exception(
+            "Could not create thumbnail because medium file does not exist."
+        )
 
     return ffmpeg.thumbnails(origin_path, thumb_path, mime_type)
 
 
-def _generate_tiny(medium_id, session):
+def _generate_tiny(medium_id: int, session: scoped_session) -> None:
     size, _ = list(current_app.config["BEEVENUE_THUMBNAIL_SIZES"].items())[0]
     tiny_thumb_res = current_app.config["BEEVENUE_TINY_THUMBNAIL_SIZE"]
 

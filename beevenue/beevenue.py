@@ -1,16 +1,32 @@
 import os
+from typing import Callable, Optional
 
 from flask_compress import Compress
-from flask_migrate import Migrate
 from flask_cors import CORS
+from flask_migrate import Migrate
 
-
+from .auth import blueprint as auth_bp
+from .auth.auth import init as auth_init_app
+from .cache import init_app as cache_init_app
 from .cli import init_cli
+from .core.controller.routes import bp as routes_bp
+from .db import db
 from .flask import BeevenueFlask
+from .init import init_app as context_init_app
+from .login_manager import login_manager
+from .marshmallow import ma
+from .principal import principal
+from .spindex.init import init_app as spindex_init_app
+from .spindex.routes import bp as spindex_bp
+from .strawberry.routes import bp as strawberry_bp
+from .strawberry.rules.json import RuleEncoder
 
 
-def get_application(extra_config=None, fill_db=None):
-    application = BeevenueFlask("strawberry", "0.0.0.0", 7000)
+def get_application(
+    extra_config: Optional[Callable[[BeevenueFlask], None]] = None,
+    fill_db: Optional[Callable[[], None]] = None,
+) -> BeevenueFlask:
+    application = BeevenueFlask("beevenue-main", "0.0.0.0", 7000)
 
     application.config.from_envvar("BEEVENUE_CONFIG_FILE")
 
@@ -25,8 +41,6 @@ def get_application(extra_config=None, fill_db=None):
 
     Compress(application)
 
-    from .db import db
-
     db.init_app(application)
     Migrate(application, db)
 
@@ -39,34 +53,17 @@ def get_application(extra_config=None, fill_db=None):
             integrations=[FlaskIntegration()],
         )
 
-    from .marshmallow import ma
-
     ma.init_app(application)
 
     with application.app_context():
-        from .login_manager import login_manager
-
         login_manager.init_app(application)
-
-        from .principal import principal
-
         principal.init_app(application)
-
-        from .core.controller.context import init_app as context_init_app
-
         context_init_app(application)
-
-        from .auth import blueprint as auth_bp
-        from .core.controller.routes import bp as routes_bp
-        from .strawberry.routes import bp as strawberry_bp
-        from .spindex.routes import bp as spindex_bp
 
         application.register_blueprint(auth_bp)
         application.register_blueprint(routes_bp)
         application.register_blueprint(strawberry_bp)
         application.register_blueprint(spindex_bp)
-
-        from .strawberry.rules.json import RuleEncoder
 
         application.json_encoder = RuleEncoder
 
@@ -78,11 +75,7 @@ def get_application(extra_config=None, fill_db=None):
             db.create_all()
             fill_db()
 
-        from .cache import init_app as cache_init_app
-
         cache_init_app(application)
-
-        from .spindex import init_app as spindex_init_app
 
         if "BEEVENUE_SKIP_SPINDEX" in os.environ:
             print("Skipping Spindex initialization")
@@ -90,7 +83,6 @@ def get_application(extra_config=None, fill_db=None):
             spindex_init_app(application)
 
     init_cli(application)
-
-    import beevenue.auth.auth
+    auth_init_app()
 
     return application

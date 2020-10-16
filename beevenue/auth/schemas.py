@@ -1,4 +1,4 @@
-from marshmallow import fields, Schema, EXCLUDE
+from marshmallow import EXCLUDE, fields, Schema
 
 from ..schemas import requires_json_body
 

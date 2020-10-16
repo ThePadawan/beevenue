@@ -1,11 +1,10 @@
-from .reindex import setup_signals
-from .load import full_load
-from .spindex import SPINDEX
-
 from ..cache import cache
+from ..flask import BeevenueFlask
+from .load.full import full_load
+from .reindex import setup_signals
 
 
-def init_app(app):
+def init_app(app: BeevenueFlask) -> None:
     cache.init_app(app)
-    SPINDEX.add_media(full_load())
+    full_load()
     setup_signals()

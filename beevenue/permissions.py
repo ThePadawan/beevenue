@@ -1,24 +1,28 @@
 from pathlib import Path
+from typing import Any, Optional, Tuple
 
 from flask_login import current_user
 from flask_principal import identity_loaded, Permission
 
-from .spindex.spindex import SPINDEX
-from .decorators import requires
 from . import notifications
+from .decorators import RequirementDecorator, requires
+from .spindex.models import SpindexedMedium
+from .spindex.spindex import SPINDEX
 
 
 class CanSeeMediumWithRatingNeed(object):
-    def __init__(self, rating):
+    def __init__(self, rating: str):
         self.rating = rating
 
-    def __eq__(self, other):
-        return self.rating == other.rating
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, self.__class__):
+            return self.rating == other.rating
+        return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.rating,))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<CanSeeMediumWithRatingNeed rating='{self.rating}'>"
 
 
@@ -38,7 +42,7 @@ _admin_role_need = AdminRoleNeed()
 
 
 @identity_loaded.connect
-def on_identity_loaded(sender, identity):
+def on_identity_loaded(_: Any, identity: Any) -> None:
     if hasattr(current_user, "role"):
         identity.role = current_user.role
         if current_user.role == "admin":
@@ -51,38 +55,40 @@ def on_identity_loaded(sender, identity):
 _allowed = Permission()
 
 
-def _can_see_spindex_medium(m):
+def _can_see_spindex_medium(m: Optional[SpindexedMedium]) -> Permission:
     if not m:
         return _allowed
 
     return Permission(CanSeeMediumWithRatingNeed(m.rating))
 
 
-def _can_see_medium(medium_id):
+def _can_see_medium(medium_id: int) -> Permission:
     return _can_see_spindex_medium(SPINDEX.get_medium(medium_id))
 
 
-def _can_see_full_path(full_path):
+def _can_see_full_path(full_path: str) -> Permission:
     hash = str(Path(full_path).with_suffix(""))
     all_media = SPINDEX.all()
+
+    m: Optional[SpindexedMedium] = None
 
     matching = [m for m in all_media if m.hash == hash]
     if matching:
         m = matching[0]
-    else:
-        m = None
 
     return _can_see_spindex_medium(m)
 
 
-def _requires_permission(permission):
-    def validator(*args, **kwargs):
-        p = permission
-        if callable(p):
-            p = p(*args, **kwargs)
+def _requires_permission(permission: Permission) -> RequirementDecorator:
+    def validator(*args: Any, **kwargs: Any) -> Optional[Tuple[Any, int]]:
+        if callable(permission):
+            p = permission(*args, **kwargs)
+        else:
+            p = permission
 
         if not p.can():
             return notifications.no_permission(), 403
+        return None
 
     return requires(validator)
 

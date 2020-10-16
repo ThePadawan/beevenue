@@ -2,23 +2,28 @@ from enum import Enum
 import os
 import re
 from time import sleep
+from typing import Literal, Optional, Tuple, TypedDict, Union
 
 import magic
+from werkzeug.datastructures import FileStorage
+
+from beevenue.io import HelperBytesIO
 
 from ... import db
-from ...spindex.signals import medium_added
 from ...models import Medium
-
+from ...spindex.signals import medium_added
+from .extensions import EXTENSIONS
 from .md5sum import md5sum
-from .media import EXTENSIONS
-from .medium_update import update_tags, update_rating
+from .medium_update import update_rating, update_tags
+
+Uploadable = Union[HelperBytesIO, FileStorage]
 
 TAGGY_FILENAME_REGEX = re.compile(r"^\d+ - (?P<tags>.*)\.([a-zA-Z0-9]+)$")
 
 RATING_TAG_REGEX = re.compile(r"rating:(?P<rating>u|q|s|e)")
 
 
-def _maybe_add_tags(m, file):
+def _maybe_add_tags(m: Medium, file: Uploadable) -> None:
     filename = file.filename
     if not filename:
         print("Filename not useful")
@@ -54,45 +59,77 @@ def _maybe_add_tags(m, file):
         update_rating(m, rating)
 
 
-class UploadResult(Enum):
+class UploadFailureType(Enum):
     SUCCESS = 0
     CONFLICTING_MEDIUM = 1
     UNKNOWN_MIME_TYPE = 2
 
 
-def can_upload(file):
+class ConflictingMediumResult(TypedDict):
+    type: Literal[UploadFailureType.CONFLICTING_MEDIUM]
+    medium_id: int
+
+
+class UnknownMimeTypeResult(TypedDict):
+    type: Literal[UploadFailureType.UNKNOWN_MIME_TYPE]
+    mime_type: str
+
+
+UploadFailure = Union[UnknownMimeTypeResult, ConflictingMediumResult]
+
+UploadDetails = Tuple[str, str, str]
+
+
+def can_upload(
+    file: Uploadable,
+) -> Tuple[Optional[UploadDetails], Optional[UploadFailure]]:
     basename = md5sum(file)
 
     conflicting_medium = Medium.query.filter(Medium.hash == basename).first()
     if conflicting_medium:
-        return False, (UploadResult.CONFLICTING_MEDIUM, conflicting_medium.id)
+        return (
+            None,
+            {
+                "type": UploadFailureType.CONFLICTING_MEDIUM,
+                "medium_id": conflicting_medium.id,
+            },
+        )
 
     file.seek(0)
 
-    mime_type = magic.from_buffer(file.read(1024), mime=True)
+    mime_type: str = magic.from_buffer(file.read(1024), mime=True)
     file.seek(0)
     extension = EXTENSIONS.get(mime_type)
 
     if not extension:
-        return False, (UploadResult.UNKNOWN_MIME_TYPE, mime_type)
+        return (
+            None,
+            {
+                "type": UploadFailureType.UNKNOWN_MIME_TYPE,
+                "mime_type": mime_type,
+            },
+        )
 
-    return True, (mime_type, basename, extension)
+    return (mime_type, basename, extension), None
 
 
-def upload_file(file, basename, extension):
+def upload_file(file: Uploadable, basename: str, extension: str) -> None:
     p = os.path.join("media", f"{basename}.{extension}")
 
     file.save(p)
 
+    # TODO Try and replace me with os.fsync
     while not os.path.exists(p):
         sleep(1)
 
 
-def create_medium_from_upload(file):
-    success, details = can_upload(file)
+def create_medium_from_upload(
+    file: Uploadable,
+) -> Tuple[Optional[int], Optional[UploadFailure]]:
+    details, failure = can_upload(file)
 
-    if not success:
-        return details
+    if (not details) or failure:
+        return None, failure
 
     mime_type, basename, extension = details
 
@@ -106,4 +143,4 @@ def create_medium_from_upload(file):
 
     session.commit()
     medium_added.send(m.id)
-    return UploadResult.SUCCESS, m
+    return m.id, None

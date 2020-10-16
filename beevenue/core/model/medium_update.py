@@ -1,24 +1,29 @@
-from flask import request
+from typing import Iterable, List, Optional, Set, Tuple
+
 from sqlalchemy.sql import column
 
-from ...spindex.spindex import SPINDEX
-from ...spindex.signals import medium_updated
-from ...models import Medium, Tag, MediaTags
-from ... import db
+from beevenue.request import request
 
 from . import tags
+from ... import db
+from ...models import MediaTags, Medium, Tag
+from ...spindex.signals import medium_updated
+from ...spindex.spindex import SPINDEX
+from .detail import MediumDetail
 from .media import similar_media
+from .tags import ValidTagName
 
 
-def update_rating(medium, new_rating):
-    # Update rating
+def update_rating(medium: Medium, new_rating: str) -> bool:
     if medium.rating != new_rating and new_rating != "u":
         medium.rating = new_rating
         return True
     return False
 
 
-def _distinguish(new_tags):
+def _distinguish(
+    new_tags: List[ValidTagName],
+) -> Tuple[Set[ValidTagName], Set[int]]:
     # Lookup ids for all input tags
     if len(new_tags) == 0:
         existing_tags = []
@@ -34,10 +39,10 @@ def _distinguish(new_tags):
     # foreach tag not found in database, create tag
     unknown_tag_names = set(new_tags) - set(existing_tag_names)
 
-    return unknown_tag_names, existing_tag_id_by_name.values()
+    return unknown_tag_names, set(existing_tag_id_by_name.values())
 
 
-def _autocreate(unknown_tag_names):
+def _autocreate(unknown_tag_names: Set[ValidTagName]) -> List[Tag]:
     new_tags = []
     need_to_commit = False
 
@@ -59,10 +64,12 @@ def _autocreate(unknown_tag_names):
     return new_tags
 
 
-def _ensure(medium, existing_tag_ids, new_tags):
+def _ensure(
+    medium: Medium, existing_tag_ids: Set[int], new_tags: Iterable[Tag]
+) -> None:
     session = db.session()
 
-    target_tag_ids = set(existing_tag_ids) | set([t.id for t in new_tags])
+    target_tag_ids = existing_tag_ids | set([t.id for t in new_tags])
 
     # ensure that medium_tags contains exactly that set
     d = MediaTags.delete().where(column("medium_id") == medium.id)
@@ -79,20 +86,23 @@ def _ensure(medium, existing_tag_ids, new_tags):
         session.commit()
 
 
-def update_tags(medium, new_tags):
+def update_tags(medium: Medium, new_tags: List[str]) -> bool:
     if new_tags is None:
         return False
 
     validated_tags = tags.validate(new_tags)
 
     unknown_tag_names, existing_tag_ids = _distinguish(validated_tags)
-    new_tags = _autocreate(unknown_tag_names)
-    _ensure(medium, existing_tag_ids, new_tags)
+    created_tags = _autocreate(unknown_tag_names)
+    _ensure(medium, existing_tag_ids, created_tags)
 
     tags.delete_orphans()
+    return True
 
 
-def update_medium(medium_id, new_rating, new_tags):
+def update_medium(
+    medium_id: int, new_rating: str, new_tags: List[str]
+) -> Optional[MediumDetail]:
     maybe_medium = Medium.query.get(medium_id)
     if not maybe_medium:
         return None
@@ -102,5 +112,8 @@ def update_medium(medium_id, new_rating, new_tags):
     medium_updated.send(maybe_medium.id)
 
     result = SPINDEX.get_medium(maybe_medium.id)
-    result.similar = similar_media(request.beevenue_context, result)
-    return result
+
+    if not result:
+        return None
+
+    return MediumDetail(result, similar_media(request.beevenue_context, result))
