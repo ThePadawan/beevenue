@@ -78,12 +78,9 @@ def get_summary(context: BeevenueContext) -> TagSummary:
 
     all_direct_implications = session.query(TagImplication).all()
 
-    implying_this_count: Dict[int, int] = defaultdict(int)
-    implied_by_this_count: Dict[int, int] = defaultdict(int)
-
-    for i in all_direct_implications:
-        implying_this_count[i.implied_tag_id] += 1
-        implied_by_this_count[i.implying_tag_id] += 1
+    all_implied_ids = frozenset(
+        [i.implied_tag_id for i in all_direct_implications]
+    )
 
     censor_func = _get_censor_func(context)
 
@@ -93,8 +90,7 @@ def get_summary(context: BeevenueContext) -> TagSummary:
         r: TagSummaryEntry = {
             "tag": t.tag,
             "rating": t.rating,
-            "implied_by_this_count": implied_by_this_count[t.id],
-            "implying_this_count": implying_this_count[t.id],
+            "implied_by_something": t.id in all_implied_ids,
             "media_count": censor_func(media_counts[t.tag]),
         }
 

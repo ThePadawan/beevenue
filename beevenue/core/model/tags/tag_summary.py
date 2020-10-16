@@ -5,8 +5,7 @@ TagSummaryEntry = TypedDict(
     {
         "tag": str,
         "rating": str,
-        "implied_by_this_count": int,
-        "implying_this_count": int,
+        "implied_by_something": bool,
         "media_count": int,
     },
 )

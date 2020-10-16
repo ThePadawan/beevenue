@@ -68,8 +68,7 @@ class TagShowSchema(Schema):
 
 class TagSummaryItemSchema(Schema):
     media_count = fields.Int(data_key="mediaCount")
-    implying_this_count = fields.Int(data_key="implyingThisCount")
-    implied_by_this_count = fields.Int(data_key="impliedByThisCount")
+    implied_by_something = fields.Bool(data_key="impliedBySomething")
 
     class Meta:
         fields = (
@@ -77,8 +76,7 @@ class TagSummaryItemSchema(Schema):
             "tag",
             "media_count",
             "rating",
-            "implied_by_this_count",
-            "implying_this_count",
+            "implied_by_something",
         )
 
 
