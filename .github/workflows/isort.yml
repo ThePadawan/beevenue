@@ -1,0 +1,24 @@
+name: Run isort
+on:
+  - push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - uses: jamescurtin/isort-action@master
+        with:
+            requirementsFiles: "requirements.txt requirements.linuxonly.txt"
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "isort formatting"
+          title: "isort autoformat"
+          author: "PRBot <prbot@prat.ch>"
+          body: Please merge these autoformatting changes
