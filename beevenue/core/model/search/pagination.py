@@ -15,3 +15,6 @@ class Pagination(Generic[T]):
     @staticmethod
     def empty() -> "Pagination[T]":
         return Pagination(items=[], pageCount=0, pageNumber=1, pageSize=1)
+
+    def __repr__(self) -> str:
+        return f"<Pagination {self.pageCount=} {self.pageNumber=} {self.pageSize=}>"

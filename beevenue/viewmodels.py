@@ -10,7 +10,7 @@ from .spindex.models import SpindexedMedium
 class SpindexMediumSchema(Schema):
     id = fields.Int()
     tags = fields.Method("extract_innate_tags")
-    aspect_ratio = fields.Decimal(data_key="aspectRatio", as_string=True)
+    aspect_ratio = fields.String(data_key="aspectRatio")
     hash = fields.String()
     rating = fields.String()
     mime_type = fields.String()

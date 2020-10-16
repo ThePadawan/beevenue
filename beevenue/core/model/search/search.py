@@ -36,6 +36,7 @@ def _run(search_terms: Set[SearchTerm]) -> Pagination[SpindexedMedium]:
     media = SPINDEX.get_media(pagination.items)
 
     pagination.items = media  # type: ignore
+
     return pagination  # type: ignore
 
 
