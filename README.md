@@ -2,6 +2,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/ThePadawan/beevenue/badge.svg?branch=master)](https://coveralls.io/github/ThePadawan/beevenue?branch=master)
 [![Maintainability](https://api.codeclimate.com/v1/badges/706629dfd2b009b3ca27/maintainability)](https://codeclimate.com/github/ThePadawan/beevenue/maintainability)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 
 # Beevenue
 Beevenue is a tiny [booru](https://en.wiktionary.org/wiki/booru) that is lightning-fast and allows rule-based tag quality checks.
