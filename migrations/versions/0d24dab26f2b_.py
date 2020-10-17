@@ -51,8 +51,14 @@ def upgrade():
         "medium_tag",
         sa.Column("medium_id", sa.Integer(), nullable=False),
         sa.Column("tag_id", sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(["medium_id"], ["medium.id"],),
-        sa.ForeignKeyConstraint(["tag_id"], ["tag.id"],),
+        sa.ForeignKeyConstraint(
+            ["medium_id"],
+            ["medium.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["tag_id"],
+            ["tag.id"],
+        ),
         sa.PrimaryKeyConstraint("medium_id", "tag_id"),
     )
     op.create_table(
@@ -60,7 +66,10 @@ def upgrade():
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("tag_id", sa.Integer(), nullable=False),
         sa.Column("alias", sa.String(length=256), nullable=False),
-        sa.ForeignKeyConstraint(["tag_id"], ["tag.id"],),
+        sa.ForeignKeyConstraint(
+            ["tag_id"],
+            ["tag.id"],
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("alias"),
     )
@@ -68,8 +77,14 @@ def upgrade():
         "tagImplication",
         sa.Column("implying_tag_id", sa.Integer(), nullable=False),
         sa.Column("implied_tag_id", sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(["implied_tag_id"], ["tag.id"],),
-        sa.ForeignKeyConstraint(["implying_tag_id"], ["tag.id"],),
+        sa.ForeignKeyConstraint(
+            ["implied_tag_id"],
+            ["tag.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["implying_tag_id"],
+            ["tag.id"],
+        ),
         sa.PrimaryKeyConstraint("implying_tag_id", "implied_tag_id"),
     )
     # ### end Alembic commands ###

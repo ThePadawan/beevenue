@@ -17,7 +17,9 @@ def test_can_update_medium_as_admin(client, asAdmin):
 
 
 def test_cant_update_medium_to_unknown_rating(client, asAdmin, nsfw):
-    res = client.patch("/medium/3/metadata", json={"rating": "u", "tags": ["A"]})
+    res = client.patch(
+        "/medium/3/metadata", json={"rating": "u", "tags": ["A"]}
+    )
     assert res.status_code == 200
 
     res = client.get("/medium/3")
@@ -27,12 +29,16 @@ def test_cant_update_medium_to_unknown_rating(client, asAdmin, nsfw):
 
 
 def test_cant_update_medium_to_same_rating(client, asAdmin, nsfw):
-    res = client.patch("/medium/3/metadata", json={"rating": "e", "tags": ["A"]})
+    res = client.patch(
+        "/medium/3/metadata", json={"rating": "e", "tags": ["A"]}
+    )
     assert res.status_code == 200
 
 
 def test_cant_update_missing_medium(client, asAdmin, nsfw):
-    res = client.patch("/medium/233/metadata", json={"rating": "e", "tags": ["A"]})
+    res = client.patch(
+        "/medium/233/metadata", json={"rating": "e", "tags": ["A"]}
+    )
     assert res.status_code == 400
 
 
