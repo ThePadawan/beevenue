@@ -16,6 +16,8 @@ OPS: Dict[str, Callable[[int, int], bool]] = {
 
 
 class CountingSearchTerm(SearchTerm):
+    """Search term which simply counts innate tags."""
+
     def __init__(self, operator: str, number: str):
         self.operator = operator
         # Normalize operator such that "tags=5" and "tags:5"
@@ -29,18 +31,20 @@ class CountingSearchTerm(SearchTerm):
         return CountingSearchTerm(**match.groupdict())
 
     def applies_to(self, medium: SpindexedMedium) -> bool:
-        op = OPS.get(self.operator, None)
-        if not op:
+        operator = OPS.get(self.operator, None)
+        if not operator:
             raise Exception(f"Unknown operator in {self}")
 
         # Note! Only count *innate* tags, not implications, aliases, etc...
-        return op(len(medium.tag_names.innate), self.number)
+        return operator(len(medium.tag_names.innate), self.number)
 
     def __repr__(self) -> str:
         return f"tags{self.operator}{self.number}"
 
 
 class CategorySearchTerm(SearchTerm):
+    """Search term which counts innate tags of a specific category."""
+
     def __init__(self, category: str, operator: str, number: str):
         self.category = category
         self.operator = operator
@@ -61,11 +65,11 @@ class CategorySearchTerm(SearchTerm):
             if t.startswith(f"{self.category}:")
         ]
 
-        op = OPS.get(self.operator, None)
-        if not op:
+        operator = OPS.get(self.operator, None)
+        if not operator:
             raise Exception(f"Unknown operator in {self}")
 
-        return op(len(matching_tag_names), self.number)
+        return operator(len(matching_tag_names), self.number)
 
     def __repr__(self) -> str:
         return f"{self.category}tags{self.operator}{self.number}"

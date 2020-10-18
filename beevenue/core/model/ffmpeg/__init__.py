@@ -12,21 +12,23 @@ from .video import video_thumbnails
 
 
 def thumbnails(
-    in_path: str, out_path: str, mime_type: str
+    in_path: str, extensionless_out_path: Path, mime_type: str
 ) -> ThumbnailingResult:
-    still_out_path = Path(out_path).with_suffix("")
+    """Generate and persist thumbnails of the file at ``in_path``."""
 
     if re.match("image/", mime_type):
-        return image_thumbnails(in_path, still_out_path)
-    elif re.match("video/", mime_type):
-        return video_thumbnails(in_path, still_out_path)
+        return image_thumbnails(in_path, extensionless_out_path)
+    if re.match("video/", mime_type):
+        return video_thumbnails(in_path, extensionless_out_path)
 
     raise Exception(f"Cannot create thumbnails for mime_type {mime_type}")
 
 
-def _set_thumbnail(hash: str, thumbnail_size: str, filename: str) -> None:
+def _set_thumbnail(
+    medium_hash: str, thumbnail_size: str, filename: str
+) -> None:
     # thumbnail_size: "s" or "l" or ...
-    thumb_path = os.path.abspath(f"thumbs/{hash}.jpg")
+    thumb_path = os.path.abspath(f"thumbs/{medium_hash}.jpg")
     if os.path.exists(thumb_path):
         os.remove(thumb_path)
 
@@ -41,10 +43,17 @@ def _set_thumbnail(hash: str, thumbnail_size: str, filename: str) -> None:
             out_file.write(in_file.read())
 
 
-def generate_picks(n: int, in_path: str) -> List[bytes]:
+def generate_picks(thumbnail_count: int, in_path: str) -> List[bytes]:
+    """Generate some preview-sized thumbnails in-memory.
+
+    The files are returned as bytes in-memory and not permanently persisted.
+    This is a bit wasteful, but involves less server-side state management."""
+
     all_thumbs_bytes = []
 
-    with temporary_thumbnails(n, in_path, 120) as temporary_thumbs:
+    with temporary_thumbnails(
+        thumbnail_count, in_path, 120
+    ) as temporary_thumbs:
         for thumb_file_name in temporary_thumbs:
             with open(thumb_file_name, "rb") as thumb_file:
                 these_bytes = thumb_file.read()
@@ -53,12 +62,16 @@ def generate_picks(n: int, in_path: str) -> List[bytes]:
     return all_thumbs_bytes
 
 
-def pick(n: int, in_path: str, index: int, medium_hash: str) -> None:
+def pick(
+    thumbnail_count: int, in_path: str, index: int, medium_hash: str
+) -> None:
+    """Pick ``index`` out of ``thumbnail_count`` as the new thumbnail."""
+
     for thumbnail_size, thumbnail_size_pixels in current_app.config[
         "BEEVENUE_THUMBNAIL_SIZES"
     ].items():
         with temporary_thumbnails(
-            n, in_path, thumbnail_size_pixels
+            thumbnail_count, in_path, thumbnail_size_pixels
         ) as temporary_thumbs:
             picked_thumb = list(temporary_thumbs)[index]
             _set_thumbnail(medium_hash, thumbnail_size, picked_thumb)

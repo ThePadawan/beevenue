@@ -1,3 +1,4 @@
+# pylint: disable=missing-class-docstring
 from typing import List, Optional
 
 from .db import db
@@ -49,8 +50,7 @@ class Tag(db.Model):
         clean_tag = tag.strip()
         if clean_tag:
             return Tag(clean_tag)
-        else:
-            return None
+        return None
 
 
 class TagAlias(db.Model):
@@ -97,14 +97,14 @@ class Medium(db.Model):
 
     def __init__(
         self,
-        hash: str,
+        medium_hash: str,
         mime_type: str,
         rating: str = "u",
-        tags: List[Tag] = [],
+        tags: List[Tag] = None,
         aspect_ratio: Optional[float] = None,
     ):
         self.rating = rating
         self.mime_type = mime_type
-        self.hash = hash
-        self.tags = tags
+        self.hash = medium_hash
+        self.tags = tags or []
         self.aspect_ratio = aspect_ratio

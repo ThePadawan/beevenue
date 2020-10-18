@@ -42,6 +42,7 @@ def _medium_file(fname):
 
 
 def _run_testing_sql(temp_path):
+    """Fill database at given path with initial data."""
     with open(_resource("testing.sql"), "rb") as f:
         TESTING_SQL = f.read().decode("utf-8")
 
@@ -53,19 +54,11 @@ def _run_testing_sql(temp_path):
 
 
 def _ensure_folder(fname):
+    """Create the specified folder if it does not exist."""
+
     files_path = os.path.join(os.path.dirname(__file__), "..", fname)
     if not os.path.exists(files_path):
         os.mkdir(files_path)
-
-    files_path = os.path.join(os.path.dirname(__file__), fname)
-    if not os.path.exists(files_path):
-        os.mkdir(files_path)
-
-
-def _ensure_no_more_folder(fname):
-    files_path = os.path.join(os.path.dirname(__file__), fname)
-    if os.path.exists(files_path):
-        shutil.rmtree(files_path)
 
 
 def _add_simple_images(fname, hash_prefixes):
@@ -81,16 +74,19 @@ RAN_ONCE = False
 
 
 def _client():
+    """Set up the testing client."""
+
     global RAN_ONCE
     temp_fd, temp_path = tempfile.mkstemp(suffix=".db")
     temp_nice_path = os.path.abspath(temp_path)
     connection_string = f"sqlite:///{temp_nice_path}"
 
     def extra_config(application):
+        """Set specific testing-only flags on the testee."""
         application.config["SQLALCHEMY_DATABASE_URI"] = connection_string
-        application.config["TESTING"] = True
 
     def fill_db():
+        """Fill the SQL database with initial data."""
         _run_testing_sql(temp_nice_path)
 
     app = get_application(extra_config, fill_db)
@@ -134,12 +130,14 @@ def _client():
 
 @pytest.yield_fixture
 def client():
+    """Return the current testing client."""
     for c in _client():
         yield c
 
 
 @pytest.yield_fixture
 def nsfw(client):
+    """Ensure that the current session is not tagged as 'sfw'."""
     res = client.patch("/sfw", json={"sfwSession": False})
     assert res.status_code == 200
     return None
@@ -147,12 +145,14 @@ def nsfw(client):
 
 @pytest.yield_fixture
 def asAdmin(client):
+    """Ensure that we are logged in as the 'admin' role."""
     res = client.post("/login", json={"username": "admin", "password": "admin"})
     assert res.status_code == 200
 
 
 @pytest.yield_fixture
 def withVideo(client):
+    """Ensure that some uploaded video is available."""
     runner = client.app_under_test.test_cli_runner()
     runner.invoke(args=["import", _resource("tiny_video.mp4")])
     yield None
@@ -160,12 +160,14 @@ def withVideo(client):
 
 @pytest.yield_fixture
 def asUser(client):
+    """Ensure that we are logged in as the 'user' role."""
     res = client.post("/login", json={"username": "user", "password": "user"})
     assert res.status_code == 200
 
 
 @pytest.yield_fixture
 def withTrivialRules(client):
+    """Ensure that the 'trivial' ruleset is active."""
     with open("test/resources/testing_rules_trivial.json", "r") as f:
         contents = f.read()
 

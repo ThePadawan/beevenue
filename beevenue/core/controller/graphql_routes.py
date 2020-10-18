@@ -1,8 +1,10 @@
+from flask import Blueprint
 from flask_graphql import GraphQLView
 
-from . import bp
 from ... import permissions
 from .graphql import schema
+
+bp = Blueprint("graphql", __name__)
 
 graphql_func = permissions.is_owner(
     GraphQLView.as_view(

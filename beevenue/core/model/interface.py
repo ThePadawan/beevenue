@@ -1,7 +1,9 @@
 from typing import Optional
 
 
-class ThumbnailingResult(object):
+class ThumbnailingResult:
+    """Describes result of thumbnailing. Has error or success details."""
+
     def __init__(
         self, success: bool, aspect_ratio: Optional[float], error: Optional[str]
     ):

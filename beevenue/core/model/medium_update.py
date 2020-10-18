@@ -2,7 +2,7 @@ from typing import Iterable, List, Optional, Set, Tuple
 
 from sqlalchemy.sql import column
 
-from beevenue.request import request
+from beevenue import request
 
 from . import tags
 from ... import db
@@ -12,10 +12,12 @@ from ...spindex.spindex import SPINDEX
 from .detail import MediumDetail
 from .media import similar_media
 from .tags import ValidTagName
+from .tags.delete import delete_orphans
+from .tags.new import create
 
 
 def update_rating(medium: Medium, new_rating: str) -> bool:
-    if medium.rating != new_rating and new_rating != "u":
+    if new_rating not in (medium.rating, "u"):
         medium.rating = new_rating
         return True
     return False
@@ -31,8 +33,8 @@ def _distinguish(
         existing_tags = Tag.query.filter(Tag.tag.in_(new_tags)).all()
 
     existing_tag_id_by_name = {}
-    for t in existing_tags:
-        existing_tag_id_by_name[t.tag] = t.id
+    for tag in existing_tags:
+        existing_tag_id_by_name[tag.tag] = tag.id
 
     existing_tag_names = existing_tag_id_by_name.keys()
 
@@ -49,7 +51,7 @@ def _autocreate(unknown_tag_names: Set[ValidTagName]) -> List[Tag]:
     session = db.session()
 
     for unknown_tag_name in unknown_tag_names:
-        needs_to_be_inserted, matching_tag = tags.create(unknown_tag_name)
+        needs_to_be_inserted, matching_tag = create(unknown_tag_name)
         if not matching_tag:
             continue
         if needs_to_be_inserted:
@@ -69,11 +71,11 @@ def _ensure(
 ) -> None:
     session = db.session()
 
-    target_tag_ids = existing_tag_ids | set([t.id for t in new_tags])
+    target_tag_ids = existing_tag_ids | {t.id for t in new_tags}
 
     # ensure that medium_tags contains exactly that set
-    d = MediaTags.delete().where(column("medium_id") == medium.id)
-    session.execute(d)
+    stmt = MediaTags.delete().where(column("medium_id") == medium.id)
+    session.execute(stmt)
     session.commit()
 
     values = []
@@ -96,7 +98,7 @@ def update_tags(medium: Medium, new_tags: List[str]) -> bool:
     created_tags = _autocreate(unknown_tag_names)
     _ensure(medium, existing_tag_ids, created_tags)
 
-    tags.delete_orphans()
+    delete_orphans()
     return True
 
 

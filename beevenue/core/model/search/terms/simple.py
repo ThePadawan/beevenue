@@ -1,3 +1,4 @@
+from abc import ABC
 from re import Match
 from typing import NoReturn
 
@@ -5,12 +6,18 @@ from .....spindex.models import SpindexedMedium
 from .base import SearchTerm
 
 
-class BasicSearchTerm(SearchTerm):
+class BasicSearchTerm(ABC, SearchTerm):
+    """Abstract helper class that saves a single term."""
+
     def __init__(self, term: str):
         self.term = term
 
 
 class PositiveSearchTerm(BasicSearchTerm):
+    """Search term like "foo" which filters by searchable tag name.
+
+    Searchable tag names include implied tag names and tag name aliases."""
+
     def __repr__(self) -> str:
         return f"{self.term}"
 
@@ -23,6 +30,13 @@ class PositiveSearchTerm(BasicSearchTerm):
 
 
 class ExactSearchTerm(BasicSearchTerm):
+    """Search term like "+foo" which filters by exact tag name.
+
+    This sets it apart from "foo", because it does *not* search implications
+    and aliases. This allows searches like "bluegreen +blue" to find files
+    which are tagged as both blue and bluegreen (if bluegreen implies blue).
+    """
+
     def __repr__(self) -> str:
         return f"+{self.term}"
 
@@ -35,6 +49,8 @@ class ExactSearchTerm(BasicSearchTerm):
 
 
 class RatingSearchTerm(SearchTerm):
+    """Search term like "rating:s"."""
+
     def __init__(self, rating: str):
         self.rating = rating
 
@@ -50,6 +66,8 @@ class RatingSearchTerm(SearchTerm):
 
 
 class Negative(SearchTerm):
+    """Meta search term which negates the wrapped inner SearchTerm."""
+
     def __init__(self, inner_term: SearchTerm):
         self.inner_term = inner_term
 

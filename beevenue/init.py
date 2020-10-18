@@ -3,14 +3,13 @@ from typing import Any, Optional
 from flask import current_app, g, session
 from flask_login import current_user
 
-from .context import BeevenueContext
-from .flask import BeevenueFlask
-from .request import request
-from .response import BeevenueResponse
-from .spindex.spindex import MemoizedSpindex
+from . import BeevenueContext, BeevenueFlask, BeevenueResponse, request
+from .spindex.spindex import CachedSpindexCallable
 
 
 def context_setter() -> None:
+    """Set request.beevenue_context from request context."""
+
     try:
         is_sfw = session["sfwSession"]
     except Exception:
@@ -24,6 +23,11 @@ def context_setter() -> None:
 
 
 def login_required_by_default() -> Optional[Any]:
+    """Make login required by default on all endpoints.
+
+    Can be overridden through ``does_not_require_login``.
+    """
+
     # * endpoint is None: Can happen when /foo/ is registered,
     #   but /foo is accessed.
     # * OPTIONS queries are sent-preflight to e.g. PATCH,
@@ -42,20 +46,24 @@ def login_required_by_default() -> Optional[Any]:
 
 
 def set_client_hint_headers(res: BeevenueResponse) -> BeevenueResponse:
+    """Set client hint headers for better performance."""
+
     client_hint_fields = ["Viewport-Width"]
 
     res.headers.setdefault("Accept-CH", ", ".join(client_hint_fields))
     res.headers.setdefault("Accept-CH-Lifetime", 86400)
 
-    for x in client_hint_fields:
+    for hint in client_hint_fields:
         # res.vary is actually a werkzeug.datastructures.HeaderSet,
         # but mypy does not infer that correctly.
-        res.vary.add(x)  # type: ignore
+        res.vary.add(hint)  # type: ignore
 
     return res
 
 
 def set_server_push_link_header(res: BeevenueResponse) -> BeevenueResponse:
+    """Set Link headers for better performance."""
+
     if not hasattr(res, "push_links") or not res.push_links:
         return res
 
@@ -64,6 +72,8 @@ def set_server_push_link_header(res: BeevenueResponse) -> BeevenueResponse:
 
 
 def set_sendfile_header(res: BeevenueResponse) -> BeevenueResponse:
+    """Set X-Accel-Redirect headers for better performance."""
+
     if (
         not hasattr(res, "sendfile_header")
         or not res.sendfile_header
@@ -75,26 +85,32 @@ def set_sendfile_header(res: BeevenueResponse) -> BeevenueResponse:
     return res
 
 
-def spindex_memoize() -> None:
-    request.spindex = MemoizedSpindex()
+def spindex_initialize() -> None:
+    """Set request.spindex to cached implementation."""
+    request.spindex = CachedSpindexCallable()
 
 
-def spindex_unmemoize(res: BeevenueResponse) -> BeevenueResponse:
+def spindex_teardown(res: BeevenueResponse) -> BeevenueResponse:
+    """Flush cached spindex implementation if necessary."""
     if hasattr(request, "spindex"):
         request.spindex.exit()
     return res
 
 
 def init_app(app: BeevenueFlask) -> None:
+    """Register request/response lifecycle methods."""
+
     app.before_request(context_setter)
     app.before_request(login_required_by_default)
-    app.before_request(spindex_memoize)
+    app.before_request(spindex_initialize)
 
     app.after_request(set_client_hint_headers)  # type: ignore
     app.after_request(set_server_push_link_header)  # type: ignore
     app.after_request(set_sendfile_header)  # type: ignore
-    app.after_request(spindex_unmemoize)  # type: ignore
+    app.after_request(spindex_teardown)  # type: ignore
 
-    @app.teardown_appcontext
-    def teardown_session(x: Any) -> None:
+    def close_db_session(_: Any) -> None:
+        """Discards last db session on appcontext destruction."""
         g.pop("session", None)
+
+    app.teardown_appcontext(close_db_session)

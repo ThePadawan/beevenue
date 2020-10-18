@@ -1,12 +1,12 @@
 from typing import List, Optional, Set, TypeVar
 
-from beevenue.context import BeevenueContext
-from beevenue.request import request
+from beevenue import BeevenueContext
+from beevenue import request
 
 from ....spindex.models import SpindexedMedium
 from ....spindex.spindex import SPINDEX
 from .pagination import Pagination
-from .terms import get_search_terms, SearchTerm
+from .terms import parse_search_terms, SearchTerm
 from .terms.simple import Negative, RatingSearchTerm
 
 
@@ -15,7 +15,7 @@ def find_all() -> Pagination[SpindexedMedium]:
 
 
 def run(search_term_list: List[str]) -> Pagination[SpindexedMedium]:
-    search_terms = get_search_terms(search_term_list)
+    search_terms = parse_search_terms(search_term_list)
 
     if not search_terms:
         return Pagination.empty()
@@ -62,46 +62,46 @@ def _search(
     all_media = SPINDEX.all()
     result = set()
 
-    for m in all_media:
+    for medium in all_media:
         for search_term in search_terms:
-            if not search_term.applies_to(m):
+            if not search_term.applies_to(medium):
                 break
         else:
-            result.add(m.id)
+            result.add(medium.id)
 
     return result
 
 
-T = TypeVar("T")
+TItem = TypeVar("TItem")
 
 
-def _paginate(ids: List[T]) -> Pagination[T]:
-    pageNumberArg: Optional[str] = request.args.get("pageNumber", type=str)
-    pageSizeArg: Optional[str] = request.args.get("pageSize", type=str)
+def _paginate(ids: List[TItem]) -> Pagination[TItem]:
+    page_number_arg: Optional[str] = request.args.get("pageNumber", type=str)
+    page_size_arg: Optional[str] = request.args.get("pageSize", type=str)
 
-    if pageNumberArg is None or pageSizeArg is None:
+    if page_number_arg is None or page_size_arg is None:
         raise Exception("Cannot paginate request without pagination parameters")
 
-    pageNumber = int(pageNumberArg)
-    pageSize = int(pageSizeArg)
+    page_number = int(page_number_arg)
+    page_size = int(page_size_arg)
 
-    if pageSize < 1:
+    if page_size < 1:
         return Pagination(
-            items=[], pageCount=1, pageNumber=pageNumber, pageSize=pageSize
+            items=[], page_count=1, page_number=page_number, page_size=page_size
         )
 
-    if pageNumber < 1:
+    if page_number < 1:
         skip = 0
     else:
-        skip = (pageNumber - 1) * pageSize
+        skip = (page_number - 1) * page_size
 
-    pageCount = len(ids) // pageSize
-    if (len(ids) % pageSize) != 0:
-        pageCount += 1
+    page_count = len(ids) // page_size
+    if (len(ids) % page_size) != 0:
+        page_count += 1
 
     return Pagination(
-        items=ids[skip : skip + pageSize],
-        pageCount=pageCount,
-        pageNumber=pageNumber,
-        pageSize=pageSize,
+        items=ids[skip : skip + page_size],
+        page_count=page_count,
+        page_number=page_number,
+        page_size=page_size,
     )

@@ -1,18 +1,17 @@
 from enum import Enum
 import os
 import re
-from time import sleep
 from typing import Literal, Optional, Tuple, TypedDict, Union
 
 import magic
 from werkzeug.datastructures import FileStorage
 
+from beevenue import EXTENSIONS
 from beevenue.io import HelperBytesIO
 
 from ... import db
 from ...models import Medium
 from ...spindex.signals import medium_added
-from .extensions import EXTENSIONS
 from .md5sum import md5sum
 from .medium_update import update_rating, update_tags
 
@@ -23,7 +22,7 @@ TAGGY_FILENAME_REGEX = re.compile(r"^\d+ - (?P<tags>.*)\.([a-zA-Z0-9]+)$")
 RATING_TAG_REGEX = re.compile(r"rating:(?P<rating>u|q|s|e)")
 
 
-def _maybe_add_tags(m: Medium, file: Uploadable) -> None:
+def _maybe_add_tags(medium: Medium, file: Uploadable) -> None:
     filename = file.filename
     if not filename:
         print("Filename not useful")
@@ -35,15 +34,14 @@ def _maybe_add_tags(m: Medium, file: Uploadable) -> None:
         return
 
     joined_tags = match.group("tags").replace("_", ":")
-    print(joined_tags)
     tags = joined_tags.split(" ")
     ratings = []
-    for r in tags:
-        match = RATING_TAG_REGEX.match(r)
+    for chunk in tags:
+        match = RATING_TAG_REGEX.match(chunk)
         if match:
             ratings.append(
                 (
-                    r,
+                    chunk,
                     match,
                 )
             )
@@ -51,36 +49,41 @@ def _maybe_add_tags(m: Medium, file: Uploadable) -> None:
     rating = None
     if ratings:
         rating = ratings[0][1].group("rating")
-        for (r, match) in ratings:
-            tags.remove(r)
+        for (chunk, match) in ratings:
+            tags.remove(chunk)
 
-    update_tags(m, tags)
+    update_tags(medium, tags)
     if rating:
-        update_rating(m, rating)
+        update_rating(medium, rating)
 
 
 class UploadFailureType(Enum):
+    """Reason enum why the upload could not be performed.
+
+    When extending this, keep its values non-overlapping with
+    ReplacementFailureType!"""
+
     SUCCESS = 0
     CONFLICTING_MEDIUM = 1
     UNKNOWN_MIME_TYPE = 2
 
 
-class ConflictingMediumResult(TypedDict):
+class _ConflictingMediumResult(TypedDict):
     type: Literal[UploadFailureType.CONFLICTING_MEDIUM]
     medium_id: int
 
 
-class UnknownMimeTypeResult(TypedDict):
+class _UnknownMimeTypeResult(TypedDict):
     type: Literal[UploadFailureType.UNKNOWN_MIME_TYPE]
     mime_type: str
 
 
-UploadFailure = Union[UnknownMimeTypeResult, ConflictingMediumResult]
+UploadFailure = Union[_UnknownMimeTypeResult, _ConflictingMediumResult]
 
 UploadDetails = Tuple[str, str, str]
 
 
-def can_upload(
+def upload_precheck(
     file: Uploadable,
 ) -> Tuple[Optional[UploadDetails], Optional[UploadFailure]]:
     basename = md5sum(file)
@@ -114,19 +117,14 @@ def can_upload(
 
 
 def upload_file(file: Uploadable, basename: str, extension: str) -> None:
-    p = os.path.join("media", f"{basename}.{extension}")
-
-    file.save(p)
-
-    # TODO Try and replace me with os.fsync
-    while not os.path.exists(p):
-        sleep(1)
+    path = os.path.join("media", f"{basename}.{extension}")
+    file.save(path)
 
 
 def create_medium_from_upload(
     file: Uploadable,
 ) -> Tuple[Optional[int], Optional[UploadFailure]]:
-    details, failure = can_upload(file)
+    details, failure = upload_precheck(file)
 
     if (not details) or failure:
         return None, failure
@@ -134,13 +132,13 @@ def create_medium_from_upload(
     mime_type, basename, extension = details
 
     session = db.session()
-    m = Medium(mime_type=mime_type, hash=basename)
-    session.add(m)
+    medium = Medium(mime_type=mime_type, medium_hash=basename)
+    session.add(medium)
 
     upload_file(file, basename, extension)
 
-    _maybe_add_tags(m, file)
+    _maybe_add_tags(medium, file)
 
     session.commit()
-    medium_added.send(m.id)
-    return m.id, None
+    medium_added.send(medium.id)
+    return medium.id, None

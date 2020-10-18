@@ -1,13 +1,15 @@
 from typing import Callable, Dict, Union
 
-from beevenue.request import request
+from beevenue import request
 
 from ....models import Medium, Tag
 
 Rateable = Union[Tag, Medium]
 
 
-class Censorship(object):
+class Censorship:
+    """Anonymizer of tag names if users aren't allowed to see them."""
+
     def __init__(
         self, lookup: Dict[int, Rateable], name_func: Callable[[Rateable], str]
     ):
@@ -25,14 +27,19 @@ class Censorship(object):
         self.censored_counter = 0
         self.names: Dict[int, str] = dict()
 
-    def get_name(self, id: int) -> str:
-        if id not in self.names:
-            thing = self.lookup[id]
+    def get_name(self, tag_id: int) -> str:
+        """Get the (potentially anonymized) name of the tag with given id.
+
+        Will return the same name on successive calls with the same id.
+        """
+
+        if tag_id not in self.names:
+            thing = self.lookup[tag_id]
 
             if thing.rating in self.ratings_to_censor:
-                self.names[id] = f"anon{self.censored_counter}"
+                self.names[tag_id] = f"anon{self.censored_counter}"
                 self.censored_counter += 1
             else:
-                self.names[id] = self.name_func(thing)
+                self.names[tag_id] = self.name_func(thing)
 
-        return self.names[id]
+        return self.names[tag_id]

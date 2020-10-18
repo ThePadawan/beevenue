@@ -1,20 +1,29 @@
 from typing import Generic, List, TypeVar
 
-T = TypeVar("T")
+TItem = TypeVar("TItem")
 
 
-class Pagination(Generic[T]):
+class Pagination(Generic[TItem]):
+    """Generic data structure for a paginated list."""
+
     def __init__(
-        self, items: List[T], pageCount: int, pageNumber: int, pageSize: int
+        self,
+        items: List[TItem],
+        page_count: int,
+        page_number: int,
+        page_size: int,
     ):
         self.items = items
-        self.pageCount = pageCount
-        self.pageNumber = pageNumber
-        self.pageSize = pageSize
+        self.page_count = page_count
+        self.page_number = page_number
+        self.page_size = page_size
 
     @staticmethod
-    def empty() -> "Pagination[T]":
-        return Pagination(items=[], pageCount=0, pageNumber=1, pageSize=1)
+    def empty() -> "Pagination[TItem]":
+        return Pagination(items=[], page_count=0, page_number=1, page_size=1)
 
     def __repr__(self) -> str:
-        return f"<Pagination {self.pageCount=} {self.pageNumber=} {self.pageSize=}>"
+        return (
+            f"<Pagination {self.page_count=} "
+            f"{self.page_number=} {self.page_size=}>"
+        )

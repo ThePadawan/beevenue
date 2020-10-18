@@ -11,6 +11,8 @@ TagSummaryEntry = TypedDict(
 )
 
 
-class TagSummary(object):
+class TagSummary:
+    """Viewmodel to hold data for short tag summary."""
+
     def __init__(self, tags: List[TagSummaryEntry]):
         self.tags = tags

@@ -6,37 +6,50 @@ from ...spindex.spindex import SPINDEX
 
 
 class RulePart(ABC):
+    """Abstract base class for all rule parts (both iffs and thens)."""
+
     @abstractmethod
     def applies_to(self, medium_id: int) -> bool:
         """Does this part of the rule apply to the medium with that id?"""
 
     @abstractmethod
-    def get_medium_ids(self, filtering_medium_ids: List[int] = []) -> List[int]:
-        """Load all media this Iff applies to OR filterall given ids this Then applies to."""
+    def get_medium_ids(
+        self, filtering_medium_ids: Optional[List[int]] = None
+    ) -> List[int]:
+        """Load media this Iff applies to OR filter ids this Then applies to."""
 
 
 class Iff(RulePart):
+    """Abstract base class for all Iff rule parts."""
+
     @abstractmethod
     def pprint_if(self) -> str:
         """Formats this part as an 'if' clause."""
 
 
 class Then(RulePart):
+    """Abstract base class for all Then rule parts."""
+
     @abstractmethod
     def pprint_then(self) -> str:
         """Formats this part as an 'if' clause."""
 
 
 class IffAndThen(Iff, Then):
-    """Flexible rule part that can be used as both an Iff and a Then."""
+    """Flexible rule part that can be used as both an Iff and a Then.
+
+    (Only really used for type hints, since the typing module does not have
+    Sum[Iff, Then], only Union[Iff, Then]."""
 
 
 class HasAnyTags(RulePart):
+    """Abstract base class for rule parts that checks for presence of tags."""
+
     def __init__(self) -> None:
         self.tag_names: Optional[FrozenSet[str]] = None
 
     def _load_tag_names(self) -> None:
-        """Preload the concrete tag names (e.g. based on a more general regex) into self.tag_names."""
+        """Preload the tag names (e.g. based on regexes) into self.tag_names."""
 
     @abstractproperty
     def _tags_as_str(self) -> str:
@@ -53,13 +66,15 @@ class HasAnyTags(RulePart):
         if not self.tag_names:
             return False
 
-        m = SPINDEX.get_medium(medium_id)
-        if not m:
+        medium = SPINDEX.get_medium(medium_id)
+        if not medium:
             return False
 
-        return len(self.tag_names & m.tag_names.searchable) > 0
+        return len(self.tag_names & medium.tag_names.searchable) > 0
 
-    def get_medium_ids(self, filtering_medium_ids: List[int] = []) -> List[int]:
+    def get_medium_ids(
+        self, filtering_medium_ids: Optional[List[int]] = None
+    ) -> List[int]:
         self._ensure_tag_names_loaded()
         if not self.tag_names:
             return []
@@ -79,6 +94,8 @@ class HasAnyTags(RulePart):
 
 
 class HasAnyTagsLike(HasAnyTags, IffAndThen):
+    """Rule part that checks if a medium has any tags matching some regexes."""
+
     def __init__(self, *regexes: str) -> None:
         HasAnyTags.__init__(self)
         if not regexes:
@@ -90,8 +107,8 @@ class HasAnyTagsLike(HasAnyTags, IffAndThen):
         tag_names = set()
 
         all_tag_names = set()
-        for m in SPINDEX.all():
-            all_tag_names |= m.tag_names.searchable
+        for medium in SPINDEX.all():
+            all_tag_names |= medium.tag_names.searchable
 
         for regex in self.regexes:
             compiled_regex = re.compile(f"^{regex}$")
@@ -113,6 +130,8 @@ class HasAnyTagsLike(HasAnyTags, IffAndThen):
 
 
 class HasAnyTagsIn(HasAnyTags, IffAndThen):
+    """Rule part that checks if a medium has any tags in a specified set."""
+
     def __init__(self, *tag_names: str) -> None:
         HasAnyTags.__init__(self)
         if not tag_names:
@@ -131,10 +150,18 @@ class HasAnyTagsIn(HasAnyTags, IffAndThen):
 
 
 class HasRating(IffAndThen):
+    """Flexible rule part that checks for the presence of a (specific) rating.
+
+    I.e. HasRating() checks that a medium has any rating other than "unrated",
+    but HasRating("s") checks that a medium has the rating "s".
+    """
+
     def __init__(self, rating: Optional[str] = None):
         self.rating: Optional[str] = rating
 
-    def get_medium_ids(self, filtering_medium_ids: List[int] = []) -> List[int]:
+    def get_medium_ids(
+        self, filtering_medium_ids: Optional[List[int]] = None
+    ) -> List[int]:
         all_media = SPINDEX.all()
 
         if filtering_medium_ids:
@@ -148,20 +175,22 @@ class HasRating(IffAndThen):
         return [m.id for m in all_media]
 
     def applies_to(self, medium_id: int) -> bool:
-        m = SPINDEX.get_medium(medium_id)
-        if not m:
+        medium = SPINDEX.get_medium(medium_id)
+        if not medium:
             return False
 
         if self.rating:
-            return m.rating == self.rating
-        return m.rating != "u"
+            has_correct_rating: bool = medium.rating == self.rating
+            return has_correct_rating
+
+        has_any_rating: bool = medium.rating != "u"
+        return has_any_rating
 
     @property
     def _rating_str(self) -> str:
         if self.rating:
             return f"a rating of '{self.rating}'"
-        else:
-            return "a known rating"
+        return "a known rating"
 
     def pprint_then(self) -> str:
         return f"should have {self._rating_str}."

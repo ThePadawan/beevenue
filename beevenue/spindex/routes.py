@@ -11,8 +11,10 @@ bp = Blueprint("spindex", __name__)
 @permissions.is_owner
 def status():  # type: ignore
     output = []
-    for m in SPINDEX.all():
-        output.append({"id": m.id, "rating": m.rating, "hash": m.hash})
+    for medium in SPINDEX.all():
+        output.append(
+            {"id": medium.id, "rating": medium.rating, "hash": medium.hash}
+        )
 
     return jsonify(output), 200
 

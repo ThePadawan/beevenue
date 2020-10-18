@@ -1,15 +1,16 @@
 import bcrypt
-from flask import current_app, jsonify, session
+from flask import Blueprint, current_app, jsonify, session
 from flask_login import current_user, login_user, logout_user
 from flask_principal import AnonymousIdentity, Identity, identity_changed
 
-from beevenue.request import request
+from beevenue import request
 
-from . import blueprint
 from ..decorators import does_not_require_login
 from .logged_in_user import LoggedInUser
 from .models import User
 from .schemas import login_params_schema, sfw_mode_schema
+
+blueprint = Blueprint("auth", __name__)
 
 
 # "Am I logged in"? This simply reads the session cookie and replies true/false
@@ -36,7 +37,8 @@ def logout():  # type: ignore
         session.pop(key, None)
 
     identity_changed.send(
-        current_app._get_current_object(), identity=AnonymousIdentity()
+        current_app._get_current_object(),  # pylint: disable=protected-access
+        identity=AnonymousIdentity(),
     )
 
     return "", 200
@@ -62,11 +64,12 @@ def login():  # type: ignore
     if "sfwSession" not in session:
         session["sfwSession"] = True
 
-    user = LoggedInUser(id=username, role=maybe_user.role)
+    user = LoggedInUser(username, maybe_user.role)
     login_user(user)
 
     identity_changed.send(
-        current_app._get_current_object(), identity=Identity(user.id)
+        current_app._get_current_object(),  # pylint: disable=protected-access
+        identity=Identity(user.id),
     )
 
     return (

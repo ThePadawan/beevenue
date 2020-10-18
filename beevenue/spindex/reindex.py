@@ -13,8 +13,8 @@ from .signals import (
 from .spindex import SPINDEX
 
 
-def _reindex_medium(id: int) -> None:
-    SPINDEX.reindex_medium(id)
+def _reindex_medium(medium_id: int) -> None:
+    SPINDEX.reindex_medium(medium_id)
 
 
 def _rename_tag(names: Tuple[str, str]) -> None:
@@ -22,8 +22,8 @@ def _rename_tag(names: Tuple[str, str]) -> None:
     SPINDEX.rename_tag(old_name, new_name)
 
 
-def _unindex_medium(id: int) -> None:
-    SPINDEX.remove_medium(id)
+def _unindex_medium(medium_id: int) -> None:
+    SPINDEX.remove_medium(medium_id)
 
 
 def _add_alias(msg: Tuple[str, str]) -> None:
@@ -31,9 +31,9 @@ def _add_alias(msg: Tuple[str, str]) -> None:
     SPINDEX.add_alias(tag_name, new_alias)
 
 
-def _remove_alias(msg: Tuple[str, str]) -> None:
-    tag_name, former_alias = msg
-    SPINDEX.remove_alias(tag_name, former_alias)
+def _remove_alias(msg: str) -> None:
+    former_alias = msg
+    SPINDEX.remove_alias(former_alias)
 
 
 def _add_implication(msg: Tuple[str, str]) -> None:
@@ -47,6 +47,8 @@ def _remove_implication(msg: Tuple[str, str]) -> None:
 
 
 def setup_signals() -> None:
+    """Register signal handlers."""
+
     medium_updated.connect(_reindex_medium)
     medium_added.connect(_reindex_medium)
     medium_deleted.connect(_unindex_medium)

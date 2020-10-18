@@ -3,19 +3,25 @@ from typing import Iterable, Set
 from ..models import Medium
 
 
-class SpindexedMediumTagNames(object):
+class SpindexedMediumTagNames:
+    """In-memory representation of a medium's tag names."""
+
     def __init__(self, innate: Iterable[str], searchable: Iterable[str]):
         self.innate = set(innate)
         self.searchable = set(searchable)
 
 
-class SpindexedMedium(object):
+class SpindexedMedium:
+    """In-memory representation of a medium."""
+
     @staticmethod
     def create(
         medium: Medium,
         innate_tag_names: Set[str],
         searchable_tag_names: Set[str],
     ) -> "SpindexedMedium":
+        """Create in-memory representation of a Medium from the SQL database."""
+
         return SpindexedMedium(
             medium.id,
             str(medium.aspect_ratio),
@@ -28,17 +34,17 @@ class SpindexedMedium(object):
 
     def __init__(
         self,
-        id: int,
+        medium_id: int,
         aspect_ratio: str,
-        hash: str,
+        medium_hash: str,
         mime_type: str,
         rating: str,
         tiny_thumbnail: bytes,
         tag_names: SpindexedMediumTagNames,
     ) -> None:
-        self.id = id
+        self.id = medium_id  # pylint: disable=invalid-name
         self.aspect_ratio = aspect_ratio
-        self.hash = hash
+        self.hash = medium_hash
         self.mime_type = mime_type
         self.rating = rating
         self.tiny_thumbnail = tiny_thumbnail

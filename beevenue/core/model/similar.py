@@ -1,7 +1,7 @@
 from queue import PriorityQueue
 from typing import List, Set
 
-from beevenue.context import BeevenueContext
+from beevenue import BeevenueContext
 
 from ...spindex.models import SpindexedMedium
 from ...spindex.spindex import SPINDEX
@@ -10,27 +10,25 @@ from ...spindex.spindex import SPINDEX
 def _find_candidates(
     context: BeevenueContext, medium_id: int, target_tag_names: Set[str]
 ) -> Set[SpindexedMedium]:
-    """
-    Find all media that have *some* similarity to the medium
-    with Id `medium_id`.
-    """
+    """Find all media that have *some* similarity to the specified one."""
+
     candidates = set()
 
     # Maybe add a reverse index (tag => media) so this query is faster
-    for m in SPINDEX.all():
-        if m.id == medium_id:
+    for medium in SPINDEX.all():
+        if medium.id == medium_id:
             continue
 
-        if context.is_sfw and m.rating != "s":
+        if context.is_sfw and medium.rating != "s":
             continue
 
-        if context.user_role != "admin" and m.rating == "e":
+        if context.user_role != "admin" and medium.rating == "e":
             continue
 
-        if len(m.tag_names.innate & target_tag_names) == 0:
+        if len(medium.tag_names.innate & target_tag_names) == 0:
             continue
 
-        candidates.add(m)
+        candidates.add(medium)
 
     return candidates
 
@@ -74,8 +72,8 @@ def similar_media(
     for _ in range(0, 5):
         if jaccard_indices.empty():
             break
-        t = jaccard_indices.get_nowait()
-        similar_media_ids.append(t[1])
+        indices = jaccard_indices.get_nowait()
+        similar_media_ids.append(indices[1])
 
     # Since we kept Jaccard indices sorted ascendingly, we have to reverse them
     # here so that media_ids are sorted descendingly (most similar first)

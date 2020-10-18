@@ -29,7 +29,7 @@ class _FullLoadDataSource(AbstractDataSource):
         for tag_id in tag_ids:
             implied_ids |= self.implied_by_this[tag_id]
 
-        implied_names = set([self.tag_name_by_id[i] for i in implied_ids])
+        implied_names = {self.tag_name_by_id[i] for i in implied_ids}
 
         return implied_ids, implied_names
 

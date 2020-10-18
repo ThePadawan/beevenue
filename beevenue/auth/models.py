@@ -1,3 +1,4 @@
+# pylint: disable=missing-class-docstring
 from ..db import db
 
 
@@ -8,7 +9,7 @@ class User(db.Model):
     hash = db.Column(db.String(length=256), nullable=False)
     role = db.Column(db.String(length=256), nullable=False)
 
-    def __init__(self, username: str, hash: str):
+    def __init__(self, username: str, medium_hash: str):
         self.username = username
-        self.hash = hash
+        self.hash = medium_hash
         self.role = "user"

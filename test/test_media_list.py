@@ -25,3 +25,8 @@ def test_can_list_all_media_as_nsfw_admin(client, asAdmin, nsfw):
     assert res.status_code == 200
     json_result = res.get_json()
     assert len(json_result["items"]) == 5
+
+    # Note that these follow camelCase convention (for JS consumption)
+    assert "pageCount" in json_result
+    assert "pageNumber" in json_result
+    assert "pageSize" in json_result

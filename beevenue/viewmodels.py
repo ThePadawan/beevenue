@@ -7,7 +7,7 @@ from .models import Tag
 from .spindex.models import SpindexedMedium
 
 
-class SpindexMediumSchema(Schema):
+class _SpindexMediumSchema(Schema):
     id = fields.Int()
     tags = fields.Method("extract_innate_tags")
     aspect_ratio = fields.String(data_key="aspectRatio")
@@ -16,14 +16,18 @@ class SpindexMediumSchema(Schema):
     mime_type = fields.String()
 
     def extract_innate_tags(self, obj: SpindexedMedium) -> List[str]:
-        return [t for t in obj.tag_names.innate]
+        return [  # pylint: disable=unnecessary-comprehension
+            t for t in obj.tag_names.innate
+        ]
 
 
-class SpindexMediumDetailSchema(SpindexMediumSchema):
-    similar = fields.Nested("SpindexMediumDetailSchema", many=True, only=["id"])
+class _SpindexMediumDetailSchema(_SpindexMediumSchema):
+    similar = fields.Nested(
+        "_SpindexMediumDetailSchema", many=True, only=["id"]
+    )
 
 
-class PaginationMediumSchema(SpindexMediumSchema):
+class _PaginationMediumSchema(_SpindexMediumSchema):
     tiny_thumbnail = fields.Method("get_thumb", data_key="tinyThumbnail")
 
     def get_thumb(self, obj: SpindexedMedium) -> Optional[str]:
@@ -32,18 +36,18 @@ class PaginationMediumSchema(SpindexMediumSchema):
         return None
 
 
-class PaginationSchema(Schema):
+class _PaginationSchema(Schema):
     items = fields.Nested(
-        PaginationMediumSchema,
+        _PaginationMediumSchema,
         many=True,
         only=["id", "aspect_ratio", "hash", "tiny_thumbnail"],
     )
-    pageCount = fields.Int()
-    pageNumber = fields.Int()
-    pageSize = fields.Int()
+    page_count = fields.Int(data_key="pageCount")
+    page_number = fields.Int(data_key="pageNumber")
+    page_size = fields.Int(data_key="pageSize")
 
 
-class TagShowSchema(Schema):
+class _TagShowSchema(Schema):
     aliases = fields.Method("get_aliases")
     count = fields.Method("get_media_count")
 
@@ -66,13 +70,14 @@ class TagShowSchema(Schema):
         return [t.tag for t in obj.implying_this]
 
 
-class TagSummaryItemSchema(Schema):
+class _TagSummaryItemSchema(Schema):
     media_count = fields.Int(data_key="mediaCount")
     implied_by_something = fields.Bool(data_key="impliedBySomething")
 
     class Meta:
+        """Only serialize these exact fields."""
+
         fields = (
-            "id",
             "tag",
             "media_count",
             "rating",
@@ -80,11 +85,11 @@ class TagSummaryItemSchema(Schema):
         )
 
 
-class TagSummarySchema(Schema):
-    tags = fields.Nested(TagSummaryItemSchema, many=True)
+class _TagSummarySchema(Schema):
+    tags = fields.Nested(_TagSummaryItemSchema, many=True)
 
 
-medium_detail_schema = SpindexMediumDetailSchema()
-pagination_schema = PaginationSchema()
-tag_summary_schema = TagSummarySchema()
-tag_show_schema = TagShowSchema()
+medium_detail_schema = _SpindexMediumDetailSchema()
+pagination_schema = _PaginationSchema()
+tag_summary_schema = _TagSummarySchema()
+tag_show_schema = _TagShowSchema()

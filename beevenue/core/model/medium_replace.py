@@ -3,34 +3,40 @@ from typing import Literal, Optional, TypedDict, Union
 
 from werkzeug.datastructures import FileStorage
 
+from beevenue import EXTENSIONS
 from . import thumbnails
 from ... import db
 from ...models import Medium
 from ...spindex.signals import medium_updated
-from .file_upload import can_upload, upload_file, UploadFailure
-from .media import delete_medium_files, EXTENSIONS
+from .file_upload import upload_precheck, upload_file, UploadFailure
+from .media import delete_medium_files
 
 
 class ReplacementFailureType(Enum):
+    """Reason why medium could not be replaced.
+
+    Values must extend and not overlap with UploadFailureType!
+    """
+
     UNKNOWN_MEDIUM = 3
 
 
-class UnknownMediumResult(TypedDict):
+class _UnknownMediumResult(TypedDict):
     type: Literal[ReplacementFailureType.UNKNOWN_MEDIUM]
 
 
-ReplacementFailure = Union[UploadFailure, UnknownMediumResult]
+ReplacementFailure = Union[UploadFailure, _UnknownMediumResult]
 
 
 def replace_medium(
     medium_id: int, file: FileStorage
 ) -> Optional[ReplacementFailure]:
-    """Try to replace the medium with id ``medium_id`` with the specified file."""
+    """Update file for medium with id ``medium_id``."""
     maybe_medium = Medium.query.get(medium_id)
     if not maybe_medium:
         return {"type": ReplacementFailureType.UNKNOWN_MEDIUM}
 
-    details, failure = can_upload(file)
+    details, failure = upload_precheck(file)
 
     if (not details) or failure:
         return failure

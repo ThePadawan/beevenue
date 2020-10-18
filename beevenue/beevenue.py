@@ -1,20 +1,24 @@
+"""Application factory. Lots of initial setup is performed here."""
+
 import os
 from typing import Callable, Optional
 
 from flask_compress import Compress
 from flask_cors import CORS
 from flask_migrate import Migrate
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
-from .auth import blueprint as auth_bp
+from . import BeevenueFlask
 from .auth.auth import init as auth_init_app
+from .auth.routes import blueprint as auth_bp
 from .cache import init_app as cache_init_app
 from .cli import init_cli
-from .core.controller.routes import bp as routes_bp
+from .core.controller import graphql_routes, media_routes, routes, tag_routes
 from .db import db
-from .flask import BeevenueFlask
 from .init import init_app as context_init_app
 from .login_manager import login_manager
-from .marshmallow import ma
 from .principal import principal
 from .spindex.init import init_app as spindex_init_app
 from .spindex.routes import bp as spindex_bp
@@ -26,6 +30,8 @@ def get_application(
     extra_config: Optional[Callable[[BeevenueFlask], None]] = None,
     fill_db: Optional[Callable[[], None]] = None,
 ) -> BeevenueFlask:
+    """Construct and return uWSGI application object."""
+
     application = BeevenueFlask("beevenue-main", "0.0.0.0", 7000)
 
     application.config.from_envvar("BEEVENUE_CONFIG_FILE")
@@ -45,16 +51,10 @@ def get_application(
     Migrate(application, db)
 
     if application.config.get("SENTRY_DSN"):
-        import sentry_sdk
-        from sentry_sdk.integrations.flask import FlaskIntegration
-        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
-
         sentry_sdk.init(
             dsn=application.config["SENTRY_DSN"],
             integrations=[FlaskIntegration(), SqlalchemyIntegration()],
         )
-
-    ma.init_app(application)
 
     with application.app_context():
         login_manager.init_app(application)
@@ -62,7 +62,10 @@ def get_application(
         context_init_app(application)
 
         application.register_blueprint(auth_bp)
-        application.register_blueprint(routes_bp)
+        application.register_blueprint(routes.bp)
+        application.register_blueprint(tag_routes.bp)
+        application.register_blueprint(media_routes.bp)
+        application.register_blueprint(graphql_routes.bp)
         application.register_blueprint(strawberry_bp)
         application.register_blueprint(spindex_bp)
 

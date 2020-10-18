@@ -7,10 +7,15 @@ from ..models import SpindexedMedium
 
 
 class AbstractDataSource(ABC):
+    """Abstract SQL data source used to load media from SQL database.
+
+    Used to populate spindex (e.g. on initial load, or when reindexing."""
+
     @abstractmethod
     def alias_names(self, tag_ids: Iterable[int]) -> Set[str]:
         """Returns all names of aliases for the given tag_ids."""
 
+    @abstractmethod
     def implied(self, tag_ids: Iterable[int]) -> Tuple[Set[int], Set[str]]:
         """Returns ids and names of tags implied by the given tag_ids."""
 
@@ -19,7 +24,7 @@ def create_spindexed_medium(
     data_source: AbstractDataSource, medium: Medium
 ) -> SpindexedMedium:
     # First, get innate tags. These will never change.
-    innate_tag_names = set([t.tag for t in medium.tags])
+    innate_tag_names = {t.tag for t in medium.tags}
 
     # Follow chain of implications. Gather implied tags
     # and aliases until that queue is empty.
@@ -37,12 +42,12 @@ def _non_innate_tags(
 ) -> Set[str]:
     extra: Set[str] = set()
 
-    q: deque = deque()
-    initial_tag_ids = set([t.id for t in medium.tags])
-    q.append(initial_tag_ids)
+    queue: deque = deque()
+    initial_tag_ids = {t.id for t in medium.tags}
+    queue.append(initial_tag_ids)
 
-    while q:
-        tag_ids: List[int] = q.pop()
+    while queue:
+        tag_ids: List[int] = queue.pop()
         if not tag_ids:
             continue
 
@@ -51,6 +56,6 @@ def _non_innate_tags(
         implied_tag_ids, implied_tag_names = data_source.implied(tag_ids)
         extra |= implied_tag_names
 
-        q.append(implied_tag_ids)
+        queue.append(implied_tag_ids)
 
     return extra

@@ -6,8 +6,13 @@ from .models import User
 
 
 def init() -> None:
-    @login_manager.user_loader
-    def user_loader(username: str) -> Optional[LoggedInUser]:
+    """Initialize auth component of application."""
+
+    def user_loader(
+        username: str,
+    ) -> Optional[LoggedInUser]:
+        """Try to load user with specified username."""
+
         maybe_user = User.query.filter(User.username == username).first()
 
         if not maybe_user:
@@ -16,3 +21,5 @@ def init() -> None:
         user = LoggedInUser(username, maybe_user.role)
         user.id = username
         return user
+
+    login_manager.user_loader(user_loader)

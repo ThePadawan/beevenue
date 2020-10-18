@@ -1,14 +1,15 @@
-from flask import make_response, render_template, send_file
+from flask import make_response, render_template, send_file, Blueprint
 
-from beevenue.request import request
+from beevenue import request
 
-from . import bp
 from ... import notifications, permissions, schemas
 from ..model import media, thumbnails
 from ..model.file_upload import create_medium_from_upload, UploadFailureType
 from ..model.medium_replace import replace_medium, ReplacementFailureType
 from ..model.medium_update import update_medium
 from ..model.search.search import find_all
+
+bp = Blueprint("media", __name__)
 
 
 @bp.route("/media")
@@ -46,7 +47,8 @@ def get_medium(medium_id: int):  # type: ignore
 def update_medium_metadata(medium_id: int):  # type: ignore
     """Update some or all of the medium's metadata (e.g. rating).
 
-    Note: This is *not* used to update the medium itself. See the /file endpoint for that.
+    Note: This is *not* used to update the medium itself.
+    See the /file endpoint for that.
     """
     body = request.json
 
@@ -58,8 +60,7 @@ def update_medium_metadata(medium_id: int):  # type: ignore
 
     if success:
         return success
-    else:
-        return notifications.could_not_update_medium(), 400
+    return notifications.could_not_update_medium(), 400
 
 
 @bp.route("/medium", methods=["POST"])
@@ -96,7 +97,7 @@ def form_upload_medium():  # type: ignore
 @bp.route("/medium/<int:medium_id>/file", methods=["PATCH"])
 @permissions.is_owner
 def replace_medium_file(medium_id: int):  # type: ignore
-    """Replace this medium's file. Use the /metadata route to replace e.g. rating."""
+    """Replace medium's file. Use the /metadata route to replace e.g. rating."""
 
     if not request.files:
         return notifications.simple_error("You must supply a file"), 400
@@ -114,14 +115,14 @@ def replace_medium_file(medium_id: int):  # type: ignore
             ),
             400,
         )
-    elif error["type"] == UploadFailureType.CONFLICTING_MEDIUM:
+    if error["type"] == UploadFailureType.CONFLICTING_MEDIUM:
         return (
             notifications.medium_already_exists(
                 stream.filename, error["medium_id"]
             ),
             400,
         )
-    elif error["type"] == ReplacementFailureType.UNKNOWN_MEDIUM:
+    if error["type"] == ReplacementFailureType.UNKNOWN_MEDIUM:
         return notifications.no_such_medium(medium_id), 400
 
     raise Exception(f"Unknown error occurred when replacing medium: {error}")
@@ -150,13 +151,13 @@ def get_backup_sh():  # type: ignore
 @bp.route("/medium/<int:medium_id>/backup")
 @permissions.is_owner
 def get_medium_zip(medium_id: int):  # type: ignore
-    status, b = media.get_zip(medium_id)
+    status, zip_bytes = media.get_zip(medium_id)
 
     if status == 404:
         return "", 404
 
     return send_file(
-        b,
+        zip_bytes,
         mimetype="application/zip",
         as_attachment=True,
         attachment_filename=f"{medium_id}.zip",

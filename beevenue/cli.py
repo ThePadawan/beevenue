@@ -1,47 +1,55 @@
+"""CLI operations for the application. Mainly used for testing."""
+
 import os
-from typing import Iterable
+from typing import Any, Iterable
 
 import click
 from flask import g
 
+from . import BeevenueFlask
 from .core.model import thumbnails
-from .core.model.file_upload import create_medium_from_upload, UploadFailure
-from .flask import BeevenueFlask
+from .core.model.file_upload import create_medium_from_upload
 from .io import HelperBytesIO
 
 
-class Nop(object):
-    def remove_id(self, id: int) -> None:
-        """Do nothing, intentionally."""
+def _nop_spindex(_: bool) -> Any:
+    """Return a Spindex that does nothing.
 
-    def add(self, x: object) -> None:
-        """Do nothing, intentionally."""
+    We can use this during CLI usage since we never care about reading
+    from the Spindex, so we might as well not even write it."""
 
+    class _Nop:
+        def remove_id(self, medium_id: int) -> None:
+            """Do nothing, intentionally."""
 
-class NopSpindex(object):
-    def __call__(self, do_write: bool) -> Nop:
-        return Nop()
+        def add(self, _: object) -> None:
+            """Do nothing, intentionally."""
+
+    return _Nop()
 
 
 def init_cli(app: BeevenueFlask) -> None:
+    """Initialize CLI component of the application."""
+
     @app.cli.command("import")
     @click.argument("file_paths", nargs=-1, type=click.Path(exists=True))
     def _import(file_paths: Iterable[str]) -> None:
-        g.spindex = NopSpindex()
+        """Import all the specified files. Skip invalid files."""
+        g.spindex = _nop_spindex
 
-        for p in file_paths:
-            print(f"Importing {p}...")
-            with open(p, "rb") as f:
-                file_bytes = f.read()
+        for path in file_paths:
+            print(f"Importing {path}...")
+            with open(path, "rb") as current_file:
+                file_bytes = current_file.read()
             stream = HelperBytesIO(file_bytes)
-            stream.filename = os.path.basename(p)
+            stream.filename = os.path.basename(path)
 
             print("Uploading...")
             medium_id, failure = create_medium_from_upload(stream)
             if failure or not medium_id:
-                print(f"Could not upload file {p}: {failure}")
+                print(f"Could not upload file {path}: {failure}")
                 continue
 
             print("Creating thumbnails...")
             thumbnails.create(medium_id)
-            print(f"Successfully imported {p}")
+            print(f"Successfully imported {path}")

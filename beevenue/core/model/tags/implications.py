@@ -5,10 +5,10 @@ from sqlalchemy import and_
 from sqlalchemy.orm.query import Query
 from sqlalchemy.orm.scoping import scoped_session
 
-from . import delete_orphans
 from .... import db
 from ....models import Tag, TagImplication
 from ....spindex.signals import implication_added, implication_removed
+from .delete import delete_orphans
 
 
 def _identify_implication_tags(
@@ -35,11 +35,11 @@ def _would_create_implication_cycle(
     visited = set()
     visited.add(implying_tag.id)
 
-    q: deque = deque()
-    q.append(implied_tag.id)
+    queue: deque = deque()
+    queue.append(implied_tag.id)
 
-    while q:
-        current = q.pop()
+    while queue:
+        current = queue.pop()
 
         neighbors = (
             session.query(TagImplication)
@@ -49,10 +49,10 @@ def _would_create_implication_cycle(
 
         neighbor_ids = [n.implied_tag_id for n in neighbors]
 
-        for n in neighbor_ids:
-            if n in visited:
+        for neighbor_id in neighbor_ids:
+            if neighbor_id in visited:
                 return True
-            q.append(n)
+            queue.append(neighbor_id)
 
     return False
 
@@ -69,7 +69,10 @@ def _tag_implication_query(
 
 
 def add_implication(implying: str, implied: str) -> Optional[str]:
-    """Add an implication between two tags. Returns error on failure, else None."""
+    """Add an implication between two tags.
+
+    Returns error on failure, else None."""
+
     session = db.session()
 
     tags = _identify_implication_tags(session, implying, implied)
@@ -106,7 +109,10 @@ def add_implication(implying: str, implied: str) -> Optional[str]:
 
 
 def remove_implication(implying: str, implied: str) -> Optional[str]:
-    """Remove an implication between two tags. Returns error on failure, else None."""
+    """Remove an implication between two tags.
+
+    Returns error on failure, else None."""
+
     session = db.session()
 
     tags = _identify_implication_tags(session, implying, implied)
@@ -137,9 +143,11 @@ def remove_implication(implying: str, implied: str) -> Optional[str]:
 
 def get_all() -> Dict[str, List[str]]:
     session = db.session()
-    all = (
+    rows = (
         session.query(Tag)
-        .filter(Tag.implied_by_this != None)  # noqa: E711
+        .filter(
+            Tag.implied_by_this != None  # pylint: disable=singleton-comparison
+        )
         .all()
     )
-    return {row.tag: [t.tag for t in row.implied_by_this] for row in all}
+    return {row.tag: [t.tag for t in row.implied_by_this] for row in rows}

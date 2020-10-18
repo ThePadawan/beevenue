@@ -20,7 +20,7 @@ class _SingleLoadDataSource(AbstractDataSource):
             .all()
         )
 
-        return set([t[0] for t in tag_alias_entities])
+        return {t[0] for t in tag_alias_entities}
 
     def implied(self, tag_ids: Iterable[int]) -> Tuple[Set[int], Set[str]]:
         implied_tag_id_entities = (
@@ -29,7 +29,7 @@ class _SingleLoadDataSource(AbstractDataSource):
             .with_entities(TagImplication.c.implied_tag_id)
             .all()
         )
-        implied_tag_ids = set([t[0] for t in implied_tag_id_entities])
+        implied_tag_ids = {t[0] for t in implied_tag_id_entities}
 
         implied_tag_name_entities = (
             self.session.query(Tag)
@@ -37,15 +37,15 @@ class _SingleLoadDataSource(AbstractDataSource):
             .with_entities(Tag.tag)
             .all()
         )
-        implied_tag_names = set([t[0] for t in implied_tag_name_entities])
+        implied_tag_names = {t[0] for t in implied_tag_name_entities}
 
         return implied_tag_ids, implied_tag_names
 
 
-def single_load(id: int) -> Optional[SpindexedMedium]:
+def single_load(medium_id: int) -> Optional[SpindexedMedium]:
     session = db.session()
 
-    matching_media = session.query(Medium).filter_by(id=id).all()
+    matching_media = session.query(Medium).filter_by(id=medium_id).all()
     if not matching_media:
         return None
 

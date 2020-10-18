@@ -7,12 +7,14 @@ from flask import current_app
 from ..interface import ThumbnailingResult
 
 
-def video_thumbnails(in_path: str, out_path_base: Path) -> ThumbnailingResult:
+def video_thumbnails(
+    in_path: str, extensionless_out_path: Path
+) -> ThumbnailingResult:
     for thumbnail_size, thumbnail_size_pixels in current_app.config[
         "BEEVENUE_THUMBNAIL_SIZES"
     ].items():
         min_axis = thumbnail_size_pixels
-        out_path = out_path_base.with_suffix(f".{thumbnail_size}.jpg")
+        out_path = extensionless_out_path.with_suffix(f".{thumbnail_size}.jpg")
 
         cmd = [
             "ffmpeg",
@@ -26,7 +28,7 @@ def video_thumbnails(in_path: str, out_path_base: Path) -> ThumbnailingResult:
             f"{out_path}",
         ]
 
-        ffmpeg_result = subprocess.run(cmd)
+        ffmpeg_result = subprocess.run(cmd, check=False)
 
         if ffmpeg_result.returncode != 0:
             return ThumbnailingResult.from_failure(

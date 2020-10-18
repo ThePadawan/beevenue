@@ -30,7 +30,8 @@ FILTERS: List[Tuple[Pattern, Type[SearchTerm]]] = [
 ]
 
 
-def _maybe_match(term: str) -> Optional[SearchTerm]:
+def _try_parse(term: str) -> Optional[SearchTerm]:
+    """Try and parse the given search term string into a valid SearchTerm."""
     if len(term) < 1:
         return None
 
@@ -57,11 +58,13 @@ def _maybe_match(term: str) -> Optional[SearchTerm]:
     return term_obj
 
 
-def get_search_terms(search_term_list: List[str]) -> Set[SearchTerm]:
+def parse_search_terms(search_term_list: List[str]) -> Set[SearchTerm]:
+    """Parse list of search term strings into Set of valid SearchTerms."""
+
     result = set()
 
     for term in search_term_list:
-        maybe_term = _maybe_match(term)
+        maybe_term = _try_parse(term)
         if maybe_term:
             result.add(maybe_term)
 

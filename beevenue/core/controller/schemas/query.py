@@ -7,24 +7,24 @@ from ....schemas import (
 )
 
 
-class SearchQueryParamsSchema(PaginationQueryParamsSchema):
+class _SearchQueryParamsSchema(PaginationQueryParamsSchema):
     q = fields.String(required=True)
 
 
-search_query_params_schema = requires_query_params(SearchQueryParamsSchema())
+search_query_params_schema = requires_query_params(_SearchQueryParamsSchema())
 
 
-class UpdateTagSchema(Schema):
+class _UpdateTagSchema(Schema):
     tag = fields.String()
     rating = fields.String()
 
 
-update_tag_schema = requires_json_body(UpdateTagSchema())
+update_tag_schema = requires_json_body(_UpdateTagSchema())
 
 
-class AddTagsBatchSchema(Schema):
+class _AddTagsBatchSchema(Schema):
     tags = fields.List(fields.String, required=True)
     mediumIds = fields.List(fields.Int, required=True)
 
 
-add_tags_batch_schema = requires_json_body(AddTagsBatchSchema())
+add_tags_batch_schema = requires_json_body(_AddTagsBatchSchema())

@@ -8,20 +8,19 @@ from flask import current_app
 from sqlalchemy.orm import load_only
 from sqlalchemy.orm.scoping import scoped_session
 
-from beevenue.context import BeevenueContext
+from beevenue import BeevenueContext, EXTENSIONS
 
 from ... import db
 from ...models import Medium
 from ...spindex.signals import medium_deleted
 from ...spindex.spindex import SPINDEX
 from .detail import MediumDetail
-from .extensions import EXTENSIONS
 from .similar import similar_media
 
 
-def _try_and_remove(f: str) -> None:
+def _try_and_remove(file: str) -> None:
     try:
-        os.remove(f)
+        os.remove(file)
     except Exception:
         pass
 
@@ -48,6 +47,8 @@ def get(
 
 
 def get_all_ids() -> List[int]:
+    """Get ids of *all* media."""
+
     return [
         m.id
         for m in Medium.query.options(load_only(Medium.id))
@@ -57,6 +58,8 @@ def get_all_ids() -> List[int]:
 
 
 def delete(medium_id: int) -> bool:
+    """Delete medium. Return True on success, False otherwise."""
+
     maybe_medium = Medium.query.filter_by(id=medium_id).first()
 
     if not maybe_medium:
@@ -74,42 +77,44 @@ def delete(medium_id: int) -> bool:
 
 
 def _delete(session: scoped_session, medium: Medium) -> None:
-    hash = medium.hash
+    current_hash = medium.hash
     extension = EXTENSIONS[medium.mime_type]
     session.delete(medium)
     session.commit()
 
     medium_deleted.send(medium.id)
-    delete_medium_files(hash, extension)
+    delete_medium_files(current_hash, extension)
 
 
-def delete_medium_files(hash: str, extension: str) -> None:
-    _try_and_remove(f"media/{hash}.{extension}")
+def delete_medium_files(medium_hash: str, extension: str) -> None:
+    """Ensure medium files and thumbnails are deleted, ignoring failure."""
 
-    for thumbnail_size, _ in current_app.config[
-        "BEEVENUE_THUMBNAIL_SIZES"
-    ].items():
-        _try_and_remove(f"thumbs/{hash}.{thumbnail_size}.jpg")
+    _try_and_remove(f"media/{medium_hash}.{extension}")
+
+    for thumbnail_size in current_app.config["BEEVENUE_THUMBNAIL_SIZES"].keys():
+        _try_and_remove(f"thumbs/{medium_hash}.{thumbnail_size}.jpg")
 
 
 def get_zip(medium_id: int) -> Tuple[int, Optional[BytesIO]]:
+    """Get zip file containing file and metadata for specific medium."""
+
     medium = Medium.query.filter_by(id=medium_id).first()
 
     if not medium:
         return 404, None
 
     result_bytes = BytesIO()
-    with zipfile.ZipFile(result_bytes, mode="w") as z:
+    with zipfile.ZipFile(result_bytes, mode="w") as zip_file:
         # Add metadata
         metadata_bytes = _get_metadata_bytes(medium)
-        z.writestr(f"{medium.id}.metadata.json", metadata_bytes)
+        zip_file.writestr(f"{medium.id}.metadata.json", metadata_bytes)
 
         # Add data
         extension = EXTENSIONS[medium.mime_type]
         with current_app.open_resource(
             f"media/{medium.hash}.{extension}", "rb"
         ) as res:
-            z.writestr(f"{medium.id}.{extension}", res.read())
+            zip_file.writestr(f"{medium.id}.{extension}", res.read())
 
     result_bytes.seek(0)
     return 200, result_bytes

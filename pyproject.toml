@@ -6,3 +6,32 @@ line_length = 80
 
 [tool.black]
 line-length = 80
+
+[tool.pylint.master]
+load-plugins = [
+"pylint_flask",
+"pylint_flask_sqlalchemy"
+]
+max-line-length = 80
+
+[tool.pylint.typecheck]
+# old-style SQLAlchemy tables are broken without this
+ignored-classes = [ "Table" ]
+
+[tool.pylint.all]
+# black and pylint don't agree on continuations. black is less wrong though.
+disable = """
+too-few-public-methods,
+too-many-ancestors,
+too-many-arguments,
+no-self-use,
+bad-continuation,
+missing-module-docstring,
+missing-function-docstring,
+broad-except,
+wrong-import-order
+"""
+# enable = """,
+# missing-class-docstring,
+# unused-import
+# """

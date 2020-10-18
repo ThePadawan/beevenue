@@ -1,17 +1,17 @@
 from base64 import b64encode
 from pathlib import Path
 
-from flask import send_from_directory
+from flask import Blueprint, send_from_directory
 
-from beevenue.request import request
-from beevenue.response import BeevenueResponse
+from beevenue import request, BeevenueResponse
 
-from . import bp
 from ... import notifications, permissions
 from ...spindex.spindex import SPINDEX
 from ..model import thumbnails
 from ..model.search import search
 from .schemas.query import search_query_params_schema
+
+bp = Blueprint("routes", __name__)
 
 
 @bp.route("/search")
@@ -32,10 +32,15 @@ def create_thumbnail(medium_id: int):  # type: ignore
     return message, status_code
 
 
-@bp.route("/medium/<int:medium_id>/thumbnail/picks/<int:n>", methods=["GET"])
+@bp.route(
+    "/medium/<int:medium_id>/thumbnail/picks/<int:thumbnail_count>",
+    methods=["GET"],
+)
 @permissions.is_owner
-def show_thumbnail_picks(medium_id: int, n: int):  # type: ignore
-    status_code, list_of_bytes = thumbnails.generate_picks(medium_id, n)
+def show_thumbnail_picks(medium_id: int, thumbnail_count: int):  # type: ignore
+    status_code, list_of_bytes = thumbnails.generate_picks(
+        medium_id, thumbnail_count
+    )
 
     if status_code != 200 or (list_of_bytes is None):
         return "", status_code
@@ -43,19 +48,22 @@ def show_thumbnail_picks(medium_id: int, n: int):  # type: ignore
     # Idea: We could also use a zip file.
     base64_strings = []
 
-    for b in list_of_bytes:
-        base64_strings.append(b64encode(b).decode("utf-8"))
+    for byte in list_of_bytes:
+        base64_strings.append(b64encode(byte).decode("utf-8"))
 
     return {"thumbs": base64_strings}
 
 
 @bp.route(
-    "/medium/<int:medium_id>/thumbnail/pick/<int:thumb_index>/<int:n>",
+    "/medium/<int:medium_id>/thumbnail/pick/"
+    "<int:thumb_index>/<int:thumbnail_count>",
     methods=["PATCH"],
 )
 @permissions.is_owner
-def pick_thumbnail(medium_id: int, thumb_index: int, n: int):  # type: ignore
-    status_code = thumbnails.pick(medium_id, thumb_index, n)
+def pick_thumbnail(  # type: ignore
+    medium_id: int, thumb_index: int, thumbnail_count: int
+):
+    status_code = thumbnails.pick(medium_id, thumb_index, thumbnail_count)
 
     return notifications.new_thumbnail(), status_code
 
@@ -77,7 +85,9 @@ def get_magic_thumb(medium_id: int):  # type: ignore
 
     thumb_path = Path(f"{medium.hash}.{size}.jpg")
 
-    res: BeevenueResponse = send_from_directory("thumbs", thumb_path)  # type: ignore
+    res: BeevenueResponse = send_from_directory(  # type: ignore
+        "thumbs", thumb_path
+    )
     # Note this must be distinct from the public route ("/thumbs"),
     # or Nginx will freak.
     res.set_sendfile_header(Path("/", "beevenue_thumbs", thumb_path))
@@ -88,7 +98,9 @@ def get_magic_thumb(medium_id: int):  # type: ignore
 @bp.route("/files/<path:full_path>")
 @permissions.get_medium_file
 def get_file(full_path: str):  # type: ignore
-    res: BeevenueResponse = send_from_directory("media", full_path)  # type: ignore
+    res: BeevenueResponse = send_from_directory(  # type: ignore
+        "media", full_path
+    )
     # Note this must be distinct from the public route ("/files"),
     # or Nginx will freak.
     res.set_sendfile_header(Path("/", "media", full_path))

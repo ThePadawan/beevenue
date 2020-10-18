@@ -1,0 +1,40 @@
+name: PR
+on:
+  push:
+    branches:
+      - "feature/**"
+
+jobs:
+  pr_checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@master
+      - name: Install Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+          architecture: "x64"
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements.linuxonly.txt -r requirements.cionly.txt
+      - name: Run black
+        run: black .
+      - name: Run mypy
+        run: mypy .
+      - name: Forcefully downgrade isort to fix pylint
+        run: pip install -I isort==4.3.21
+      - name: Run pylint
+        run: pylint beevenue
+      - name: Install newest isort
+        run: pip uninstall -y isort && pip install -I -U isort
+      - name: Run isort
+        run: isort **/*.py
+      - name: Create PR (if necessary)
+        id: cpr
+        uses: peter-evans/create-pull-request@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Autoformat changes"
+          title: "Autoformat changes"
+          author: "PRBot <prbot@prat.ch>"
+          body: Please merge these autoformatting changes.

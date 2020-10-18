@@ -1,5 +1,5 @@
 import json
-from typing import List, Literal, Optional, TypedDict, Union
+from typing import List
 
 from .common import (
     HasAnyTagsIn,
@@ -11,50 +11,10 @@ from .common import (
 from .iff import All, Iff
 from .rule import Rule
 from .then import Fail, Then
+from . import types
 
 
-class AllJson(TypedDict):
-    type: Literal["all"]
-
-
-class FailJson(TypedDict):
-    type: Literal["fail"]
-
-
-class HasAnyRatingJson(TypedDict):
-    type: Literal["hasRating"]
-
-
-class HasSpecificRatingJson(TypedDict):
-    type: Literal["hasRating"]
-    data: Optional[str]
-
-
-class HasAnyTagsInJson(TypedDict):
-    type: Literal["hasAnyTagsIn"]
-    data: List[str]
-
-
-class HasAnyTagsLikeJson(TypedDict):
-    type: Literal["hasAnyTagsLike"]
-    data: List[str]
-
-
-RuleJson = Union[
-    AllJson,
-    FailJson,
-    HasAnyRatingJson,
-    HasSpecificRatingJson,
-    HasAnyTagsInJson,
-    HasAnyTagsLikeJson,
-]
-
-TopLevelRule = TypedDict(
-    "TopLevelRule", {"if": RuleJson, "then": List[RuleJson]}
-)
-
-
-def _decode_common(obj: RuleJson) -> IffAndThen:
+def _decode_common(obj: types.RuleJson) -> IffAndThen:
     if obj["type"] == "hasRating":
         return HasRating(obj.get("data", None))  # type: ignore
 
@@ -67,77 +27,82 @@ def _decode_common(obj: RuleJson) -> IffAndThen:
     raise Exception(f'Unknown rule part type "{obj["type"]}"')
 
 
-def _decode_iff(obj: RuleJson) -> Iff:
+def _decode_iff(obj: types.RuleJson) -> Iff:
     if obj["type"] == "all":
         return All()
     return _decode_common(obj)
 
 
-def _decode_then(obj: RuleJson) -> Then:
+def _decode_then(obj: types.RuleJson) -> Then:
     if obj["type"] == "fail":
         return Fail()
     return _decode_common(obj)
 
 
-def _decode_thens(thens_obj: List[RuleJson]) -> List[Then]:
+def _decode_thens(thens_obj: List[types.RuleJson]) -> List[Then]:
     return [_decode_then(t) for t in thens_obj]
 
 
-def _decode_rule(obj: TopLevelRule) -> Rule:
+def _decode_rule(obj: types.TopLevelRuleJson) -> Rule:
     iff = _decode_iff(obj["if"])
     thens = _decode_thens(obj["then"])
 
     return Rule(iff, thens)
 
 
-def decode_rules(json_text: str) -> List[Rule]:
-    rules_obj = json.loads(json_text)
-    return decode_rules_obj(rules_obj)
+def decode_rules_json(json_text: str) -> List[Rule]:
+    """Decode given JSON text into list of Rules."""
+    return decode_rules_list(json.loads(json_text))
 
 
-def decode_rules_obj(obj: List[TopLevelRule]) -> List[Rule]:
-    return [_decode_rule(rule) for rule in obj]
+def decode_rules_list(json_list: List[types.TopLevelRuleJson]) -> List[Rule]:
+    """Decode given list of dictionaries into list of Rules."""
+    return [_decode_rule(rule) for rule in json_list]
 
 
 class RulePartEncoder(json.JSONEncoder):
-    def default(self, obj: RulePart) -> RuleJson:
-        if isinstance(obj, All):
-            all: AllJson = {"type": "all"}
-            return all
-        if isinstance(obj, Fail):
-            fail: FailJson = {"type": "fail"}
+    """JSON Encoder for `RulePart`."""
+
+    def default(self, o: RulePart) -> types.RuleJson:
+        if isinstance(o, All):
+            all_json: types.AllJson = {"type": "all"}
+            return all_json
+        if isinstance(o, Fail):
+            fail: types.FailJson = {"type": "fail"}
             return fail
-        if isinstance(obj, HasRating):
-            if obj.rating:
-                specificRatingJson: HasSpecificRatingJson = {
+        if isinstance(o, HasRating):
+            if o.rating:
+                specific_rating_json: types.HasSpecificRatingJson = {
                     "type": "hasRating",
-                    "data": obj.rating,
+                    "data": o.rating,
                 }
-                return specificRatingJson
-            else:
-                anyRatingJson: HasAnyRatingJson = {"type": "hasRating"}
-                return anyRatingJson
-        if isinstance(obj, HasAnyTagsIn):
-            hasAnyTagsInJson: HasAnyTagsInJson = {
+                return specific_rating_json
+
+            any_rating_json: types.HasAnyRatingJson = {"type": "hasRating"}
+            return any_rating_json
+        if isinstance(o, HasAnyTagsIn):
+            has_any_tags_in_json: types.HasAnyTagsInJson = {
                 "type": "hasAnyTagsIn",
-                "data": list(obj.tag_names),
+                "data": list(o.tag_names),
             }
-            return hasAnyTagsInJson
-        if isinstance(obj, HasAnyTagsLike):
-            hasAnyTagsLikeJson: HasAnyTagsLikeJson = {
+            return has_any_tags_in_json
+        if isinstance(o, HasAnyTagsLike):
+            has_any_tags_like_json: types.HasAnyTagsLikeJson = {
                 "type": "hasAnyTagsLike",
-                "data": list(obj.regexes),
+                "data": list(o.regexes),
             }
-            return hasAnyTagsLikeJson
-        raise Exception(f"Cannot encode rule part with type {type(obj)}")
+            return has_any_tags_like_json
+        raise Exception(f"Cannot encode rule part with type {type(o)}")
 
 
 class RuleEncoder(json.JSONEncoder):
-    def default(self, obj: TopLevelRule) -> Rule:
-        if isinstance(obj, Rule):
+    """JSON Encoder for `Rule`."""
+
+    def default(self, o: types.TopLevelRuleJson) -> Rule:
+        if isinstance(o, Rule):
             i = RulePartEncoder()
             return {
-                "if": i.default(obj.iff),
-                "then": [i.default(t) for t in obj.thens],
+                "if": i.default(o.iff),
+                "then": [i.default(t) for t in o.thens],
             }
-        raise Exception(f"Cannot encode rule with type {type(obj)}")
+        raise Exception(f"Cannot encode rule with type {type(o)}")

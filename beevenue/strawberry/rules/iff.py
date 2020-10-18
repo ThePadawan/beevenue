@@ -1,11 +1,15 @@
-from typing import List
+from typing import Optional, List
 
 from ...spindex.spindex import SPINDEX
 from .common import Iff
 
 
 class All(Iff):
-    def get_medium_ids(self, filtering_medium_ids: List[int] = []) -> List[int]:
+    """Select all media."""
+
+    def get_medium_ids(
+        self, filtering_medium_ids: Optional[List[int]] = None
+    ) -> List[int]:
         return [m.id for m in SPINDEX.all()]
 
     def applies_to(self, medium_id: int) -> bool:

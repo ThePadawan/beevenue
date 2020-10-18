@@ -1,10 +1,22 @@
-from beevenue.request import request
+from flask import Blueprint
 
-from . import bp
+from beevenue import request
+
 from ... import notifications, permissions
-from ..model import tags
-from ..model.tags import aliases, implications, summary
+from ..model.tags import (
+    aliases,
+    implications,
+    load,
+    summary,
+    update,
+    similarity_chart,
+    new,
+    implications_chart,
+)
 from .schemas.query import add_tags_batch_schema, update_tag_schema
+
+
+bp = Blueprint("tags", __name__)
 
 
 @bp.route("/tag/<string:tag_name>", methods=["PATCH"])
@@ -12,7 +24,7 @@ from .schemas.query import add_tags_batch_schema, update_tag_schema
 @update_tag_schema
 def patch_tag(tag_name: str):  # type: ignore
     body = request.json
-    success, error_or_tag = tags.update(tag_name, body)
+    success, error_or_tag = update.update(tag_name, body)
     if not success:
         return error_or_tag, 400
 
@@ -33,8 +45,7 @@ def tag_add_implication(tag_name: str, implied_by_this: str):  # type: ignore
 
     if not error:
         return "", 200
-    else:
-        return notifications.simple_error(error), 400
+    return notifications.simple_error(error), 400
 
 
 @bp.route(IMPLICATION_ROUTE_PATH, methods=["DELETE"])
@@ -46,8 +57,7 @@ def tag_remove_implication(tag_name: str, implied_by_this: str):  # type: ignore
 
     if not error:
         return "", 200
-    else:
-        return notifications.simple_error(error), 400
+    return notifications.simple_error(error), 400
 
 
 @bp.route("/tag/implications/backup")
@@ -66,34 +76,33 @@ def get_tags_stats():  # type: ignore
 @permissions.is_owner
 @add_tags_batch_schema
 def add_tags_batch():  # type: ignore
-    result = tags.add_batch(
+    added_count = new.add_batch(
         request.json["tags"],
         request.json["mediumIds"],
     )
 
-    if not result:
+    if added_count is None:
         return notifications.simple_warning("No tags added")
 
-    tag_count, added_count = result
-    return notifications.tag_batch_added(tag_count, added_count), 200
+    return notifications.tag_batch_added(added_count), 200
 
 
 @bp.route("/tags/similarity")
 def get_tag_similarity():  # type: ignore
-    matrix = tags.get_similarity_matrix()
+    matrix = similarity_chart.get_similarity_matrix()
     return matrix, 200
 
 
 @bp.route("/tags/implications")
 def get_tag_implications():  # type: ignore
-    implications = tags.get_all_implications()
-    return implications, 200
+    chart = implications_chart.get_all_implications()
+    return chart, 200
 
 
 @bp.route("/tag/<string:name>", methods=["GET", "OPTION"])
 @permissions.is_owner
 def get_tag(name: str):  # type: ignore
-    maybe_tag = tags.get(name)
+    maybe_tag = load.get(name)
 
     if not maybe_tag:
         return notifications.no_such_tag(name), 404
