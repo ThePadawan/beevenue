@@ -8,7 +8,7 @@ from PIL import Image
 from flask import current_app
 from sqlalchemy.orm.scoping import scoped_session
 
-from beevenue import EXTENSIONS
+from beevenue import EXTENSIONS, paths
 from . import ffmpeg
 from ... import db
 from ...models import Medium
@@ -29,7 +29,7 @@ def _thumbnailable_video(
         return 400, None
 
     extension = EXTENSIONS[medium.mime_type]
-    origin_path = os.path.abspath(f"media/{medium.hash}.{extension}")
+    origin_path = paths.medium_path((f"{medium.hash}.{extension}"))
 
     if not os.path.exists(origin_path):
         return 404, None
@@ -80,11 +80,13 @@ def create(medium_id: int) -> Tuple[int, str]:
 
 
 def _create(mime_type: str, medium_hash: str) -> ThumbnailingResult:
-    extensionless_thumb_path = Path(os.path.abspath(f"thumbs/{medium_hash}"))
+    extensionless_thumb_path = Path(
+        os.path.join(paths.thumbnail_directory(), medium_hash)
+    )
 
     extension = EXTENSIONS[mime_type]
 
-    origin_path = os.path.abspath(f"media/{medium_hash}.{extension}")
+    origin_path = paths.medium_path((f"{medium_hash}.{extension}"))
 
     if not os.path.exists(origin_path):
         raise Exception(
@@ -99,7 +101,7 @@ def _generate_tiny(medium_id: int, session: scoped_session) -> None:
     tiny_thumb_res = current_app.config["BEEVENUE_TINY_THUMBNAIL_SIZE"]
 
     medium = Medium.query.get(medium_id)
-    out_path = os.path.abspath(f"thumbs/{medium.hash}.{size}.jpg")
+    out_path = paths.thumbnail_path(medium_hash=medium.hash, size=size)
 
     with Image.open(out_path, "r") as img:
         thumbnail = img.copy()

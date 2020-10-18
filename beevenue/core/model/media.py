@@ -8,7 +8,7 @@ from flask import current_app
 from sqlalchemy.orm import load_only
 from sqlalchemy.orm.scoping import scoped_session
 
-from beevenue import BeevenueContext, EXTENSIONS
+from beevenue import BeevenueContext, EXTENSIONS, paths
 
 from ... import db
 from ...models import Medium
@@ -89,10 +89,11 @@ def _delete(session: scoped_session, medium: Medium) -> None:
 def delete_medium_files(medium_hash: str, extension: str) -> None:
     """Ensure medium files and thumbnails are deleted, ignoring failure."""
 
-    _try_and_remove(f"media/{medium_hash}.{extension}")
+    _try_and_remove(paths.medium_path(f"{medium_hash}.{extension}"))
 
     for thumbnail_size in current_app.config["BEEVENUE_THUMBNAIL_SIZES"].keys():
-        _try_and_remove(f"thumbs/{medium_hash}.{thumbnail_size}.jpg")
+        path = paths.thumbnail_path(medium_hash, thumbnail_size)
+        _try_and_remove(path)
 
 
 def get_zip(medium_id: int) -> Tuple[int, Optional[BytesIO]]:
@@ -112,7 +113,7 @@ def get_zip(medium_id: int) -> Tuple[int, Optional[BytesIO]]:
         # Add data
         extension = EXTENSIONS[medium.mime_type]
         with current_app.open_resource(
-            f"media/{medium.hash}.{extension}", "rb"
+            paths.medium_path(f"{medium.hash}.{extension}"), "rb"
         ) as res:
             zip_file.writestr(f"{medium.id}.{extension}", res.read())
 

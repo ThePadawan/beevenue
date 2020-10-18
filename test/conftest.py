@@ -30,7 +30,7 @@ def _resource(fname):
 
 
 def _file(folder, fname):
-    return os.path.join(os.path.dirname(__file__), "..", folder, fname)
+    return os.path.join(os.path.dirname(__file__), folder, fname)
 
 
 def _thumbs_file(fname):
@@ -54,11 +54,12 @@ def _run_testing_sql(temp_path):
 
 
 def _ensure_folder(fname):
-    """Create the specified folder if it does not exist."""
+    """Ensure the specified folder exists and is empty."""
 
-    files_path = os.path.join(os.path.dirname(__file__), "..", fname)
-    if not os.path.exists(files_path):
-        os.mkdir(files_path)
+    folder = os.path.join(os.path.dirname(__file__), fname)
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+    os.mkdir(folder)
 
 
 def _add_simple_images(fname, hash_prefixes):

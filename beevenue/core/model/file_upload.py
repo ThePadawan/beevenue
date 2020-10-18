@@ -1,12 +1,11 @@
 from enum import Enum
-import os
 import re
 from typing import Literal, Optional, Tuple, TypedDict, Union
 
 import magic
 from werkzeug.datastructures import FileStorage
 
-from beevenue import EXTENSIONS
+from beevenue import EXTENSIONS, paths
 from beevenue.io import HelperBytesIO
 
 from ... import db
@@ -117,7 +116,7 @@ def upload_precheck(
 
 
 def upload_file(file: Uploadable, basename: str, extension: str) -> None:
-    path = os.path.join("media", f"{basename}.{extension}")
+    path = paths.medium_path(f"{basename}.{extension}")
     file.save(path)
 
 

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from flask import Blueprint, send_from_directory
 
-from beevenue import request, BeevenueResponse
+from beevenue import paths, request, BeevenueResponse
 
 from ... import notifications, permissions
 from ...spindex.spindex import SPINDEX
@@ -86,7 +86,7 @@ def get_magic_thumb(medium_id: int):  # type: ignore
     thumb_path = Path(f"{medium.hash}.{size}.jpg")
 
     res: BeevenueResponse = send_from_directory(  # type: ignore
-        "thumbs", thumb_path
+        paths.thumbnail_directory(), thumb_path
     )
     # Note this must be distinct from the public route ("/thumbs"),
     # or Nginx will freak.
@@ -99,7 +99,7 @@ def get_magic_thumb(medium_id: int):  # type: ignore
 @permissions.get_medium_file
 def get_file(full_path: str):  # type: ignore
     res: BeevenueResponse = send_from_directory(  # type: ignore
-        "media", full_path
+        paths.medium_directory(), full_path
     )
     # Note this must be distinct from the public route ("/files"),
     # or Nginx will freak.

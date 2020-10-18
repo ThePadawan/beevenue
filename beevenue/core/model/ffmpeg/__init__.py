@@ -5,6 +5,7 @@ from typing import List
 
 from flask import current_app
 
+from beevenue import paths
 from ..interface import ThumbnailingResult
 from .image import image_thumbnails
 from .temporary_thumbnails import temporary_thumbnails
@@ -27,13 +28,7 @@ def thumbnails(
 def _set_thumbnail(
     medium_hash: str, thumbnail_size: str, filename: str
 ) -> None:
-    # thumbnail_size: "s" or "l" or ...
-    thumb_path = os.path.abspath(f"thumbs/{medium_hash}.jpg")
-    if os.path.exists(thumb_path):
-        os.remove(thumb_path)
-
-    out_path = Path(thumb_path).with_suffix("")
-    out_path = out_path.with_suffix(f".{thumbnail_size}.jpg")
+    out_path = Path(paths.thumbnail_path(medium_hash, thumbnail_size))
 
     if os.path.exists(out_path):
         os.remove(out_path)
