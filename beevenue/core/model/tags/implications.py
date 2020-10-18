@@ -108,17 +108,15 @@ def add_implication(implying: str, implied: str) -> Optional[str]:
     return None
 
 
-def remove_implication(implying: str, implied: str) -> Optional[str]:
-    """Remove an implication between two tags.
-
-    Returns error on failure, else None."""
+def remove_implication(implying: str, implied: str) -> None:
+    """Remove an implication between two tags."""
 
     session = db.session()
 
     tags = _identify_implication_tags(session, implying, implied)
 
     if not tags:
-        return "Could not find both tags"
+        return None
 
     implying_tag, implied_tag = tags
 

@@ -8,8 +8,3 @@ class User(db.Model):
     username = db.Column(db.String(length=256), unique=True, nullable=False)
     hash = db.Column(db.String(length=256), nullable=False)
     role = db.Column(db.String(length=256), nullable=False)
-
-    def __init__(self, username: str, medium_hash: str):
-        self.username = username
-        self.hash = medium_hash
-        self.role = "user"

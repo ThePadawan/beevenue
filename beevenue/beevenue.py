@@ -1,11 +1,12 @@
 """Application factory. Lots of initial setup is performed here."""
 
 import os
-from typing import Callable, Optional
+from typing import Any, Callable
 
 from flask_compress import Compress
 from flask_cors import CORS
 from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
@@ -26,25 +27,25 @@ from .strawberry.routes import bp as strawberry_bp
 from .strawberry.rules.json import RuleEncoder
 
 
+def _nop(_: Any) -> None:
+    """Do nothing, intentionally."""
+
+
 def get_application(
-    extra_config: Optional[Callable[[BeevenueFlask], None]] = None,
-    fill_db: Optional[Callable[[], None]] = None,
+    extra_config: Callable[[BeevenueFlask], None] = _nop,
+    fill_db: Callable[[SQLAlchemy], None] = _nop,
 ) -> BeevenueFlask:
     """Construct and return uWSGI application object."""
 
     application = BeevenueFlask("beevenue-main", "0.0.0.0", 7000)
-
     application.config.from_envvar("BEEVENUE_CONFIG_FILE")
-
-    if extra_config:
-        extra_config(application)
+    extra_config(application)
 
     CORS(
         application,
         supports_credentials=True,
         origins=application.config["BEEVENUE_ALLOWED_CORS_ORIGINS"],
     )
-
     Compress(application)
 
     db.init_app(application)
@@ -73,11 +74,7 @@ def get_application(
 
         # Only used for testing - needs to happen after DB is setup,
         # but before filling Spindex from DB.
-        if fill_db:
-            # Tests also don't use migrations, they just create the schema
-            # from scratch.
-            db.create_all()
-            fill_db()
+        fill_db(db)
 
         cache_init_app(application)
 

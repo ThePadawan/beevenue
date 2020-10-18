@@ -13,13 +13,8 @@ def init() -> None:
     ) -> Optional[LoggedInUser]:
         """Try to load user with specified username."""
 
-        maybe_user = User.query.filter(User.username == username).first()
-
-        if not maybe_user:
-            return None
-
-        user = LoggedInUser(username, maybe_user.role)
-        user.id = username
+        user_entity = User.query.filter(User.username == username).first()
+        user = LoggedInUser(username, user_entity.role)
         return user
 
     login_manager.user_loader(user_loader)

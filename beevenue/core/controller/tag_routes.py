@@ -51,13 +51,9 @@ def tag_add_implication(tag_name: str, implied_by_this: str):  # type: ignore
 @bp.route(IMPLICATION_ROUTE_PATH, methods=["DELETE"])
 @permissions.is_owner
 def tag_remove_implication(tag_name: str, implied_by_this: str):  # type: ignore
-    error = implications.remove_implication(
-        implying=tag_name, implied=implied_by_this
-    )
+    implications.remove_implication(implying=tag_name, implied=implied_by_this)
 
-    if not error:
-        return "", 200
-    return notifications.simple_error(error), 400
+    return "", 200
 
 
 @bp.route("/tag/implications/backup")

@@ -3,14 +3,22 @@ from urllib import parse
 import pytest
 
 
-def _when_searching(c, query):
-    q = parse.urlencode({"q": query, "pageNumber": 1, "pageSize": 10})
+def _when_searching(c, query, page_number=1, page_size=10):
+    q = parse.urlencode(
+        {"q": query, "pageNumber": page_number, "pageSize": page_size}
+    )
     print(q)
     return c.get(f"/search?{q}")
 
 
-def test_cannot_crash_search_with_weird_int_pagination(client, asUser):
-    q = parse.urlencode({"q": "test", "pageNumber": 0, "pageSize": -200})
+@pytest.mark.parametrize("pageNumber", [0, -1])
+@pytest.mark.parametrize("pageSize", [0, -10])
+def test_cannot_crash_search_with_weird_int_pagination(
+    client, asUser, pageNumber, pageSize
+):
+    q = parse.urlencode(
+        {"q": "test", "pageNumber": pageNumber, "pageSize": pageSize}
+    )
     print(q)
     res = client.get(f"/search?{q}")
     assert res.status_code != 500
@@ -54,6 +62,11 @@ def test_search_with_only_negative_terms_succeeds(client, asUser):
     assert res.status_code == 200
     result = res.get_json()
     assert len(result["items"]) >= 1
+
+
+def test_valid_search_with_weird_params_succeeds(client, asUser):
+    res = _when_searching(client, "+C", page_size=0, page_number=0)
+    assert res.status_code == 200
 
 
 def test_search_with_only_exact_terms_succeeds(client, asUser):
@@ -102,7 +115,7 @@ def test_search_with_alias_term_succeeds(client, asUser):
 
 
 def test_search_with_rating_term_succeeds(client, asAdmin, nsfw):
-    res = _when_searching(client, "rating:s")
+    res = _when_searching(client, "rating:s", page_size=3)
     assert res.status_code == 200
     result = res.get_json()
     print(result)

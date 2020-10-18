@@ -68,17 +68,9 @@ def image_thumbnails(
                 img, width, height, aspect_ratio, min_axis
             )
 
-            try:
-                thumbnail.save(
-                    out_path, quality=80, progressive=True, optimize=True
-                )
-            except Exception:
-                background = Image.new("RGB", thumbnail.size, (255, 255, 255))
-                # 3 is the alpha channel
-                background.paste(thumbnail, mask=thumbnail.split()[3])
-                background.save(
-                    out_path, quality=80, progressive=True, optimize=True
-                )
+            thumbnail.save(
+                out_path, quality=80, progressive=True, optimize=True
+            )
 
         thumb_width, thumb_height = thumbnail.size
         aspect_ratio = float(thumb_width) / thumb_height

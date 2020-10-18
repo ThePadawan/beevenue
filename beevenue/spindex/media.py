@@ -18,9 +18,6 @@ class SpindexMedia:
     def add(self, item: SpindexedMedium) -> None:
         self.data[item.id] = item
 
-    def remove(self, item: SpindexedMedium) -> Optional[SpindexedMedium]:
-        return self.remove_id(item.id)
-
     def remove_id(self, medium_id: int) -> Optional[SpindexedMedium]:
         if medium_id in self.data:
             item = self.data[medium_id]

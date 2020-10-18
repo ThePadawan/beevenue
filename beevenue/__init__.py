@@ -17,7 +17,6 @@ EXTENSIONS = {
     "image/gif": "gif",
     "image/jpeg": "jpg",
     "image/jpg": "jpg",
-    "application/x-shockwave-flash": "swf",
 }
 
 

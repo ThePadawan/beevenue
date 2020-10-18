@@ -1,5 +1,7 @@
 from io import BytesIO
 
+import pytest
+
 from beevenue.core.model.md5sum import md5sum
 
 
@@ -11,10 +13,26 @@ def _assert_hash_is_now(client, expected_hash_func):
     assert expected_hash_func(json_result["hash"])
 
 
-def test_medium_replace_can_succeed(client, asAdmin, nsfw):
+def test_medium_replace_fails_without_file(client, asAdmin, nsfw):
+    res = client.patch("/medium/3/file", data={})
+    assert res.status_code == 400
+
+
+def test_medium_replace_fails_on_nonexistant_medium(client, asAdmin, nsfw):
+    with open(f"test/resources/medium_to_be_uploaded.png", "rb") as f:
+        contents = f.read()
+
+    res = client.patch(
+        "/medium/12345/file", data={"file": (BytesIO(contents), "example.foo")}
+    )
+    assert res.status_code == 400
+
+
+@pytest.mark.parametrize("local_file", ["tall.png", "wide.png"])
+def test_medium_replace_can_succeed(client, asAdmin, nsfw, local_file):
     """Replace the file of a medium, checking if the hash changes from the old to the new one."""
 
-    with open("test/resources/medium_to_be_uploaded.png", "rb") as f:
+    with open(f"test/resources/{local_file}", "rb") as f:
         contents = f.read()
 
     expected_hash = md5sum(BytesIO(contents))

@@ -1,4 +1,4 @@
-from typing import List, Optional, Set, TypeVar
+from typing import List, Set, TypeVar
 
 from beevenue import BeevenueContext
 from beevenue import request
@@ -76,24 +76,23 @@ TItem = TypeVar("TItem")
 
 
 def _paginate(ids: List[TItem]) -> Pagination[TItem]:
-    page_number_arg: Optional[str] = request.args.get("pageNumber", type=str)
-    page_size_arg: Optional[str] = request.args.get("pageSize", type=str)
-
-    if page_number_arg is None or page_size_arg is None:
-        raise Exception("Cannot paginate request without pagination parameters")
+    page_number_arg: str = request.args.get(  # type: ignore
+        "pageNumber", type=str
+    )
+    page_size_arg: str = request.args.get("pageSize", type=str)  # type: ignore
 
     page_number = int(page_number_arg)
     page_size = int(page_size_arg)
+
+    if page_number < 1:
+        page_number = 1
 
     if page_size < 1:
         return Pagination(
             items=[], page_count=1, page_number=page_number, page_size=page_size
         )
 
-    if page_number < 1:
-        skip = 0
-    else:
-        skip = (page_number - 1) * page_size
+    skip = (page_number - 1) * page_size
 
     page_count = len(ids) // page_size
     if (len(ids) % page_size) != 0:

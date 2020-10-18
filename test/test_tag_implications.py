@@ -40,5 +40,11 @@ def test_can_add_implication_three_chain(client, asAdmin):
     assert res.status_code == 200
 
 
-def test_cant_remove_missing_implication(client, asAdmin):
+def test_removing_implication_for_missing_tag_succeeds(client, asAdmin):
     res = client.delete("/tag/c:tinkerbell/implications/nothing")
+    assert res.status_code == 200
+
+
+def test_removing_missing_implication_succeeds(client, asAdmin):
+    res = client.delete("/tag/c:tinkerbell/implications/A")
+    assert res.status_code == 200

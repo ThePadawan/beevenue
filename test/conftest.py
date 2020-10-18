@@ -63,7 +63,7 @@ def _ensure_folder(fname):
 
 
 def _add_simple_images(fname, hash_prefixes):
-    res = _resource(f"{fname}.jpg")
+    res = _resource(fname)
 
     for hash_prefix in hash_prefixes:
         shutil.copy(res, _medium_file(f"{hash_prefix}.jpg"))
@@ -86,8 +86,9 @@ def _client():
         """Set specific testing-only flags on the testee."""
         application.config["SQLALCHEMY_DATABASE_URI"] = connection_string
 
-    def fill_db():
-        """Fill the SQL database with initial data."""
+    def fill_db(db):
+        """Create schema and fill the SQL database with initial data."""
+        db.create_all()
         _run_testing_sql(temp_nice_path)
 
     app = get_application(extra_config, fill_db)
@@ -96,7 +97,7 @@ def _client():
         _ensure_folder("media")
         _ensure_folder("thumbs")
         _add_simple_images(
-            "placeholder", ["hash1", "hash2", "hash3", "hash4", "hash5"]
+            "placeholder.jpg", ["hash1", "hash2", "hash3", "hash4", "hash5"]
         )
 
     # Some tests ruin this file by overwriting it. So we restore it when we're done.

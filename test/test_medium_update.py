@@ -66,3 +66,14 @@ def test_can_update_medium_with_duplicate_tags(client, asAdmin):
         json={"rating": "q", "tags": ["new_tag", "new_tag", "c:pete"]},
     )
     assert res.status_code == 200
+
+
+def test_can_update_medium_without_changes(client, asAdmin, nsfw):
+    res = client.get("/medium/5")
+    old_model = res.get_json()
+
+    res = client.patch(
+        "/medium/5/metadata",
+        json={"rating": old_model["rating"], "tags": old_model["tags"]},
+    )
+    assert res.status_code == 200

@@ -18,3 +18,11 @@ def test_trivial_rules_always_succeed(client, asAdmin, withTrivialRules, id):
     assert r.status_code == 200
     assert str(id) in r.get_json()
     assert r.get_json()[str(id)] == []
+
+
+def test_trivial_rules_return_zero_violations(
+    client, asAdmin, withTrivialRules
+):
+    r = client.get("/tags/missing/any")
+    assert r.status_code == 200
+    assert r.get_json() == {}

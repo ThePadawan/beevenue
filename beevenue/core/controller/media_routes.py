@@ -5,7 +5,7 @@ from beevenue import request
 from ... import notifications, permissions, schemas
 from ..model import media, thumbnails
 from ..model.file_upload import create_medium_from_upload, UploadFailureType
-from ..model.medium_replace import replace_medium, ReplacementFailureType
+from ..model.medium_replace import replace_medium
 from ..model.medium_update import update_medium
 from ..model.search.search import find_all
 
@@ -122,10 +122,9 @@ def replace_medium_file(medium_id: int):  # type: ignore
             ),
             400,
         )
-    if error["type"] == ReplacementFailureType.UNKNOWN_MEDIUM:
-        return notifications.no_such_medium(medium_id), 400
 
-    raise Exception(f"Unknown error occurred when replacing medium: {error}")
+    # error["type"] must now be "ReplacementFailureType.UNKNOWN_MEDIUM"
+    return notifications.no_such_medium(medium_id), 400
 
 
 @bp.route("/media/backup.sh")

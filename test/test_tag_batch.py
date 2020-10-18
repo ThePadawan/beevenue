@@ -41,7 +41,7 @@ def test_tag_cannot_add_zero_tags_to_medium(client, asAdmin):
 
 def test_tag_cannot_add_new_tags_to_medium(client, asAdmin):
     res = client.post(
-        "/tags/batch", json={"tags": ["klonoa"], "mediumIds": [1]}
+        "/tags/batch", json={"tags": ["klonoa", "C"], "mediumIds": [1]}
     )
     assert res.status_code == 200
 

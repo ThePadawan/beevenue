@@ -30,9 +30,6 @@ def _set_thumbnail(
 ) -> None:
     out_path = Path(paths.thumbnail_path(medium_hash, thumbnail_size))
 
-    if os.path.exists(out_path):
-        os.remove(out_path)
-
     with open(filename, "rb") as in_file:
         with open(out_path, "wb") as out_file:
             out_file.write(in_file.read())

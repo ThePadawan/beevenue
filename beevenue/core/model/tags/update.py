@@ -10,6 +10,8 @@ from ....models import Tag, MediaTags
 def _rename(
     session: scoped_session, old_tag: Tag, new_name: str
 ) -> Tuple[str, bool]:
+    new_name = new_name.strip()
+
     if not new_name:
         return "You must specify a new name", False
 

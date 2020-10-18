@@ -25,6 +25,16 @@ def test_can_update_current_tag_as_admin(client, asAdmin):
     assert res.status_code == 200
 
 
+def test_cannot_update_current_tag_to_whitespace(client, asAdmin):
+    res = client.patch("/tag/u:overwatch", json={"tag": "   "})
+    assert res.status_code == 400
+
+
+def test_can_update_tag_rating(client, asAdmin):
+    res = client.patch("/tag/u:overwatch", json={"rating": "q"})
+    assert res.status_code == 200
+
+
 def test_can_merge_current_tag_as_admin(client, asAdmin):
     res = client.patch("/tag/A", json={"tag": "B"})
     assert res.status_code == 200

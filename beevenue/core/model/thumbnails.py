@@ -29,11 +29,7 @@ def _thumbnailable_video(
         return 400, None
 
     extension = EXTENSIONS[medium.mime_type]
-    origin_path = paths.medium_path((f"{medium.hash}.{extension}"))
-
-    if not os.path.exists(origin_path):
-        return 404, None
-
+    origin_path = paths.medium_path(f"{medium.hash}.{extension}")
     return 200, (origin_path, medium)
 
 
@@ -87,12 +83,6 @@ def _create(mime_type: str, medium_hash: str) -> ThumbnailingResult:
     extension = EXTENSIONS[mime_type]
 
     origin_path = paths.medium_path((f"{medium_hash}.{extension}"))
-
-    if not os.path.exists(origin_path):
-        raise Exception(
-            "Could not create thumbnail because medium file does not exist."
-        )
-
     return ffmpeg.thumbnails(origin_path, extensionless_thumb_path, mime_type)
 
 
