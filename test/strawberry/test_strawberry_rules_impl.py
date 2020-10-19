@@ -1,14 +1,14 @@
 import pytest
 
-from beevenue.strawberry.rules.common import (
+from beevenue.strawberry.common import (
     HasAnyTagsIn,
     HasAnyTagsLike,
     HasRating,
 )
-from beevenue.strawberry.rules.iff import All
-from beevenue.strawberry.rules.json import RuleEncoder, RulePartEncoder
-from beevenue.strawberry.rules.rule import Rule
-from beevenue.strawberry.rules.then import Fail
+from beevenue.strawberry.iff import All
+from beevenue.strawberry.json import RuleEncoder, RulePartEncoder
+from beevenue.strawberry.rule import Rule
+from beevenue.strawberry.then import Fail
 
 rules = [
     Rule(HasRating("u"), [Fail()]),

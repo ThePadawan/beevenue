@@ -4,33 +4,33 @@ from typing import List, Optional
 from marshmallow import fields, Schema
 
 from .models import Tag
-from .spindex.models import SpindexedMedium
+from .types import MediumDocument
 
 
-class _SpindexMediumSchema(Schema):
-    id = fields.Int()
+class _MediumDocumentSchema(Schema):
+    medium_id = fields.Int(data_key="id")
     tags = fields.Method("extract_innate_tags")
     aspect_ratio = fields.String(data_key="aspectRatio")
-    hash = fields.String()
+    medium_hash = fields.String(data_key="hash")
     rating = fields.String()
     mime_type = fields.String()
 
-    def extract_innate_tags(self, obj: SpindexedMedium) -> List[str]:
+    def extract_innate_tags(self, obj: MediumDocument) -> List[str]:
         return [  # pylint: disable=unnecessary-comprehension
             t for t in obj.tag_names.innate
         ]
 
 
-class _SpindexMediumDetailSchema(_SpindexMediumSchema):
+class _MediumDocumentDetailSchema(_MediumDocumentSchema):
     similar = fields.Nested(
-        "_SpindexMediumDetailSchema", many=True, only=["id"]
+        "_MediumDocumentDetailSchema", many=True, only=["medium_id"]
     )
 
 
-class _PaginationMediumSchema(_SpindexMediumSchema):
+class _PaginationMediumSchema(_MediumDocumentSchema):
     tiny_thumbnail = fields.Method("get_thumb", data_key="tinyThumbnail")
 
-    def get_thumb(self, obj: SpindexedMedium) -> Optional[str]:
+    def get_thumb(self, obj: MediumDocument) -> Optional[str]:
         if obj.tiny_thumbnail:
             return base64.b64encode(obj.tiny_thumbnail).decode("utf-8")
         return None
@@ -40,7 +40,7 @@ class _PaginationSchema(Schema):
     items = fields.Nested(
         _PaginationMediumSchema,
         many=True,
-        only=["id", "aspect_ratio", "hash", "tiny_thumbnail"],
+        only=["medium_id", "aspect_ratio", "medium_hash", "tiny_thumbnail"],
     )
     page_count = fields.Int(data_key="pageCount")
     page_number = fields.Int(data_key="pageNumber")
@@ -89,7 +89,7 @@ class _TagSummarySchema(Schema):
     tags = fields.Nested(_TagSummaryItemSchema, many=True)
 
 
-medium_detail_schema = _SpindexMediumDetailSchema()
+medium_detail_schema = _MediumDocumentDetailSchema()
 pagination_schema = _PaginationSchema()
 tag_summary_schema = _TagSummarySchema()
 tag_show_schema = _TagShowSchema()

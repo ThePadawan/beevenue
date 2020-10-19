@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from flask import jsonify, Request
 from marshmallow import fields, Schema
 
-from beevenue import request
+from beevenue.flask import request
 
 from .decorators import RequirementDecorator, requires
 

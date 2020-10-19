@@ -3,7 +3,7 @@ from flask import Blueprint, current_app, jsonify, session
 from flask_login import current_user, login_user, logout_user
 from flask_principal import AnonymousIdentity, Identity, identity_changed
 
-from beevenue import request
+from beevenue.flask import request
 
 from ..decorators import does_not_require_login
 from .logged_in_user import LoggedInUser

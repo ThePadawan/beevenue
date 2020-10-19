@@ -2,9 +2,9 @@ from typing import Any
 
 from flask import jsonify
 
-from .core.model.detail import MediumDetail
-from .core.model.search.pagination import Pagination
-from .core.model.tags.tag_summary import TagSummary
+from .core.detail import MediumDetail
+from .core.search.pagination import Pagination
+from .core.tags.tag_summary import TagSummary
 from .models import Tag
 from .viewmodels import (
     medium_detail_schema,

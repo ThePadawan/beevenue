@@ -1,15 +1,14 @@
 import random
 from typing import Dict, Generator, List, Set, Tuple
 
-from flask import Blueprint, current_app, jsonify
+from flask import Blueprint, current_app, g, jsonify
 from flask.json import dumps
 
-from beevenue import request
+from beevenue.flask import request
 
 from .. import permissions
-from ..spindex.spindex import SPINDEX
-from .rules.json import decode_rules_json, decode_rules_list
-from .rules.rule import Rule
+from .json import decode_rules_json, decode_rules_list
+from .rule import Rule
 
 bp = Blueprint("strawberry", __name__)
 
@@ -116,12 +115,12 @@ def get_missing_tags_any():  # type: ignore
     # but also that all SFW media get reviewed before all others.
     random.shuffle(violations)
 
-    all_media = SPINDEX.all()
+    all_media = g.spindex.all()
 
     violation_medium_ids = frozenset(v[0] for v in violations)
-    media = [m for m in all_media if m.id in violation_medium_ids]
+    media = [m for m in all_media if m.medium_id in violation_medium_ids]
 
-    rating_by_id = {m.id: m.rating for m in media}
+    rating_by_id = {m.medium_id: m.rating for m in media}
 
     def sorter(violation: Tuple[int, Rule]) -> int:
         if rating_by_id[violation[0]] == "s":

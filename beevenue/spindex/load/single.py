@@ -1,16 +1,15 @@
 from typing import Iterable, Optional, Set, Tuple
 
-from sqlalchemy.orm.scoping import scoped_session
+from flask import g
 
 from . import AbstractDataSource, create_spindexed_medium
-from ... import db
 from ...models import Medium, Tag, TagAlias, TagImplication
-from ..models import SpindexedMedium
+from ...types import MediumDocument
 
 
 class _SingleLoadDataSource(AbstractDataSource):
-    def __init__(self, session: scoped_session):
-        self.session = session
+    def __init__(self) -> None:
+        self.session = g.db
 
     def alias_names(self, tag_ids: Iterable[int]) -> Set[str]:
         tag_alias_entities = (
@@ -42,8 +41,8 @@ class _SingleLoadDataSource(AbstractDataSource):
         return implied_tag_ids, implied_tag_names
 
 
-def single_load(medium_id: int) -> Optional[SpindexedMedium]:
-    session = db.session()
+def single_load(medium_id: int) -> Optional[MediumDocument]:
+    session = g.db
 
     matching_media = session.query(Medium).filter_by(id=medium_id).all()
     if not matching_media:
@@ -51,6 +50,4 @@ def single_load(medium_id: int) -> Optional[SpindexedMedium]:
 
     matching_medium = matching_media[0]
 
-    return create_spindexed_medium(
-        _SingleLoadDataSource(session), matching_medium
-    )
+    return create_spindexed_medium(_SingleLoadDataSource(), matching_medium)

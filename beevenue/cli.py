@@ -1,31 +1,31 @@
 """CLI operations for the application. Mainly used for testing."""
 
 import os
-from typing import Any, Iterable
+from typing import Iterable
 
 import click
 from flask import g
 
-from . import BeevenueFlask
-from .core.model import thumbnails
-from .core.model.file_upload import create_medium_from_upload
+from .core import thumbnails
+from .core.file_upload import create_medium_from_upload
+from .flask import BeevenueFlask
 from .io import HelperBytesIO
 
 
-def _nop_spindex(_: bool) -> Any:
-    """Return a Spindex that does nothing.
+class _Nop:
+    """Spindex that does nothing.
 
     We can use this during CLI usage since we never care about reading
     from the Spindex, so we might as well not even write it."""
 
-    class _Nop:
-        def remove_id(self, medium_id: int) -> None:
-            """Do nothing, intentionally."""
+    def reindex_medium(self, medium_id: int) -> None:
+        """Do nothing, intentionally."""
 
-        def add(self, _: object) -> None:
-            """Do nothing, intentionally."""
+    def remove_id(self, medium_id: int) -> None:
+        """Do nothing, intentionally."""
 
-    return _Nop()
+    def add(self, _: object) -> None:
+        """Do nothing, intentionally."""
 
 
 def init_cli(app: BeevenueFlask) -> None:
@@ -35,7 +35,8 @@ def init_cli(app: BeevenueFlask) -> None:
     @click.argument("file_paths", nargs=-1, type=click.Path(exists=True))
     def _import(file_paths: Iterable[str]) -> None:
         """Import all the specified files. Skip invalid files."""
-        g.spindex = _nop_spindex
+
+        g.spindex = _Nop()
 
         for path in file_paths:
             print(f"Importing {path}...")

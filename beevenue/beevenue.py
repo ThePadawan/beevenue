@@ -11,20 +11,20 @@ import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
-from . import BeevenueFlask
 from .auth.auth import init as auth_init_app
 from .auth.routes import blueprint as auth_bp
 from .cache import init_app as cache_init_app
 from .cli import init_cli
-from .core.controller import graphql_routes, media_routes, routes, tag_routes
+from .core import graphql_routes, media_routes, routes, tag_routes
 from .db import db
+from .db import init_app as db_init_app
+from .flask import BeevenueFlask
 from .init import init_app as context_init_app
 from .login_manager import login_manager
 from .principal import principal
 from .spindex.init import init_app as spindex_init_app
 from .spindex.routes import bp as spindex_bp
-from .strawberry.routes import bp as strawberry_bp
-from .strawberry.rules.json import RuleEncoder
+from .strawberry.init import init_app as strawberry_init_app
 
 
 def _nop(_: Any) -> None:
@@ -61,16 +61,16 @@ def get_application(
         login_manager.init_app(application)
         principal.init_app(application)
         context_init_app(application)
+        db_init_app(application)
 
         application.register_blueprint(auth_bp)
         application.register_blueprint(routes.bp)
         application.register_blueprint(tag_routes.bp)
         application.register_blueprint(media_routes.bp)
         application.register_blueprint(graphql_routes.bp)
-        application.register_blueprint(strawberry_bp)
         application.register_blueprint(spindex_bp)
 
-        application.json_encoder = RuleEncoder
+        strawberry_init_app(application)
 
         # Only used for testing - needs to happen after DB is setup,
         # but before filling Spindex from DB.

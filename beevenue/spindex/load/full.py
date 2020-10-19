@@ -1,10 +1,10 @@
 from collections import defaultdict
 from typing import Dict, Iterable, Set, Tuple
 
+from flask import g
+
 from . import AbstractDataSource, create_spindexed_medium
-from ... import db
 from ...models import Medium, Tag, TagAlias, TagImplication
-from ..spindex import SPINDEX
 
 
 class _FullLoadDataSource(AbstractDataSource):
@@ -35,7 +35,7 @@ class _FullLoadDataSource(AbstractDataSource):
 
 
 def full_load() -> None:
-    session = db.session()
+    session = g.db
     all_media = Medium.query.all()
 
     all_implications = session.query(TagImplication).all()
@@ -65,4 +65,4 @@ def full_load() -> None:
         medium_to_cache = create_spindexed_medium(data_source, medium)
         media_to_cache.append(medium_to_cache)
 
-    SPINDEX.add_media(media_to_cache)
+    g.spindex.add_media(media_to_cache)

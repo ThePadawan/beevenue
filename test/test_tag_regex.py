@@ -1,6 +1,6 @@
 import pytest
 
-from beevenue.core.model.tags import VALID_TAG_REGEX
+from beevenue.core.tags import VALID_TAG_REGEX
 
 invalid_tag_names = ["u:", "c:3:b", ":3", "toradora!", ""]
 

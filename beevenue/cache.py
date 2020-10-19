@@ -2,7 +2,7 @@
 
 from flask_caching import Cache
 
-from beevenue import BeevenueFlask
+from .flask import BeevenueFlask
 
 cache = Cache(config={"CACHE_TYPE": "filesystem", "CACHE_DEFAULT_TIMEOUT": 0})
 

@@ -5,13 +5,13 @@ from pathlib import Path
 import pytest
 
 from beevenue.beevenue import get_application
-from beevenue.core.model import ffmpeg
-from beevenue.core.model.search.pagination import Pagination
-from beevenue.core.model.search.terms import complex, simple
+from beevenue.core import ffmpeg
+from beevenue.core.search import complex, simple
+from beevenue.core.search.pagination import Pagination
 from beevenue.models import Tag
 from beevenue.permissions import _CanSeeMediumWithRatingNeed
 from beevenue.spindex.models import SpindexedMedium, SpindexedMediumTagNames
-from beevenue.strawberry.rules.common import HasAnyTagsIn, HasRating
+from beevenue.strawberry.common import HasAnyTagsIn, HasRating
 
 
 def test_permission_need_internals():
@@ -40,15 +40,12 @@ def test_tag_cannot_be_created_empty(client):
 
 
 def test_rules_never_apply_to_nonexistant_media(client):
-    def empty_spindex(_):
-        class Empty:
-            def get_medium(self, medium_id):
-                return None
-
-        return Empty()
+    class Empty:
+        def get_medium(self, medium_id):
+            return None
 
     with client.app_under_test.test_request_context() as context:
-        context.request.spindex = empty_spindex
+        context.g.spindex = Empty()
 
         assert not HasRating("q").applies_to(1234567)
         assert not HasAnyTagsIn("nonexistantTag").applies_to(1234567)

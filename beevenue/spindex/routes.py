@@ -1,8 +1,7 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, g, jsonify
 
 from .. import permissions
 from .init import full_load
-from .spindex import SPINDEX
 
 bp = Blueprint("spindex", __name__)
 
@@ -11,9 +10,13 @@ bp = Blueprint("spindex", __name__)
 @permissions.is_owner
 def status():  # type: ignore
     output = []
-    for medium in SPINDEX.all():
+    for medium in g.spindex.all():
         output.append(
-            {"id": medium.id, "rating": medium.rating, "hash": medium.hash}
+            {
+                "id": medium.medium_id,
+                "rating": medium.rating,
+                "hash": medium.medium_hash,
+            }
         )
 
     return jsonify(output), 200
@@ -23,4 +26,4 @@ def status():  # type: ignore
 @permissions.is_owner
 def reindex():  # type: ignore
     full_load()
-    return f"Full load finished. Loaded {len(SPINDEX.all())} entries.", 200
+    return f"Full load finished. Loaded {len(g.spindex.all())} entries.", 200

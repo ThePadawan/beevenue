@@ -1,13 +1,13 @@
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
+from flask import g
 from flask_login import current_user
 from flask_principal import identity_loaded, Permission
 
 from . import notifications
 from .decorators import RequirementDecorator, requires
-from .spindex.models import SpindexedMedium
-from .spindex.spindex import SPINDEX
+from .types import MediumDocument
 
 
 class _CanSeeMediumWithRatingNeed:
@@ -58,7 +58,7 @@ _allowed = Permission()
 
 
 def _can_see_spindex_medium(
-    maybe_medium: Optional[SpindexedMedium],
+    maybe_medium: Optional[MediumDocument],
 ) -> Permission:
     """Get Permission to see the specified medium."""
 
@@ -69,16 +69,16 @@ def _can_see_spindex_medium(
 
 
 def _can_see_medium(medium_id: int) -> Permission:
-    return _can_see_spindex_medium(SPINDEX.get_medium(medium_id))
+    return _can_see_spindex_medium(g.spindex.get_medium(medium_id))
 
 
 def _can_see_full_path(full_path: str) -> Permission:
     medium_hash = str(Path(full_path).with_suffix(""))
-    all_media = SPINDEX.all()
+    all_media = g.spindex.all()
 
-    matching = [m for m in all_media if m.hash == medium_hash]
+    matching = [m for m in all_media if m.medium_hash == medium_hash]
 
-    maybe_medium: Optional[SpindexedMedium] = None
+    maybe_medium: Optional[MediumDocument] = None
     if matching:
         maybe_medium = matching[0]
 

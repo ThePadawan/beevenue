@@ -1,9 +1,10 @@
 from typing import Iterable, Set
 
 from ..models import Medium
+from ..types import TagNamesField, MediumDocument
 
 
-class SpindexedMediumTagNames:
+class SpindexedMediumTagNames(TagNamesField):
     """In-memory representation of a medium's tag names."""
 
     def __init__(self, innate: Iterable[str], searchable: Iterable[str]):
@@ -11,7 +12,7 @@ class SpindexedMediumTagNames:
         self.searchable = set(searchable)
 
 
-class SpindexedMedium:
+class SpindexedMedium(MediumDocument):
     """In-memory representation of a medium."""
 
     @staticmethod
@@ -42,16 +43,16 @@ class SpindexedMedium:
         tiny_thumbnail: bytes,
         tag_names: SpindexedMediumTagNames,
     ) -> None:
-        self.id = medium_id  # pylint: disable=invalid-name
+        self.medium_id = medium_id  # pylint: disable=invalid-name
         self.aspect_ratio = aspect_ratio
-        self.hash = medium_hash
+        self.medium_hash = medium_hash
         self.mime_type = mime_type
         self.rating = rating
         self.tiny_thumbnail = tiny_thumbnail
         self.tag_names = tag_names
 
     def __str__(self) -> str:
-        return f"<SpindexedMedium {self.id}>"
+        return f"<SpindexedMedium {self.medium_id}>"
 
     def __repr__(self) -> str:
         return self.__str__()

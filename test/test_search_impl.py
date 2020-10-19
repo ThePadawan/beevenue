@@ -1,5 +1,5 @@
-from beevenue.core.model.search.terms.base import SearchTerm
-from beevenue.core.model.search.terms.simple import PositiveSearchTerm
+from beevenue.core.search.base import SearchTerm
+from beevenue.core.search.simple import PositiveSearchTerm
 
 
 def test_terms_are_compared_by_value():

@@ -3,15 +3,15 @@ from abc import ABC, abstractmethod
 from .media import SpindexMedia
 
 
-class SpindexCallable(ABC):
-    """Abstract base class for all SpindexMedia holders.
+class SpindexSessionFactory(ABC):
+    """Abstract base class for all session factories.
 
-    __call__ is used to lazily access SpindexMedia.
-    exit is called on request end to persist changes.
+    get is used to lazily create a session.
+    exit (to be called on request end) persists changes (if necessary).
     """
 
     @abstractmethod
-    def __call__(self, do_write: bool) -> SpindexMedia:
+    def get(self, do_write: bool) -> SpindexMedia:
         """Get the current Spindex implementation."""
 
     @abstractmethod

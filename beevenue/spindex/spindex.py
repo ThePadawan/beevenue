@@ -1,18 +1,16 @@
 from contextlib import AbstractContextManager, contextmanager
 from typing import Any, ContextManager, Generator, Iterable, List, Optional
 
-from flask import g
-
-from beevenue import request
+from beevenue.flask import request
 
 from ..cache import cache
-from .interface import SpindexCallable
+from .interface import SpindexSessionFactory
 from .load.single import single_load
 from .media import SpindexMedia
-from .models import SpindexedMedium
+from ..types import MediumDocument
 
 
-class CachedSpindexCallable(SpindexCallable):
+class CachingSessionFactory(SpindexSessionFactory):
     """Holder class for the Spindex currently in memory.
 
     Is lazily initialized from cache, and only persists back into cache
@@ -25,7 +23,7 @@ class CachedSpindexCallable(SpindexCallable):
         self.spindex: Optional[SpindexMedia] = None
         self.do_write = False
 
-    def __call__(self, do_write: bool) -> SpindexMedia:
+    def get(self, do_write: bool) -> SpindexMedia:
         self.do_write |= do_write
         if self.spindex is None:
             self.spindex = cache.get("MEDIA")
@@ -53,11 +51,8 @@ class _InitializationContext(AbstractContextManager):
 
 
 @contextmanager
-def _cache_context(write_on_exit: bool) -> Generator[SpindexMedia, None, None]:
-    if "spindex" in g:
-        yield g.spindex(write_on_exit)
-    else:
-        yield request.spindex(write_on_exit)
+def _session(write_on_exit: bool) -> Generator[SpindexMedia, None, None]:
+    yield request.spindex_session.get(write_on_exit)
 
 
 class Spindex:
@@ -65,24 +60,24 @@ class Spindex:
 
     @property
     def _read_context(self) -> ContextManager[SpindexMedia]:
-        return _cache_context(False)
+        return _session(False)
 
     @property
     def _write_context(self) -> ContextManager[SpindexMedia]:
         # Note: This *always* writes, even if no actual modification
         # took place. This makes it less laborious for the caller to explicitly
         # decide when to write or not (using a "dirty" flag or similar).
-        return _cache_context(True)
+        return _session(True)
 
-    def all(self) -> Iterable[SpindexedMedium]:
+    def all(self) -> Iterable[MediumDocument]:
         with self._read_context as context:
             return context.get_all()
 
-    def get_medium(self, medium_id: int) -> Optional[SpindexedMedium]:
+    def get_medium(self, medium_id: int) -> Optional[MediumDocument]:
         with self._read_context as context:
             return context.get_medium(medium_id)
 
-    def get_media(self, ids: Iterable[int]) -> List[SpindexedMedium]:
+    def get_media(self, ids: Iterable[int]) -> List[MediumDocument]:
         with self._read_context as context:
             result = []
             for medium_id in ids:
@@ -147,14 +142,11 @@ class Spindex:
 
             return True
 
-    def remove_medium(self, medium_id: int) -> Optional[SpindexedMedium]:
+    def remove_medium(self, medium_id: int) -> Optional[MediumDocument]:
         with self._write_context as ctx:
             return ctx.remove_id(medium_id)
 
-    def add_media(self, media: Iterable[SpindexedMedium]) -> None:
+    def add_media(self, media: Iterable[MediumDocument]) -> None:
         with _InitializationContext() as ctx:
             for medium in media:
                 ctx.add(medium)
-
-
-SPINDEX = Spindex()

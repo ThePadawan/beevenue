@@ -156,7 +156,9 @@ def asAdmin(client):
 def withVideo(client):
     """Ensure that some uploaded video is available."""
     runner = client.app_under_test.test_cli_runner()
-    runner.invoke(args=["import", _resource("tiny_video.mp4")])
+    result = runner.invoke(args=["import", _resource("tiny_video.mp4")])
+    if result.exception:
+        raise result.exception
     yield None
 
 

@@ -2,7 +2,7 @@ from io import BytesIO
 
 import pytest
 
-from beevenue.core.model.md5sum import md5sum
+from beevenue.core.file_upload import _md5sum
 
 
 def _assert_hash_is_now(client, expected_hash_func):
@@ -35,7 +35,7 @@ def test_medium_replace_can_succeed(client, asAdmin, nsfw, local_file):
     with open(f"test/resources/{local_file}", "rb") as f:
         contents = f.read()
 
-    expected_hash = md5sum(BytesIO(contents))
+    expected_hash = _md5sum(BytesIO(contents))
 
     _assert_hash_is_now(client, lambda h: h != expected_hash)
 
