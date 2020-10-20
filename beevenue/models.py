@@ -7,10 +7,18 @@ TagImplication = db.Table(
     "tagImplication",
     db.metadata,
     db.Column(
-        "implying_tag_id", db.Integer, db.ForeignKey("tag.id"), primary_key=True
+        "implying_tag_id",
+        db.Integer,
+        db.ForeignKey("tag.id"),
+        index=True,
+        primary_key=True,
     ),
     db.Column(
-        "implied_tag_id", db.Integer, db.ForeignKey("tag.id"), primary_key=True
+        "implied_tag_id",
+        db.Integer,
+        db.ForeignKey("tag.id"),
+        index=True,
+        primary_key=True,
     ),
 )
 
@@ -56,7 +64,9 @@ class Tag(db.Model):
 class TagAlias(db.Model):
     __tablename__ = "tagAlias"
     id = db.Column(db.Integer, primary_key=True)
-    tag_id = db.Column(db.Integer, db.ForeignKey("tag.id"), nullable=False)
+    tag_id = db.Column(
+        db.Integer, db.ForeignKey("tag.id"), index=True, nullable=False
+    )
     alias = db.Column(db.String(length=256), unique=True, nullable=False)
 
     tag = db.relationship(Tag, lazy="joined")
@@ -70,9 +80,19 @@ MediaTags = db.Table(
     "medium_tag",
     db.metadata,
     db.Column(
-        "medium_id", db.Integer, db.ForeignKey("medium.id"), primary_key=True
+        "medium_id",
+        db.Integer,
+        db.ForeignKey("medium.id"),
+        index=True,
+        primary_key=True,
     ),
-    db.Column("tag_id", db.Integer, db.ForeignKey("tag.id"), primary_key=True),
+    db.Column(
+        "tag_id",
+        db.Integer,
+        db.ForeignKey("tag.id"),
+        index=True,
+        primary_key=True,
+    ),
 )
 
 
