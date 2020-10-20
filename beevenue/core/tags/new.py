@@ -46,20 +46,12 @@ def add_batch(tag_names: Iterable[str], medium_ids: Set[int]) -> Optional[int]:
     return added_count
 
 
-def create(name: ValidTagName) -> Tuple[bool, Optional[Tag]]:
-    """
-    Returns tuple of (needs_to_be_inserted, matching_tag)
-    """
-    session = g.db
-
-    # Don't create tag if there is another tag that has the same 'name'
-    maybe_conflict = session.query(Tag).filter_by(tag=name).first()
-    if maybe_conflict:
-        return False, None
+def create(name: ValidTagName) -> Tuple[bool, Tag]:
+    """Return tuple of (needs_to_be_inserted, matching_tag)."""
 
     # Don't create tag if there is another tag that has 'name' as an alias
-    maybe_conflict = session.query(TagAlias).filter_by(alias=name).first()
+    maybe_conflict = g.db.query(TagAlias).filter_by(alias=name).first()
     if maybe_conflict:
         return False, maybe_conflict.tag
 
-    return True, Tag.create(name)
+    return True, Tag.create(name)  # type: ignore

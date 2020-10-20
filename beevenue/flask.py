@@ -91,15 +91,6 @@ class BeevenueFlask(Flask):
         decorate_response(res, rv)
         return res
 
-    def start(self) -> None:
-        """Run this application (main uWSGI entrypoint)."""
-        if self.config["DEBUG"]:
-            self.run(self.hostname, self.port, threaded=True)
-        else:
-            self.run(
-                self.hostname, self.port, threaded=True, use_x_sendfile=True
-            )
-
 
 def _thumb_url(medium: MediumDocument) -> str:
     """Get URL for this medium's thumbnail."""

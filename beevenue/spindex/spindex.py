@@ -79,11 +79,10 @@ class Spindex:
 
     def get_media(self, ids: Iterable[int]) -> List[MediumDocument]:
         with self._read_context as context:
-            result = []
-            for medium_id in ids:
-                maybe_medium = context.get_medium(medium_id)
-                if maybe_medium:
-                    result.append(maybe_medium)
+            maybe_media = [context.get_medium(i) for i in ids]
+            result: List[MediumDocument] = [
+                r for r in maybe_media if r is not None
+            ]
             return result
 
     def add_alias(self, tag_name: str, new_alias: str) -> bool:
@@ -106,12 +105,8 @@ class Spindex:
         with self._write_context as ctx:
             ctx.remove_id(medium_id)
 
-            new_spindexed_medium = single_load(medium_id)
-
-            if not new_spindexed_medium:
-                return False
-
-            ctx.add(new_spindexed_medium)
+            new_medium: MediumDocument = single_load(medium_id)  # type: ignore
+            ctx.add(new_medium)
             return True
 
     def rename_tag(self, old_name: str, new_name: str) -> bool:

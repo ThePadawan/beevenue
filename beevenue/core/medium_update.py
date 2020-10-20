@@ -6,6 +6,7 @@ from sqlalchemy.sql import column
 from beevenue.flask import request
 
 from . import tags
+from ..types import MediumDocument
 from ..models import MediaTags, Medium, Tag
 from ..signals import medium_updated
 from .detail import MediumDetail
@@ -51,8 +52,7 @@ def _autocreate(unknown_tag_names: Set[ValidTagName]) -> List[Tag]:
 
     for unknown_tag_name in unknown_tag_names:
         needs_to_be_inserted, matching_tag = create(unknown_tag_name)
-        if not matching_tag:
-            continue
+
         if needs_to_be_inserted:
             session.add(matching_tag)
             need_to_commit = True
@@ -112,9 +112,8 @@ def update_medium(
     update_tags(maybe_medium, new_tags)
     medium_updated.send(maybe_medium.id)
 
-    result = g.spindex.get_medium(maybe_medium.id)
-
-    if not result:
-        return None
+    result: MediumDocument = g.spindex.get_medium(  # type: ignore
+        maybe_medium.id
+    )
 
     return MediumDetail(result, similar_media(request.beevenue_context, result))

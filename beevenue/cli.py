@@ -53,4 +53,4 @@ def init_cli(app: BeevenueFlask) -> None:
 
             print("Creating thumbnails...")
             thumbnails.create(medium_id)
-            print(f"Successfully imported {path}")
+            print(f"Successfully imported {path} (Medium {medium_id})")

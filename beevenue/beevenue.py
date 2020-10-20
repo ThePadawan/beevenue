@@ -51,11 +51,10 @@ def get_application(
     db.init_app(application)
     Migrate(application, db)
 
-    if application.config.get("SENTRY_DSN"):
-        sentry_sdk.init(
-            dsn=application.config["SENTRY_DSN"],
-            integrations=[FlaskIntegration(), SqlalchemyIntegration()],
-        )
+    sentry_sdk.init(
+        dsn=application.config["SENTRY_DSN"],
+        integrations=[FlaskIntegration(), SqlalchemyIntegration()],
+    )
 
     with application.app_context():
         login_manager.init_app(application)

@@ -32,6 +32,8 @@ def test_can_get_tag_implications_chart_with_zero_implications(client, asAdmin):
     assert res.status_code == 200
     res = client.delete("/tag/c:peter/implications/u:peter.pan")
     assert res.status_code == 200
+    res = client.delete("/tag/tobecensored/implications/tobecensoredtoo")
+    assert res.status_code == 200
 
     # This should still succeed
     res = client.get("/tags/implications")

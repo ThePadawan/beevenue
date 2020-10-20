@@ -42,12 +42,5 @@ class _SingleLoadDataSource(AbstractDataSource):
 
 
 def single_load(medium_id: int) -> Optional[MediumDocument]:
-    session = g.db
-
-    matching_media = session.query(Medium).filter_by(id=medium_id).all()
-    if not matching_media:
-        return None
-
-    matching_medium = matching_media[0]
-
+    matching_medium = g.db.query(Medium).filter_by(id=medium_id).first()
     return create_spindexed_medium(_SingleLoadDataSource(), matching_medium)

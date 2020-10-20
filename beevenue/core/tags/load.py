@@ -32,7 +32,6 @@ def load(
     if not all_tags:
         return None
 
-    # load media by ids
     all_media = Medium.query.filter(Medium.id.in_(medium_ids)).all()
 
     # User submitted only ids for nonexistant media

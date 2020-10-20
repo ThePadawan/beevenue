@@ -39,7 +39,18 @@ def test_tag_cannot_add_zero_tags_to_medium(client, asAdmin):
     assert res.status_code == 200
 
 
-def test_tag_cannot_add_new_tags_to_medium(client, asAdmin):
+def test_tag_cannot_add_only_new_tags_to_medium(client, asAdmin):
+    res = client.post(
+        "/tags/batch", json={"tags": ["klonoa"], "mediumIds": [1]}
+    )
+    assert res.status_code == 200
+
+    res = client.get("/medium/1")
+    assert res.status_code == 200
+    assert "klonoa" not in res.get_json()["tags"]
+
+
+def test_tag_cannot_add_some_new_tags_to_medium(client, asAdmin):
     res = client.post(
         "/tags/batch", json={"tags": ["klonoa", "C"], "mediumIds": [1]}
     )

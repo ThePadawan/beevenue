@@ -65,10 +65,7 @@ def delete(medium_id: int) -> bool:
 
     # Delete "Medium" DB row. Note: SQLAlchemy
     # automatically removes MediaTags rows!
-    try:
-        _delete(maybe_medium)
-    except FileNotFoundError:
-        pass
+    _delete(maybe_medium)
 
     return True
 

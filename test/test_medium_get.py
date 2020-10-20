@@ -4,7 +4,7 @@ def test_cannot_get_e_rated_medium_as_sfw_user(client, asUser):
 
 
 def test_cannot_get_q_rated_medium_as_sfw_user(client, asUser):
-    res = client.get("/medium/5")
+    res = client.get("/medium/12")
     assert res.status_code == 400
 
 

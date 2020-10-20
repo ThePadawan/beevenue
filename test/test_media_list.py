@@ -7,7 +7,7 @@ def test_can_only_list_s_media_as_user(client, asUser):
     res = client.get("/media?pageNumber=1&pageSize=10", follow_redirects=True)
     assert res.status_code == 200
     json_result = res.get_json()
-    assert len(json_result["items"]) == 3
+    assert len(json_result["items"]) == 10
 
 
 def test_can_list_s_media_as_sfw_admin(client, asAdmin):
@@ -17,14 +17,14 @@ def test_can_list_s_media_as_sfw_admin(client, asAdmin):
     json_result = res.get_json()
     print(res.data)
     print(res.get_json())
-    assert len(json_result["items"]) == 3
+    assert len(json_result["items"]) == 10
 
 
 def test_can_list_all_media_as_nsfw_admin(client, asAdmin, nsfw):
     res = client.get("/media?pageNumber=1&pageSize=10", follow_redirects=True)
     assert res.status_code == 200
     json_result = res.get_json()
-    assert len(json_result["items"]) == 5
+    assert len(json_result["items"]) == 10
 
     # Note that these follow camelCase convention (for JS consumption)
     assert "pageCount" in json_result

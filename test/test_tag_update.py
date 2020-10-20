@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_cannot_update_tag_without_login(client):
     res = client.patch("/tag/u:overwatch")
     assert res.status_code == 401
@@ -33,6 +36,12 @@ def test_cannot_update_current_tag_to_whitespace(client, asAdmin):
 def test_can_update_tag_rating(client, asAdmin):
     res = client.patch("/tag/u:overwatch", json={"rating": "q"})
     assert res.status_code == 200
+
+
+@pytest.mark.parametrize("rating", ["potato", "u"])
+def test_cant_update_tag_rating_to_something_weird(client, asAdmin, rating):
+    res = client.patch("/tag/u:overwatch", json={"rating": rating})
+    assert res.status_code == 400
 
 
 def test_can_merge_current_tag_as_admin(client, asAdmin):

@@ -36,3 +36,13 @@ def test_can_access_magic_thumbs_with_small_vw_client_hint(client, asAdmin):
 def test_can_access_magic_thumbs_with_large_vw_client_hint(client, asAdmin):
     res = client.get("/thumbs/1", headers={"Viewport-Width": "1600"})
     assert res.status_code == 200
+
+
+def test_sendfile_headers_are_set(client, asUser):
+    prev = client.app_under_test.use_x_sendfile
+    client.app_under_test.use_x_sendfile = True
+    res = client.get("/thumbs/1")
+    client.app_under_test.use_x_sendfile = prev
+
+    assert res.status_code == 200
+    assert "X-Sendfile" in res.headers

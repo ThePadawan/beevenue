@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import sqlite3
 import tempfile
@@ -159,7 +160,14 @@ def withVideo(client):
     result = runner.invoke(args=["import", _resource("tiny_video.mp4")])
     if result.exception:
         raise result.exception
-    yield None
+    print(result.__dict__)
+    stdout = result.stdout_bytes.decode("utf-8")
+    match = re.search(r"\(Medium (?P<medium_id>.+)\)", stdout)
+    if not match:
+        raise Exception("Could not determine Medium id after upload")
+    medium_id_str = match.group("medium_id")
+    medium_id = int(medium_id_str)
+    yield {"medium_id": medium_id}
 
 
 @pytest.yield_fixture

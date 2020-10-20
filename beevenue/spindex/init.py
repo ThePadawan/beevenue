@@ -18,8 +18,7 @@ def init_app(app: BeevenueFlask) -> None:
 
 
 def _set_spindex() -> None:
-    if "spindex" not in g:
-        g.spindex = Spindex()
+    g.spindex = Spindex()
 
 
 def _close_spindex(_: Any) -> None:

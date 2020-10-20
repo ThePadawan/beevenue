@@ -40,7 +40,6 @@ def _md5sum(stream: Readable) -> str:
 def _maybe_add_tags(medium: Medium, file: Uploadable) -> None:
     filename = file.filename
     if not filename:
-        print("Filename not useful")
         return
 
     match = TAGGY_FILENAME_REGEX.match(filename)

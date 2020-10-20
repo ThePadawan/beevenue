@@ -1,4 +1,6 @@
 from io import BytesIO
+import pytest
+import subprocess
 
 
 def test_cannot_upload_medium_without_login(client):
@@ -50,11 +52,50 @@ def test_uploading_weird_mime_type_fails(client, asAdmin):
     assert res.status_code == 400
 
 
-def test_uploading_medium_with_taggy_filename_succeeds(client, asAdmin):
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "1234 - rating_q u_overwatch A.jpg",
+        "1234 - rating_q.jpg",
+        "1234 - A.jpg",
+    ],
+)
+def test_uploading_medium_with_taggy_filename_succeeds(
+    client, asAdmin, filename
+):
     with open("test/resources/placeholder.jpg", "rb") as f:
         contents = f.read()
     res = client.post(
         "/medium",
-        data={"file": (BytesIO(contents), "1234 - rating_q u_overwatch A.jpg")},
+        data={"file": (BytesIO(contents), filename)},
     )
     assert res.status_code == 200
+
+
+@pytest.mark.parametrize("filename", ["", "    "])
+def test_uploading_medium_with_empty_filename_fails(client, asAdmin, filename):
+    with open("test/resources/placeholder.jpg", "rb") as f:
+        contents = f.read()
+    res = client.post(
+        "/medium",
+        data={"file": (BytesIO(contents), filename)},
+    )
+    assert res.status_code == 200
+
+
+def test_uploading_video_with_broken_ffmpeg(client, asAdmin, monkeypatch):
+    def fake_run(*args, **kwargs):
+        class FakeResult:
+            returncode = 1
+
+        return FakeResult()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    with open("test/resources/tiny_video.mp4", "rb") as f:
+        contents = f.read()
+    res = client.post(
+        "/medium",
+        data={"file": (BytesIO(contents), "example.mp4")},
+    )
+    assert res.status_code == 400

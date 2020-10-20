@@ -127,7 +127,7 @@ def test_search_with_counting_term_succeeds(client, asAdmin, nsfw):
     assert res.status_code == 200
     result = res.get_json()
     print(result)
-    assert len(result["items"]) == 2
+    assert len(result["items"]) == 9
 
 
 def test_search_with_counting_term2_succeeds(client, asAdmin, nsfw):
@@ -135,7 +135,7 @@ def test_search_with_counting_term2_succeeds(client, asAdmin, nsfw):
     assert res.status_code == 200
     result = res.get_json()
     print(result)
-    assert len(result["items"]) == 2
+    assert len(result["items"]) == 9
 
 
 def test_search_with_counting_term3_succeeds(client, asAdmin, nsfw):
