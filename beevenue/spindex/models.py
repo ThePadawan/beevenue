@@ -1,4 +1,4 @@
-from typing import Iterable, Set
+from typing import Iterable, List, Set
 
 from ..models import Medium
 from ..types import TagNamesField, MediumDocument
@@ -7,6 +7,8 @@ from ..types import TagNamesField, MediumDocument
 class SpindexedMediumTagNames(TagNamesField):
     """In-memory representation of a medium's tag names."""
 
+    __slots__: List[str] = []
+
     def __init__(self, innate: Iterable[str], searchable: Iterable[str]):
         self.innate = set(innate)
         self.searchable = set(searchable)
@@ -14,6 +16,8 @@ class SpindexedMediumTagNames(TagNamesField):
 
 class SpindexedMedium(MediumDocument):
     """In-memory representation of a medium."""
+
+    __slots__: List[str] = []
 
     @staticmethod
     def create(
